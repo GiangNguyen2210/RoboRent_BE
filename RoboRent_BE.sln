@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoboRent_BE.Controller", "RoboRent_BE.Controller\RoboRent_BE.Controller.csproj", "{40934BAE-3713-4DC9-92CF-80A761D607A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoboRent_BE.Model", "RoboRent_BE.Model\RoboRent_BE.Model.csproj", "{2133B57A-0381-473C-B03B-4F06054B6AD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoboRent_BE.Service", "RoboRent_BE.Service\RoboRent_BE.Service.csproj", "{A880A37A-88FA-4B1B-812A-01CA72D333EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoboRent_BE.Repository", "RoboRent_BE.Repository\RoboRent_BE.Repository.csproj", "{F798E3A8-CA3C-4880-B809-84C1BEDE7660}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{40934BAE-3713-4DC9-92CF-80A761D607A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40934BAE-3713-4DC9-92CF-80A761D607A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40934BAE-3713-4DC9-92CF-80A761D607A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40934BAE-3713-4DC9-92CF-80A761D607A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2133B57A-0381-473C-B03B-4F06054B6AD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2133B57A-0381-473C-B03B-4F06054B6AD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2133B57A-0381-473C-B03B-4F06054B6AD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2133B57A-0381-473C-B03B-4F06054B6AD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A880A37A-88FA-4B1B-812A-01CA72D333EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A880A37A-88FA-4B1B-812A-01CA72D333EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A880A37A-88FA-4B1B-812A-01CA72D333EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A880A37A-88FA-4B1B-812A-01CA72D333EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F798E3A8-CA3C-4880-B809-84C1BEDE7660}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F798E3A8-CA3C-4880-B809-84C1BEDE7660}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F798E3A8-CA3C-4880-B809-84C1BEDE7660}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F798E3A8-CA3C-4880-B809-84C1BEDE7660}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
