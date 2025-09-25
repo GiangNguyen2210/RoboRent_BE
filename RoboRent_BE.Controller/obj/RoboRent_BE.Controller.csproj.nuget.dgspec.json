@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj": {}
+    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj": {}
   },
   "projects": {
-    "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj": {
+    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+        "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
         "projectName": "RoboRent_BE.Controller",
-        "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
-        "packagesPath": "C:\\Users\\giang\\.nuget\\packages\\",
-        "outputPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Controller\\obj\\",
+        "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+        "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
+        "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\giang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,14 +26,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
-                "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj"
+              "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
+                "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj"
               }
             }
           }
@@ -54,6 +55,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Microsoft.AspNetCore.Authentication.Google": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.0.9, )"
@@ -100,24 +105,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
+    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+        "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
         "projectName": "RoboRent_BE.Model",
-        "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
-        "packagesPath": "C:\\Users\\giang\\.nuget\\packages\\",
-        "outputPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
+        "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+        "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
+        "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\giang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -126,6 +131,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -189,24 +195,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj": {
+    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj",
+        "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj",
         "projectName": "RoboRent_BE.Repository",
-        "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj",
-        "packagesPath": "C:\\Users\\giang\\.nuget\\packages\\",
-        "outputPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\obj\\",
+        "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj",
+        "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
+        "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\giang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -215,14 +221,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
-                "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj"
+              "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
+                "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj"
               }
             }
           }
@@ -258,24 +265,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
+    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj",
+        "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj",
         "projectName": "RoboRent_BE.Service",
-        "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj",
-        "packagesPath": "C:\\Users\\giang\\.nuget\\packages\\",
-        "outputPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Service\\obj\\",
+        "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj",
+        "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
+        "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\giang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -284,14 +291,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj": {
-                "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj"
+              "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj": {
+                "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj"
               }
             }
           }
@@ -327,7 +335,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

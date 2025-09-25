@@ -4952,23 +4952,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\giang\\.nuget\\packages\\": {},
-    "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\dotru\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+      "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
       "projectName": "RoboRent_BE.Model",
-      "projectPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
-      "packagesPath": "C:\\Users\\giang\\.nuget\\packages\\",
-      "outputPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
+      "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+      "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
+      "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "D:\\Environments\\IDE\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\giang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4977,6 +4977,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -5040,7 +5041,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

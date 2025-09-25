@@ -1,12 +1,213 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Uni144-FA25SE213-RoboRent\\BE\\RoboRent_BE\\",
-  "Documents": [],
+  "WorkspaceRootPath": "G:\\FA25-Roborent\\RoboRent_BE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.service\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|solutionrelative:roborent_be.service\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.controller\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|solutionrelative:roborent_be.controller\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.model\\migrations\\20250915105611_initial.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|solutionrelative:roborent_be.model\\migrations\\20250915105611_initial.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.service\\interfaces\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|solutionrelative:roborent_be.service\\interfaces\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.service\\interfaces\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A880A37A-88FA-4B1B-812A-01CA72D333EC}|RoboRent_BE.Service\\RoboRent_BE.Service.csproj|solutionrelative:roborent_be.service\\interfaces\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.controller\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|solutionrelative:roborent_be.controller\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.model\\migrations\\appdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|solutionrelative:roborent_be.model\\migrations\\appdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.model\\roborent_be.model.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{2133B57A-0381-473C-B03B-4F06054B6AD4}|RoboRent_BE.Model\\RoboRent_BE.Model.csproj|solutionrelative:roborent_be.model\\roborent_be.model.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F798E3A8-CA3C-4880-B809-84C1BEDE7660}|RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.repository\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F798E3A8-CA3C-4880-B809-84C1BEDE7660}|RoboRent_BE.Repository\\RoboRent_BE.Repository.csproj|solutionrelative:roborent_be.repository\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|g:\\fa25-roborent\\roborent_be\\roborent_be.controller\\roborent_be.controller.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{40934BAE-3713-4DC9-92CF-80A761D607A6}|RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj|solutionrelative:roborent_be.controller\\roborent_be.controller.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\dotru\\AppData\\Roaming\\Microsoft\\UserSecrets\\37542591-01f0-40e4-8027-111e2ad3dff6\\secrets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 168,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "RoboRent_BE.Controller",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+              "RelativeDocumentMoniker": "RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+              "RelativeToolTip": "RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-25T08:28:10.942Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "RoboRent_BE.Model.csproj",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+              "RelativeDocumentMoniker": "RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+              "RelativeToolTip": "RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-25T08:27:47.432Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Program.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\Program.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Controller\\Program.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\Program.cs",
+              "RelativeToolTip": "RoboRent_BE.Controller\\Program.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAADcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T08:46:01.343Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 232,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AccountService.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Services\\AccountService.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Service\\Services\\AccountService.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Services\\AccountService.cs",
+              "RelativeToolTip": "RoboRent_BE.Service\\Services\\AccountService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T10:10:30.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IAccountService.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Interfaces\\IAccountService.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Service\\Interfaces\\IAccountService.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Interfaces\\IAccountService.cs",
+              "RelativeToolTip": "RoboRent_BE.Service\\Interfaces\\IAccountService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T10:05:31.104Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\appsettings.json",
+              "RelativeDocumentMoniker": "RoboRent_BE.Controller\\appsettings.json",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\appsettings.json",
+              "RelativeToolTip": "RoboRent_BE.Controller\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-25T09:11:54.385Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "20250915105611_Initial.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\Migrations\\20250915105611_Initial.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Model\\Migrations\\20250915105611_Initial.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\Migrations\\20250915105611_Initial.cs",
+              "RelativeToolTip": "RoboRent_BE.Model\\Migrations\\20250915105611_Initial.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T09:07:00.061Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IEmailService.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Interfaces\\IEmailService.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Service\\Interfaces\\IEmailService.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\Interfaces\\IEmailService.cs",
+              "RelativeToolTip": "RoboRent_BE.Service\\Interfaces\\IEmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T10:10:06.691Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "AppDbContextModelSnapshot.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\Migrations\\AppDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Model\\Migrations\\AppDbContextModelSnapshot.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\Migrations\\AppDbContextModelSnapshot.cs",
+              "RelativeToolTip": "RoboRent_BE.Model\\Migrations\\AppDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T09:08:55.736Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AccountRepository.cs",
+              "DocumentMoniker": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\Repositories\\AccountRepository.cs",
+              "RelativeDocumentMoniker": "RoboRent_BE.Repository\\Repositories\\AccountRepository.cs",
+              "ToolTip": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Repository\\Repositories\\AccountRepository.cs",
+              "RelativeToolTip": "RoboRent_BE.Repository\\Repositories\\AccountRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-25T09:03:04.916Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "secrets.json",
+              "DocumentMoniker": "C:\\Users\\dotru\\AppData\\Roaming\\Microsoft\\UserSecrets\\37542591-01f0-40e4-8027-111e2ad3dff6\\secrets.json",
+              "ToolTip": "C:\\Users\\dotru\\AppData\\Roaming\\Microsoft\\UserSecrets\\37542591-01f0-40e4-8027-111e2ad3dff6\\secrets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-25T08:46:44.866Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
