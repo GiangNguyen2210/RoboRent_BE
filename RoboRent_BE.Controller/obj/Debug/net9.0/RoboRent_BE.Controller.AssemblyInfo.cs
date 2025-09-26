@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RoboRent_BE.Controller")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eab32a2fd475fe424e94d58edebc4a487ee03c31")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3566494f23993a4e392ca956f3dfe2026a0e96a7")]
 [assembly: System.Reflection.AssemblyProductAttribute("RoboRent_BE.Controller")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RoboRent_BE.Controller")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -5106,23 +5106,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\dotru\\.nuget\\packages\\": {},
+    "C:\\Users\\ADMIN\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+      "projectUniqueName": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
       "projectName": "RoboRent_BE.Controller",
-      "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
-      "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
-      "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\obj\\",
+      "projectPath": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\RoboRent_BE.Controller.csproj",
+      "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+      "outputPath": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Controller\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -5138,8 +5138,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
-              "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj"
+            "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj": {
+              "projectPath": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Service\\RoboRent_BE.Service.csproj"
             }
           }
         }

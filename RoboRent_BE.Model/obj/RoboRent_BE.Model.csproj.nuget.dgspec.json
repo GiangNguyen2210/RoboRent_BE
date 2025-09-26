@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {}
+    "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {}
   },
   "projects": {
-    "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
+    "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+        "projectUniqueName": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
         "projectName": "RoboRent_BE.Model",
-        "projectPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
-        "packagesPath": "C:\\Users\\dotru\\.nuget\\packages\\",
-        "outputPath": "G:\\FA25-Roborent\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
+        "projectPath": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Model\\RoboRent_BE.Model.csproj",
+        "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+        "outputPath": "D:\\Roborent\\RoboRent_BE\\RoboRent_BE.Model\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\dotru\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
