@@ -51,3 +51,4 @@ D:\Roborent\RoboRent_BE\RoboRent_BE.Service\obj\Debug\net9.0\RoboRent_BE.Service
 D:\Roborent\RoboRent_BE\RoboRent_BE.Service\obj\Debug\net9.0\refint\RoboRent_BE.Service.dll
 D:\Roborent\RoboRent_BE\RoboRent_BE.Service\obj\Debug\net9.0\RoboRent_BE.Service.pdb
 D:\Roborent\RoboRent_BE\RoboRent_BE.Service\obj\Debug\net9.0\ref\RoboRent_BE.Service.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Service\obj\Debug\net9.0\RoboRent_BE.Service.sourcelink.json

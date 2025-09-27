@@ -530,3 +530,8 @@ D:\Roborent\RoboRent_BE\RoboRent_BE.Controller\obj\Debug\net9.0\refint\RoboRent_
 D:\Roborent\RoboRent_BE\RoboRent_BE.Controller\obj\Debug\net9.0\RoboRent_BE.Controller.pdb
 D:\Roborent\RoboRent_BE\RoboRent_BE.Controller\obj\Debug\net9.0\RoboRent_BE.Controller.genruntimeconfig.cache
 D:\Roborent\RoboRent_BE\RoboRent_BE.Controller\obj\Debug\net9.0\ref\RoboRent_BE.Controller.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Controller\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.Google.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Controller\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Controller\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Controller\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Controller\obj\Debug\net9.0\RoboRent_BE.Controller.sourcelink.json

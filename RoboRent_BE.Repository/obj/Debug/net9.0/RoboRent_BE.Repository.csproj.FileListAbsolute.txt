@@ -45,3 +45,4 @@ D:\Roborent\RoboRent_BE\RoboRent_BE.Repository\obj\Debug\net9.0\RoboRent_BE.Repo
 D:\Roborent\RoboRent_BE\RoboRent_BE.Repository\obj\Debug\net9.0\refint\RoboRent_BE.Repository.dll
 D:\Roborent\RoboRent_BE\RoboRent_BE.Repository\obj\Debug\net9.0\RoboRent_BE.Repository.pdb
 D:\Roborent\RoboRent_BE\RoboRent_BE.Repository\obj\Debug\net9.0\ref\RoboRent_BE.Repository.dll
+D:\Uni144-FA25SE213-RoboRent\BE\RoboRent_BE\RoboRent_BE.Repository\obj\Debug\net9.0\RoboRent_BE.Repository.sourcelink.json
