@@ -11,6 +11,7 @@ public static class DependencyInjection
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddTransient<IAccountService, AccountService>();
+            services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<ICompanyService, CompanyService>();
         services.AddTransient<IEventRoboTypeService, EventRoboTypeService>();
         services.AddTransient<IEventService, EventService>();

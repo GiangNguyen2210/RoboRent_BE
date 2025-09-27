@@ -4,5 +4,6 @@ namespace RoboRent_BE.Service.Interfaces;
 
 public interface IAccountService
 {
-    // Add custom methods here
+    Task<Account> CreatePendingAccountAsync(string userId, string? fullName);
+    Task<bool> ActivateAccountAsync(string userId);
 }
