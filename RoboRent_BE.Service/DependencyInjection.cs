@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Repository.Repositories;
+using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Service.Services;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddTransient<IRobotService, RobotService>();
         services.AddTransient<IRoboTypeService, RoboTypeService>();
         services.AddTransient<ITypesOfRoboService, TypesOfRoboService>();
+        services.AddTransient<IPayOSService, PayOSService>();
         return services;
     }
 }

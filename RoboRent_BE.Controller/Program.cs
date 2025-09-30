@@ -9,6 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddControllers();
+
+
 builder.Services.AddRepositories().AddServices();
 
 // Add DbContext
@@ -22,6 +27,9 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.Run();
