@@ -11,7 +11,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="payOS" Version="1.0.9" />
+      <Folder Include="Interfaces\" />
+      <Folder Include="Services\" />
     </ItemGroup>
 
 </Project>

@@ -7,26 +7,26 @@ namespace RoboRent_BE.Repository.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly AppDbContext _dbContext;
+        private readonly AppDbContext _db;
         internal readonly DbSet<T> DbSet;
 
-        public GenericRepository(AppDbContext dbContext)
+        public GenericRepository(AppDbContext db)
         {
-            _dbContext = dbContext;
-            DbSet = dbContext.Set<T>();
+            _db = db;
+            DbSet = db.Set<T>();
         }
 
         public async Task<T> AddAsync(T entity)
         {
-            await _dbContext.AddAsync(entity);
-            await _dbContext.SaveChangesAsync();
+            await _db.AddAsync(entity);
+            await _db.SaveChangesAsync();
             return entity;
         }
 
         public async Task<T> DeleteAsync(T entity)
         {
-            _dbContext.Remove(entity);
-            await _dbContext.SaveChangesAsync();
+            _db.Remove(entity);
+            await _db.SaveChangesAsync();
             return entity;
         }
 
@@ -72,14 +72,14 @@ namespace RoboRent_BE.Repository.Repositories
 
         public async Task<T> UpdateAsync(T entity)
         {
-            _dbContext.Update(entity);
-            await _dbContext.SaveChangesAsync();
+            _db.Update(entity);
+            await _db.SaveChangesAsync();
             return entity;
         }
 
         public AppDbContext GetDbContext()
         {
-            return _dbContext;
+            return _db;
         }
     }
 }

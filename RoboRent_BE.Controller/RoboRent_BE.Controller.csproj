@@ -16,11 +16,14 @@
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\RoboRent_BE.Service\RoboRent_BE.Service.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Controllers\" />
     </ItemGroup>
 
 </Project>
