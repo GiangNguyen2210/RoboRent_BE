@@ -13,7 +13,6 @@ public static class DependencyInjection
     {
         services.AddTransient<IAccountService, AccountService>();
             services.AddTransient<IEmailService, EmailService>();
-        services.AddTransient<ICompanyService, CompanyService>();
         services.AddTransient<IEventRoboTypeService, EventRoboTypeService>();
         services.AddTransient<IEventService, EventService>();
         services.AddTransient<IModifyIdentityUserService, ModifyIdentityUserService>();

@@ -7,8 +7,13 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {}
+    public virtual DbSet<RentalContract> RentalContracts { get; set; } = null!;
     
-    public virtual DbSet<Company>  Companies { get; set; } = null!;
+    public virtual DbSet<EventSchedule> EventSchedules { get; set; } = null!;
+    
+    public virtual DbSet<RentalPackage> RentalPackages { get; set; } = null!;
+    
+    public virtual DbSet<RobosOfRentalPackage> RobosOfRentalPackages { get; set; } = null!;
     
     public virtual DbSet<Account> Accounts { get; set; } = null!;
     
@@ -36,6 +41,8 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
         modelBuilder.Entity<EventRoboType>().HasKey(ert => new { ert.EventId, ert.RoboTypeId });
         
         modelBuilder.Entity<TypesOfRobo>().HasKey(tor => new { tor.RobotId, tor.RoboTypeId });
+
+        modelBuilder.Entity<RobosOfRentalPackage>().HasKey(rorp => new { rorp.RentalPackageId, rorp.RoboTypeId });
         
         base.OnModelCreating(modelBuilder);
     }

@@ -17,15 +17,13 @@ public partial class Account
     
     public string? gender { get; set; } = string.Empty;
     
+    public bool? IdentificationIsValidated  { get; set; } = false;
+    
     public bool? isDeleted { get; set; } = false;
     
     public string? Status { get; set; } = string.Empty;
     
     [Required] public string? UserId { get; set; } = string.Empty;
-    
-    public int? CompanyId { get; set; }
-    
-    [ForeignKey("CompanyId")] public virtual Company Company { get; set; } = null!;
     
     [ForeignKey("UserId")] public virtual ModifyIdentityUser ModifyIdentityUser { get; set; } = null!;
 }
