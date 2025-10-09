@@ -29,7 +29,12 @@ public partial class Rental
     
     public int? EventId { get; set; }
     
+    public int? RentalPackageId  { get; set; }
+    
     [ForeignKey("EventId")] public virtual Event Event { get; set; } = null!;
     
     [ForeignKey("AccountId")] public virtual Account Account { get; set; } = null!;
+    
+    [ForeignKey("RentalPackageId")] public virtual RentalPackage RentalPackage { get; set; } = null!;
+
 }

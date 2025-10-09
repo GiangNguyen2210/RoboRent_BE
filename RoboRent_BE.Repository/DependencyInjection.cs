@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RoboRent_BE.Repository.Interface;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Repository.Repositories;
 
@@ -13,13 +14,13 @@ public static class DependencyInjection
         services.AddTransient<IEventRepository, EventRepository>();
         services.AddTransient<IRoboTypeRepository, RoboTypeRepository>();
         services.AddTransient<IPriceQuoteRepository, PriceQuoteRepository>();
-        services.AddTransient<ICompanyRepository, CompanyRepository>();
         services.AddTransient<IEventRoboTypeRepository, EventRoboTypeRepository>();
         services.AddTransient<IModifyIdentityUserRepository, ModifyIdentityUserRepository>();
         services.AddTransient<IRentalRepository, RentalRepository>();
         services.AddTransient<IRentalDetailRepository, RentalDetailRepository>();
         services.AddTransient<IRobotRepository, RobotRepository>();
         services.AddTransient<ITypesOfRoboRepository, TypesOfRoboRepository>();
+        services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
         return services;
     }
 }
