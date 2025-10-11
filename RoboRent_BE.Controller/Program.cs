@@ -8,8 +8,8 @@ using RoboRent_BE.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 //variable for google auth
-var googleClientId = builder.Configuration["googleloginweb:client_id"];
-var googleClientSecret = builder.Configuration["googleloginweb:client_secret"];
+var googleClientId = builder.Configuration["GoogleLoginWeb:Client_id"];
+var googleClientSecret = builder.Configuration["GoogleLoginWeb:Client_secret"];
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
