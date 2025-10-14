@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class change_rental_contract : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -439,7 +439,8 @@ namespace RoboRent_BE.Model.Migrations
                     Description = table.Column<string>(type: "text", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
-                    RentalId = table.Column<int>(type: "integer", nullable: true)
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
+                    ContractUrl = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

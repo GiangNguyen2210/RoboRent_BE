@@ -25,8 +25,8 @@ public partial class Rental
     
     public string? Status { get; set; } = string.Empty;
     
-    [Required] public int? AccountId { get; set; }
-    
+    [Required] public int? AccountId { get; set; } // the rental
+
     public int? EventId { get; set; }
     
     public int? RentalPackageId  { get; set; }
