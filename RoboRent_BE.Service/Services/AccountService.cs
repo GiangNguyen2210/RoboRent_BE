@@ -45,4 +45,9 @@ public class AccountService : IAccountService
         await _accountRepository.UpdateAsync(account);
         return true;
     }
+
+    public async Task<Account?> GetAccountByUserIdAsync(string userId)
+    {
+        return await _accountRepository.GetAsync(a => a.UserId == userId);
+    }
 }

@@ -6,4 +6,5 @@ public interface IAccountService
 {
     Task<Account> CreatePendingAccountAsync(string userId, string? fullName);
     Task<bool> ActivateAccountAsync(string userId);
+    Task<Account?> GetAccountByUserIdAsync(string userId);
 }

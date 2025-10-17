@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Service.Interfaces;
 using System.Security.Claims;
@@ -115,7 +118,52 @@ namespace RoboRent_BE.Controller.Controllers
                 await _emailService.SendEmailAsync(user.Email!, "Verify your RoboRent account", html);
             }
 
-            return Redirect(returnUrl ?? "/");
+            // Issue JWT token for the authenticated user
+            var jwtSection = _configuration.GetSection("Jwt");
+            var jwtSecret = jwtSection["Secret"];
+            var jwtIssuer = jwtSection["Issuer"]; 
+            var jwtAudience = jwtSection["Audience"]; 
+            var jwtExpiresMinutes = int.TryParse(jwtSection["ExpiresMinutes"], out var m) ? m : 60;
+
+            if (string.IsNullOrWhiteSpace(jwtSecret))
+            {
+                // Fallback: proceed without token if not configured
+                return Redirect(returnUrl ?? "/");
+            }
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // session when login with existed google account
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Name, fullName ?? user.UserName ?? string.Empty),
+                new Claim("accountId", account.Id.ToString()),
+                new Claim("accountStatus", account.Status ?? string.Empty)
+            };
+
+            var jwtToken = new JwtSecurityToken(
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(jwtExpiresMinutes),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+            // If a returnUrl was provided, append token as a query param for SPA to capture
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                var separator = returnUrl.Contains("?") ? "&" : "?";
+                var redirectWithToken = $"{returnUrl}{separator}token={Uri.EscapeDataString(tokenString)}";
+                return Redirect(redirectWithToken);
+            }
+
+            // Otherwise return token in body for API consumers
+            return Ok(new { token = tokenString });
         }
 
         [HttpGet("verify")]
@@ -139,6 +187,92 @@ namespace RoboRent_BE.Controller.Controllers
             await _userManager.UpdateAsync(user);
 
             return Ok(new { message = "Account verified and activated." });
+        }
+
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            var accountId = User.FindFirst("accountId")?.Value;
+            var accountStatus = User.FindFirst("accountStatus")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found in token.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(new
+            {
+                userId = user.Id,
+                email = user.Email,
+                userName = user.UserName,
+                accountId = accountId,
+                accountStatus = accountStatus,
+                emailConfirmed = user.EmailConfirmed
+            });
+        }
+
+        [HttpPost("refresh-token")]
+        [Authorize]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found in token.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Generate new JWT token
+            var jwtSection = _configuration.GetSection("Jwt");
+            var jwtSecret = jwtSection["Secret"];
+            var jwtIssuer = jwtSection["Issuer"];
+            var jwtAudience = jwtSection["Audience"];
+            var jwtExpiresMinutes = int.TryParse(jwtSection["ExpiresMinutes"], out var m) ? m : 60;
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Name, user.UserName ?? string.Empty),
+            };
+
+            // Get account info if exists
+            var account = await _accountService.GetAccountByUserIdAsync(user.Id);
+            if (account != null)
+            {
+                claims.Add(new Claim("accountId", account.Id.ToString()));
+                claims.Add(new Claim("accountStatus", account.Status ?? string.Empty));
+            }
+
+            var jwtToken = new JwtSecurityToken(
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(jwtExpiresMinutes),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+            return Ok(new { token = tokenString });
         }
     }
 }
