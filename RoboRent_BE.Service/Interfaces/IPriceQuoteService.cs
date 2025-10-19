@@ -1,10 +1,8 @@
-using RoboRent_BE.Model.DTOs.PriceQuote;
+using RoboRent_BE.Model.Entities;
 
 namespace RoboRent_BE.Service.Interfaces;
 
 public interface IPriceQuoteService
 {
-    Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId);
-    Task<PriceQuoteResponse> GetPriceQuoteAsync(int id);
-    Task<RentalQuotesResponse> GetQuotesByRentalIdAsync(int rentalId);
+    // Add custom methods here
 }

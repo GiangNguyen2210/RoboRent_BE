@@ -8,26 +8,12 @@ public partial class PriceQuote
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-    
-    [Required]
-    public int RentalId { get; set; }
-    
-    [ForeignKey(nameof(RentalId))]
-    public virtual Rental Rental { get; set; } = null!;
 
-    public Double? Delivery { get; set; }  = 0;
+    public string? Delivery { get; set; }  = string.Empty;
 
     public Double? Deposit { get; set; } = 0;
 
     public Double? Complete { get; set; } = 0;
-    
-    public double? Service { get; set; }
-    
-    public string? StaffDescription { get; set; }
-    
-    public string? ManagerFeedback { get; set; }
-    
-    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     
     public bool? IsDeleted { get; set; } = false;
     

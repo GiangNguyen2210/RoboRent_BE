@@ -67,6 +67,23 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PriceQuotes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Delivery = table.Column<string>(type: "text", nullable: true),
+                    Deposit = table.Column<double>(type: "double precision", nullable: true),
+                    Complete = table.Column<double>(type: "double precision", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PriceQuotes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentalPackages",
                 columns: table => new
                 {
@@ -390,41 +407,6 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChatRooms",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalId = table.Column<int>(type: "integer", nullable: false),
-                    StaffId = table.Column<int>(type: "integer", nullable: false),
-                    CustomerId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ChatRooms", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ChatRooms_Accounts_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ChatRooms_Accounts_StaffId",
-                        column: x => x.StaffId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ChatRooms_Rentals_RentalId",
-                        column: x => x.RentalId,
-                        principalTable: "Rentals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "EventSchedules",
                 columns: table => new
                 {
@@ -445,34 +427,6 @@ namespace RoboRent_BE.Model.Migrations
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PriceQuotes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalId = table.Column<int>(type: "integer", nullable: false),
-                    Delivery = table.Column<double>(type: "double precision", nullable: true),
-                    Deposit = table.Column<double>(type: "double precision", nullable: true),
-                    Complete = table.Column<double>(type: "double precision", nullable: true),
-                    Service = table.Column<double>(type: "double precision", nullable: true),
-                    StaffDescription = table.Column<string>(type: "text", nullable: true),
-                    ManagerFeedback = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PriceQuotes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PriceQuotes_Rentals_RentalId",
-                        column: x => x.RentalId,
-                        principalTable: "Rentals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -530,39 +484,6 @@ namespace RoboRent_BE.Model.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "ChatMessages",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ChatRoomId = table.Column<int>(type: "integer", nullable: false),
-                    SenderId = table.Column<int>(type: "integer", nullable: false),
-                    MessageType = table.Column<int>(type: "integer", nullable: false),
-                    Content = table.Column<string>(type: "text", nullable: false),
-                    MediaUrls = table.Column<string>(type: "text", nullable: true),
-                    RelatedEntityId = table.Column<int>(type: "integer", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: true),
-                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ChatMessages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ChatMessages_Accounts_SenderId",
-                        column: x => x.SenderId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ChatMessages_ChatRooms_ChatRoomId",
-                        column: x => x.ChatRoomId,
-                        principalTable: "ChatRooms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_UserId",
                 table: "Accounts",
@@ -606,31 +527,6 @@ namespace RoboRent_BE.Model.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChatMessages_ChatRoomId",
-                table: "ChatMessages",
-                column: "ChatRoomId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatMessages_SenderId",
-                table: "ChatMessages",
-                column: "SenderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatRooms_CustomerId",
-                table: "ChatRooms",
-                column: "CustomerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatRooms_RentalId",
-                table: "ChatRooms",
-                column: "RentalId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatRooms_StaffId",
-                table: "ChatRooms",
-                column: "StaffId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_EventRoboTypes_RoboTypeId",
                 table: "EventRoboTypes",
                 column: "RoboTypeId");
@@ -644,11 +540,6 @@ namespace RoboRent_BE.Model.Migrations
                 name: "IX_PaymentTransactions_AccountId",
                 table: "PaymentTransactions",
                 column: "AccountId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PriceQuotes_RentalId",
-                table: "PriceQuotes",
-                column: "RentalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RentalContracts_RentalId",
@@ -710,9 +601,6 @@ namespace RoboRent_BE.Model.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "ChatMessages");
-
-            migrationBuilder.DropTable(
                 name: "EventRoboTypes");
 
             migrationBuilder.DropTable(
@@ -740,16 +628,13 @@ namespace RoboRent_BE.Model.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "ChatRooms");
+                name: "Rentals");
 
             migrationBuilder.DropTable(
                 name: "RoboTypes");
 
             migrationBuilder.DropTable(
                 name: "Robots");
-
-            migrationBuilder.DropTable(
-                name: "Rentals");
 
             migrationBuilder.DropTable(
                 name: "Accounts");
