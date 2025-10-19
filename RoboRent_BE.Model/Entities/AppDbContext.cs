@@ -34,6 +34,8 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<PriceQuote>  PriceQuotes { get; set; } = null!;
     
     public virtual DbSet<PaymentTransaction>  PaymentTransactions { get; set; } = null!;
+    public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
