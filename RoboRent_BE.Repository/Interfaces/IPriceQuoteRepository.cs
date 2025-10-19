@@ -4,5 +4,6 @@ namespace RoboRent_BE.Repository.Interfaces;
 
 public interface IPriceQuoteRepository : IGenericRepository<PriceQuote>
 {
-    // Add custom methods here
+    Task<int> CountByRentalIdAsync(int rentalId);
+    Task<List<PriceQuote>> GetByRentalIdAsync(int rentalId);
 }

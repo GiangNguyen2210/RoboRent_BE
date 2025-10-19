@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository;
 using RoboRent_BE.Service;
+using RoboRent_BE.Controller.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 //variable for google auth
+
 var googleClientId = builder.Configuration["GoogleLoginWeb:Client_id"];
 var googleClientSecret = builder.Configuration["GoogleLoginWeb:Client_secret"];
 
@@ -57,6 +59,17 @@ builder.Services
         options.SignInScheme = IdentityConstants.ExternalScheme;
     });
 
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()  // Cho phép mọi origin
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -73,4 +86,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chatHub");
+
+app.UseCors("AllowAll");
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;  // Trả OK ngay
+        return;  // Không forward request (không gọi next())
+    }
+    await next();  // Tiếp tục pipeline cho method khác (GET/POST)
+});
+
 app.Run();

@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251009103310_Initial")]
+    [Migration("20251018235754_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -195,6 +195,85 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatRoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MediaUrls")
+                        .HasColumnType("text");
+
+                    b.Property<int>("MessageType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatRoomId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("RentalId");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("ChatRooms");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.Event", b =>
@@ -386,8 +465,11 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<double?>("Complete")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("Delivery")
-                        .HasColumnType("text");
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("Delivery")
+                        .HasColumnType("double precision");
 
                     b.Property<double?>("Deposit")
                         .HasColumnType("double precision");
@@ -395,10 +477,24 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ManagerFeedback")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("Service")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("StaffDescription")
+                        .HasColumnType("text");
+
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RentalId");
 
                     b.ToTable("PriceQuotes");
                 });
@@ -711,6 +807,52 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("ModifyIdentityUser");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ChatRoom", "ChatRoom")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatRoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChatRoom");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Rental");
+
+                    b.Navigation("Staff");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.EventRoboType", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.Event", "Event")
@@ -748,6 +890,17 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.PriceQuote", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rental");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.Rental", b =>
@@ -837,6 +990,11 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("RoboType");
 
                     b.Navigation("Robot");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
+                {
+                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }
