@@ -32,8 +32,8 @@ public class AuthService : IAuthService
     }
 
     public async Task<AuthResultDto> HandleGoogleCallbackAsync(
-        string? returnUrl,
-        Func<string, string, string?> buildVerifyUrl)
+    string? returnUrl,
+    Func<string, string, string?> buildVerifyUrl)
     {
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
@@ -54,32 +54,45 @@ public class AuthService : IAuthService
                 return new AuthResultDto { Error = "Email is required from Google." };
             }
 
-            user = await _userManager.FindByEmailAsync(email) ?? new ModifyIdentityUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = false,
-                Status = "PendingVerification"
-            };
+            user = await _userManager.FindByEmailAsync(email);
 
-            if (user.Id == null)
+            if (user == null)
             {
+                // Create new user
+                user = new ModifyIdentityUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = false,
+                    Status = "PendingVerification"
+                };
+
                 var createResult = await _userManager.CreateAsync(user);
                 if (!createResult.Succeeded)
                 {
                     return new AuthResultDto { Error = string.Join("; ", createResult.Errors.Select(e => e.Description)) };
                 }
 
-                var addLogin = await _userManager.AddLoginAsync(user, info);
-                if (!addLogin.Succeeded)
+                
+                var addLoginResult = await _userManager.AddLoginAsync(user, info);
+                if (!addLoginResult.Succeeded)
                 {
-                    return new AuthResultDto { Error = string.Join("; ", addLogin.Errors.Select(e => e.Description)) };
+                    return new AuthResultDto { Error = string.Join("; ", addLoginResult.Errors.Select(e => e.Description)) };
                 }
             }
             else
             {
-                // ensure external login linked (ignore result)
-                _ = await _userManager.AddLoginAsync(user, info);
+                // User exists, check if login already exists
+                var existingLogin = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                if (existingLogin == null)
+                {
+                    // Add login only if it doesn't exist
+                    var addLoginResult = await _userManager.AddLoginAsync(user, info);
+                    if (!addLoginResult.Succeeded)
+                    {
+                        return new AuthResultDto { Error = string.Join("; ", addLoginResult.Errors.Select(e => e.Description)) };
+                    }
+                }
             }
 
             await _signInManager.SignInAsync(user, isPersistent: true);
