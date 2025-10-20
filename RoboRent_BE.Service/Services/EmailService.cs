@@ -25,6 +25,17 @@ namespace RoboRent_BE.Service.Services
             var pass = _configuration["Smtp:Pass"];
             var from = _configuration["Smtp:From"] ?? user;
 
+            // Log configuration for debugging (without password)
+            _logger.LogInformation("SMTP Configuration - Host: {Host}, Port: {Port}, User: {User}, From: {From}", 
+                host, port, user, from);
+
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
+            {
+                _logger.LogError("SMTP configuration is incomplete. Host: {Host}, User: {User}, Pass: {PassSet}", 
+                    host, user, !string.IsNullOrEmpty(pass) ? "Set" : "Not Set");
+                throw new InvalidOperationException("SMTP configuration is incomplete");
+            }
+
             using var message = new MailMessage();
             message.From = new MailAddress(from!);
             message.To.Add(toEmail);
@@ -36,20 +47,31 @@ namespace RoboRent_BE.Service.Services
             {
                 Port = port,
                 Credentials = new NetworkCredential(user, pass),
-                EnableSsl = true
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Timeout = 5000
             };
 
             try
             {
+                _logger.LogInformation("Attempting to send email to {ToEmail} with subject: {Subject}", toEmail, subject);
                 await client.SendMailAsync(message);
+                _logger.LogInformation("Email sent successfully to {ToEmail}", toEmail);
+            }
+            catch (SmtpException smtpEx)
+            {
+                _logger.LogError(smtpEx, "SMTP Error sending email to {Email}. StatusCode: {StatusCode}, Message: {Message}", 
+                    toEmail, smtpEx.StatusCode, smtpEx.Message);
+                throw new InvalidOperationException($"SMTP Error: {smtpEx.Message}", smtpEx);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
+                _logger.LogError(ex, "Failed to send email to {Email}. Error: {Error}", toEmail, ex.Message);
                 throw;
             }
         }
     }
 }
+
 
 
