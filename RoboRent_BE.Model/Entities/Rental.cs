@@ -9,11 +9,9 @@ public partial class Rental
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public string? CompanyName { get; set; } = string.Empty;
+    public string? EventName { get; set; } = string.Empty;
 
     public string? PhoneNumber { get; set; } = string.Empty;
-    
-    public string? EventAddress { get; set; } = string.Empty;
     
     public string? Email { get; set; } = string.Empty;
     
@@ -31,6 +29,10 @@ public partial class Rental
     
     public int? RentalPackageId  { get; set; }
     
+    public int? StaffId { get; set; }
+    
+    [ForeignKey("StaffId")] public virtual Account Staff { get; set; } = null!;
+
     [ForeignKey("EventId")] public virtual Event Event { get; set; } = null!;
     
     [ForeignKey("AccountId")] public virtual Account Account { get; set; } = null!;

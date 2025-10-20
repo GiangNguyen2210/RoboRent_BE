@@ -9,10 +9,11 @@ using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository;
 using RoboRent_BE.Service;
 using RoboRent_BE.Controller.Hubs;
+using AutoMapper;
+using RoboRent_BE.Model.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 //variable for google auth
-
 var googleClientId = builder.Configuration["GoogleLoginWeb:Client_id"];
 var googleClientSecret = builder.Configuration["GoogleLoginWeb:Client_secret"];
 
@@ -59,6 +60,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers();
 
 builder.Services.AddRepositories().AddServices();
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+builder.Services.AddHttpClient();
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
