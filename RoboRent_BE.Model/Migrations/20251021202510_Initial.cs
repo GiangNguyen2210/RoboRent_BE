@@ -327,6 +327,38 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ContractTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TemplateCode = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    BodyJson = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    Version = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractTemplates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractTemplates_Accounts_CreatedBy",
+                        column: x => x.CreatedBy,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractTemplates_Accounts_UpdatedBy",
+                        column: x => x.UpdatedBy,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PaymentTransactions",
                 columns: table => new
                 {
@@ -397,6 +429,30 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TemplateClauses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ClauseCode = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "text", nullable: true),
+                    Body = table.Column<string>(type: "text", nullable: true),
+                    IsMandatory = table.Column<bool>(type: "boolean", nullable: true),
+                    IsEditable = table.Column<bool>(type: "boolean", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ContractTemplatesId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TemplateClauses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TemplateClauses_ContractTemplates_ContractTemplatesId",
+                        column: x => x.ContractTemplatesId,
+                        principalTable: "ContractTemplates",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ChatRooms",
                 columns: table => new
                 {
@@ -429,6 +485,48 @@ namespace RoboRent_BE.Model.Migrations
                         principalTable: "Rentals",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContractDrafts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "text", nullable: true),
+                    BodyJson = table.Column<string>(type: "text", nullable: true),
+                    Comments = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ContractTemplatesId = table.Column<int>(type: "integer", nullable: true),
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
+                    StaffId = table.Column<int>(type: "integer", nullable: true),
+                    ManagerId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractDrafts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractDrafts_Accounts_ManagerId",
+                        column: x => x.ManagerId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractDrafts_Accounts_StaffId",
+                        column: x => x.StaffId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractDrafts_ContractTemplates_ContractTemplatesId",
+                        column: x => x.ContractTemplatesId,
+                        principalTable: "ContractTemplates",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractDrafts_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -572,6 +670,155 @@ namespace RoboRent_BE.Model.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CustomerContracts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ContractNumber = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    SignedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ContractUrl = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ContractDraftsId = table.Column<int>(type: "integer", nullable: true),
+                    CustomerId = table.Column<int>(type: "integer", nullable: true),
+                    ReviewerId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerContracts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CustomerContracts_Accounts_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CustomerContracts_Accounts_ReviewerId",
+                        column: x => x.ReviewerId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CustomerContracts_ContractDrafts_ContractDraftsId",
+                        column: x => x.ContractDraftsId,
+                        principalTable: "ContractDrafts",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DraftApprovals",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Comments = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    RequestedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ContractDraftsId = table.Column<int>(type: "integer", nullable: true),
+                    RequestedBy = table.Column<int>(type: "integer", nullable: true),
+                    ReviewerId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DraftApprovals", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DraftApprovals_Accounts_RequestedBy",
+                        column: x => x.RequestedBy,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DraftApprovals_Accounts_ReviewerId",
+                        column: x => x.ReviewerId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DraftApprovals_ContractDrafts_ContractDraftsId",
+                        column: x => x.ContractDraftsId,
+                        principalTable: "ContractDrafts",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DraftClauses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "text", nullable: true),
+                    Body = table.Column<string>(type: "text", nullable: true),
+                    IsModified = table.Column<bool>(type: "boolean", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ContractDraftsId = table.Column<int>(type: "integer", nullable: true),
+                    TemplateClausesId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DraftClauses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DraftClauses_ContractDrafts_ContractDraftsId",
+                        column: x => x.ContractDraftsId,
+                        principalTable: "ContractDrafts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DraftClauses_TemplateClauses_TemplateClausesId",
+                        column: x => x.TemplateClausesId,
+                        principalTable: "TemplateClauses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContractReports",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    DraftClausesId = table.Column<int>(type: "integer", nullable: true),
+                    ReporterId = table.Column<int>(type: "integer", nullable: true),
+                    ReportRole = table.Column<string>(type: "text", nullable: true),
+                    AccusedId = table.Column<int>(type: "integer", nullable: true),
+                    ReportCategory = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    EvidencePath = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    Resolution = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ReviewedBy = table.Column<int>(type: "integer", nullable: true),
+                    ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ResolutionType = table.Column<string>(type: "text", nullable: true),
+                    PaymentId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractReports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractReports_Accounts_AccusedId",
+                        column: x => x.AccusedId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractReports_Accounts_ReporterId",
+                        column: x => x.ReporterId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractReports_Accounts_ReviewedBy",
+                        column: x => x.ReviewedBy,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractReports_DraftClauses_DraftClausesId",
+                        column: x => x.DraftClausesId,
+                        principalTable: "DraftClauses",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContractReports_PaymentTransactions_PaymentId",
+                        column: x => x.PaymentId,
+                        principalTable: "PaymentTransactions",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
@@ -579,7 +826,8 @@ namespace RoboRent_BE.Model.Migrations
                 {
                     { "1", null, "Admin", "ADMIN" },
                     { "2", null, "Staff", "STAFF" },
-                    { "3", null, "Customer", "CUSTOMER" }
+                    { "3", null, "Customer", "CUSTOMER" },
+                    { "4", null, "Manager", "MANAGER" }
                 });
 
             migrationBuilder.InsertData(
@@ -679,6 +927,101 @@ namespace RoboRent_BE.Model.Migrations
                 column: "StaffId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ContractDrafts_ContractTemplatesId",
+                table: "ContractDrafts",
+                column: "ContractTemplatesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractDrafts_ManagerId",
+                table: "ContractDrafts",
+                column: "ManagerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractDrafts_RentalId",
+                table: "ContractDrafts",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractDrafts_StaffId",
+                table: "ContractDrafts",
+                column: "StaffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractReports_AccusedId",
+                table: "ContractReports",
+                column: "AccusedId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractReports_DraftClausesId",
+                table: "ContractReports",
+                column: "DraftClausesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractReports_PaymentId",
+                table: "ContractReports",
+                column: "PaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractReports_ReporterId",
+                table: "ContractReports",
+                column: "ReporterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractReports_ReviewedBy",
+                table: "ContractReports",
+                column: "ReviewedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTemplates_CreatedBy",
+                table: "ContractTemplates",
+                column: "CreatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTemplates_UpdatedBy",
+                table: "ContractTemplates",
+                column: "UpdatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerContracts_ContractDraftsId",
+                table: "CustomerContracts",
+                column: "ContractDraftsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerContracts_CustomerId",
+                table: "CustomerContracts",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerContracts_ReviewerId",
+                table: "CustomerContracts",
+                column: "ReviewerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DraftApprovals_ContractDraftsId",
+                table: "DraftApprovals",
+                column: "ContractDraftsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DraftApprovals_RequestedBy",
+                table: "DraftApprovals",
+                column: "RequestedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DraftApprovals_ReviewerId",
+                table: "DraftApprovals",
+                column: "ReviewerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DraftClauses_ContractDraftsId",
+                table: "DraftClauses",
+                column: "ContractDraftsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DraftClauses_TemplateClausesId",
+                table: "DraftClauses",
+                column: "TemplateClausesId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EventRoboTypes_RoboTypeId",
                 table: "EventRoboTypes",
                 column: "RoboTypeId");
@@ -739,6 +1082,11 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RoboTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TemplateClauses_ContractTemplatesId",
+                table: "TemplateClauses",
+                column: "ContractTemplatesId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TypesOfRobos_RoboTypeId",
                 table: "TypesOfRobos",
                 column: "RoboTypeId");
@@ -766,13 +1114,19 @@ namespace RoboRent_BE.Model.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
+                name: "ContractReports");
+
+            migrationBuilder.DropTable(
+                name: "CustomerContracts");
+
+            migrationBuilder.DropTable(
+                name: "DraftApprovals");
+
+            migrationBuilder.DropTable(
                 name: "EventRoboTypes");
 
             migrationBuilder.DropTable(
                 name: "EventSchedules");
-
-            migrationBuilder.DropTable(
-                name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
                 name: "PriceQuotes");
@@ -796,22 +1150,37 @@ namespace RoboRent_BE.Model.Migrations
                 name: "ChatRooms");
 
             migrationBuilder.DropTable(
+                name: "DraftClauses");
+
+            migrationBuilder.DropTable(
+                name: "PaymentTransactions");
+
+            migrationBuilder.DropTable(
                 name: "RoboTypes");
 
             migrationBuilder.DropTable(
                 name: "Robots");
 
             migrationBuilder.DropTable(
+                name: "ContractDrafts");
+
+            migrationBuilder.DropTable(
+                name: "TemplateClauses");
+
+            migrationBuilder.DropTable(
                 name: "Rentals");
 
             migrationBuilder.DropTable(
-                name: "Accounts");
+                name: "ContractTemplates");
 
             migrationBuilder.DropTable(
                 name: "Events");
 
             migrationBuilder.DropTable(
                 name: "RentalPackages");
+
+            migrationBuilder.DropTable(
+                name: "Accounts");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

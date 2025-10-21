@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOS.Admin;
+using RoboRent_BE.Model.DTOs.EventSchedule;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.Entities;
 
@@ -21,6 +22,12 @@ public class MappingProfile : Profile
         CreateMap<UpdateOrderRequest, Rental>();
         
         CreateMap<Rental, OrderResonse>();
+
+        CreateMap<CreateEventScheduleRequest, EventSchedule>();
+
+        CreateMap<UpdateScheduleEventRequest, EventSchedule>();
+
+        CreateMap<EventSchedule, EventScheduleResponse>();
 
         CreateMap<ModifyIdentityUser, UpdateUserResponse>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));

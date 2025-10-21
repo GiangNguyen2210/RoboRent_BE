@@ -38,13 +38,26 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
     public virtual DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
+    public virtual DbSet<ContractDrafts> ContractDrafts { get; set; } = null!;
 
+    public virtual DbSet<ContractReports> ContractReports { get; set; } = null!;
+
+    public virtual DbSet<ContractTemplates> ContractTemplates { get; set; } = null!;
+
+    public virtual DbSet<CustomerContracts> CustomerContracts { get; set; } =  null!;
+
+    public virtual DbSet<DraftApprovals> DraftApprovals { get; set; }  = null!;
+
+    public virtual DbSet<DraftClauses> DraftClauses { get; set; } = null!;
+
+    public virtual DbSet<TemplateClauses> TemplateClauses { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<IdentityRole>().HasData(
             new IdentityRole { Id = "1", Name = "Admin", NormalizedName = "ADMIN" },
             new IdentityRole { Id = "2", Name = "Staff", NormalizedName = "STAFF" },
-            new IdentityRole { Id = "3", Name = "Customer", NormalizedName = "CUSTOMER" }
+            new IdentityRole { Id = "3", Name = "Customer", NormalizedName = "CUSTOMER" },
+            new IdentityRole { Id = "4", Name = "Manager", NormalizedName = "MANAGER" }
             );
 
         modelBuilder.Entity<Event>().HasData(

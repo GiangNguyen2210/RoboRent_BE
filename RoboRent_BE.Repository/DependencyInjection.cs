@@ -10,6 +10,7 @@ public static class DependencyInjection
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddTransient<IEventScheduleRepository, EventScheduleRepository>();
         services.AddTransient<IAccountRepository, AccountRepository>();
         services.AddTransient<IEventRepository, EventRepository>();
         services.AddTransient<IRoboTypeRepository, RoboTypeRepository>();

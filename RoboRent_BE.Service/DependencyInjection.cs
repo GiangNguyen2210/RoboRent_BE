@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IEventRoboTypeService, EventRoboTypeService>();
         services.AddTransient<IEventService, EventService>();
+        services.AddTransient<IEventScheduleService, EventScheduleService>();
         services.AddTransient<IModifyIdentityUserService, ModifyIdentityUserService>();
         services.AddTransient<IPriceQuoteService, PriceQuoteService>();
         services.AddTransient<IRentalDetailService, RentalDetailService>();

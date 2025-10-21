@@ -65,6 +65,12 @@ namespace RoboRent_BE.Model.Migrations
                             Id = "3",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
+                        },
+                        new
+                        {
+                            Id = "4",
+                            Name = "Manager",
+                            NormalizedName = "MANAGER"
                         });
                 });
 
@@ -291,6 +297,290 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("ChatRooms");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractDrafts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ContractTemplatesId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractTemplatesId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("RentalId");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("ContractDrafts");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractReports", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AccusedId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("DraftClausesId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidencePath")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReportCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportRole")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ReporterId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResolutionType")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccusedId");
+
+                    b.HasIndex("DraftClausesId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.ToTable("ContractReports");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractTemplates", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TemplateCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.ToTable("ContractTemplates");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.CustomerContracts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ContractDraftsId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ContractNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContractUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ReviewerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractDraftsId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("CustomerContracts");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.DraftApprovals", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ContractDraftsId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RequestedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractDraftsId");
+
+                    b.HasIndex("RequestedBy");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("DraftApprovals");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.DraftClauses", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ContractDraftsId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("IsModified")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("TemplateClausesId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractDraftsId");
+
+                    b.HasIndex("TemplateClausesId");
+
+                    b.ToTable("DraftClauses");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.Event", b =>
@@ -856,6 +1146,42 @@ namespace RoboRent_BE.Model.Migrations
                     b.ToTable("Robots");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.TemplateClauses", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClauseCode")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ContractTemplatesId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("IsEditable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsMandatory")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractTemplatesId");
+
+                    b.ToTable("TemplateClauses");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.TypesOfRobo", b =>
                 {
                     b.Property<int>("RobotId")
@@ -982,6 +1308,138 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractDrafts", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ContractTemplates", "ContractTemplate")
+                        .WithMany()
+                        .HasForeignKey("ContractTemplatesId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId");
+
+                    b.Navigation("ContractTemplate");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Rental");
+
+                    b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractReports", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Accused")
+                        .WithMany()
+                        .HasForeignKey("AccusedId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.DraftClauses", "DraftClauses")
+                        .WithMany()
+                        .HasForeignKey("DraftClausesId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("ReporterId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Accused");
+
+                    b.Navigation("DraftClauses");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("PaymentTransaction");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractTemplates", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Created")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Updated")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy");
+
+                    b.Navigation("Created");
+
+                    b.Navigation("Updated");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.CustomerContracts", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ContractDrafts", "ContractDrafts")
+                        .WithMany()
+                        .HasForeignKey("ContractDraftsId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId");
+
+                    b.Navigation("ContractDrafts");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.DraftApprovals", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ContractDrafts", "ContractDraft")
+                        .WithMany()
+                        .HasForeignKey("ContractDraftsId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Staff")
+                        .WithMany()
+                        .HasForeignKey("RequestedBy");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId");
+
+                    b.Navigation("ContractDraft");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.DraftClauses", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ContractDrafts", "ContractDraft")
+                        .WithMany()
+                        .HasForeignKey("ContractDraftsId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.TemplateClauses", "TemplateClause")
+                        .WithMany()
+                        .HasForeignKey("TemplateClausesId");
+
+                    b.Navigation("ContractDraft");
+
+                    b.Navigation("TemplateClause");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.EventRoboType", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.Event", "Event")
@@ -1106,6 +1564,15 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("RentalPackage");
 
                     b.Navigation("RoboType");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.TemplateClauses", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ContractTemplates", "ContractTemplate")
+                        .WithMany()
+                        .HasForeignKey("ContractTemplatesId");
+
+                    b.Navigation("ContractTemplate");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.TypesOfRobo", b =>
