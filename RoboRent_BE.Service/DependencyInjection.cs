@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddTransient<ITypesOfRoboService, TypesOfRoboService>();
         services.AddTransient<IPayOSService, PayOSService>();
         services.AddTransient<IChatService, ChatService>();
+        services.AddTransient<IRentalContractService, RentalContractService>();
 
         return services;
     }

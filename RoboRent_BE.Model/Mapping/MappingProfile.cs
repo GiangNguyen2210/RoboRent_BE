@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.DTOs.EventSchedule;
+using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.Entities;
@@ -48,6 +49,12 @@ public class MappingProfile : Profile
         CreateMap<UpdateRentalDetailRequest, RentalDetail>();
         CreateMap<RentalDetail, RentalDetailResponse>()
             .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType != null ? src.RoboType.TypeName : null))
+            .ForMember(dest => dest.RentalEventName, opt => opt.MapFrom(src => src.Rental != null ? src.Rental.EventName : null));
+
+        // Rental Contract mappings
+        CreateMap<CreateRentalContractRequest, RentalContract>();
+        CreateMap<UpdateRentalContractRequest, RentalContract>();
+        CreateMap<RentalContract, RentalContractResponse>()
             .ForMember(dest => dest.RentalEventName, opt => opt.MapFrom(src => src.Rental != null ? src.Rental.EventName : null));
     }
 }

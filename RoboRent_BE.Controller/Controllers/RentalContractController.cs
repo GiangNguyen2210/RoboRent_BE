@@ -1,26 +1,26 @@
- using Microsoft.AspNetCore.Mvc;
-using RoboRent_BE.Model.DTOS.RentalDetail;
+using Microsoft.AspNetCore.Mvc;
+using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Controller.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class RentalDetailController : ControllerBase
+public class RentalContractController : ControllerBase
 {
-    private readonly IRentalDetailService _rentalDetailService;
+    private readonly IRentalContractService _rentalContractService;
 
-    public RentalDetailController(IRentalDetailService rentalDetailService)
+    public RentalContractController(IRentalContractService rentalContractService)
     {
-        _rentalDetailService = rentalDetailService;
+        _rentalContractService = rentalContractService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllRentalDetails()
+    public async Task<IActionResult> GetAllRentalContracts()
     {
         try
         {
-            var result = await _rentalDetailService.GetAllRentalDetailsAsync();
+            var result = await _rentalContractService.GetAllRentalContractsAsync();
             return Ok(new
             {
                 success = true,
@@ -38,17 +38,17 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetRentalDetailById(int id)
+    public async Task<IActionResult> GetRentalContractById(int id)
     {
         try
         {
-            var result = await _rentalDetailService.GetRentalDetailByIdAsync(id);
+            var result = await _rentalContractService.GetRentalContractByIdAsync(id);
             if (result == null)
             {
                 return NotFound(new
                 {
                     success = false,
-                    message = "Rental detail not found"
+                    message = "Rental contract not found"
                 });
             }
 
@@ -69,33 +69,11 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpGet("rental/{rentalId}")]
-    public async Task<IActionResult> GetRentalDetailsByRentalId(int rentalId)
+    public async Task<IActionResult> GetRentalContractsByRentalId(int rentalId)
     {
         try
         {
-            var result = await _rentalDetailService.GetRentalDetailsByRentalIdAsync(rentalId);
-            return Ok(new
-            {
-                success = true,
-                data = result
-            });
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, new
-            {
-                success = false,
-                message = e.Message
-            });
-        }
-    }
-
-    [HttpGet("robotype/{roboTypeId}")]
-    public async Task<IActionResult> GetRentalDetailsByRoboTypeId(int roboTypeId)
-    {
-        try
-        {
-            var result = await _rentalDetailService.GetRentalDetailsByRoboTypeIdAsync(roboTypeId);
+            var result = await _rentalContractService.GetRentalContractsByRentalIdAsync(rentalId);
             return Ok(new
             {
                 success = true,
@@ -113,7 +91,7 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateRentalDetail([FromBody] CreateRentalDetailRequest request)
+    public async Task<IActionResult> CreateRentalContract([FromBody] CreateRentalContractRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -129,8 +107,8 @@ public class RentalDetailController : ControllerBase
 
         try
         {
-            var result = await _rentalDetailService.CreateRentalDetailAsync(request);
-            return CreatedAtAction(nameof(GetRentalDetailById), new { id = result.Id }, new
+            var result = await _rentalContractService.CreateRentalContractAsync(request);
+            return CreatedAtAction(nameof(GetRentalContractById), new { id = result.Id }, new
             {
                 success = true,
                 data = result
@@ -147,7 +125,7 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRentalDetail(int id, [FromBody] UpdateRentalDetailRequest request)
+    public async Task<IActionResult> UpdateRentalContract(int id, [FromBody] UpdateRentalContractRequest request)
     {
         if (id != request.Id)
         {
@@ -172,13 +150,13 @@ public class RentalDetailController : ControllerBase
 
         try
         {
-            var result = await _rentalDetailService.UpdateRentalDetailAsync(request);
+            var result = await _rentalContractService.UpdateRentalContractAsync(request);
             if (result == null)
             {
                 return NotFound(new
                 {
                     success = false,
-                    message = "Rental detail not found"
+                    message = "Rental contract not found"
                 });
             }
 
@@ -199,24 +177,24 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRentalDetail(int id)
+    public async Task<IActionResult> DeleteRentalContract(int id)
     {
         try
         {
-            var result = await _rentalDetailService.DeleteRentalDetailAsync(id);
+            var result = await _rentalContractService.DeleteRentalContractAsync(id);
             if (!result)
             {
                 return NotFound(new
                 {
                     success = false,
-                    message = "Rental detail not found"
+                    message = "Rental contract not found"
                 });
             }
 
             return Ok(new
             {
                 success = true,
-                message = "Rental detail deleted successfully"
+                message = "Rental contract deleted successfully"
             });
         }
         catch (Exception e)
@@ -229,4 +207,3 @@ public class RentalDetailController : ControllerBase
         }
     }
 }
-

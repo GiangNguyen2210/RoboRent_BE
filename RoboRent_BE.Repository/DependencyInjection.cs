@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
+        services.AddTransient<IRentalContractRepository, RentalContractRepository>();
         return services;
     }
 }

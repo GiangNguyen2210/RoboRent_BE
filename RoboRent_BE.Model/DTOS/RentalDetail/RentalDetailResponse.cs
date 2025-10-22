@@ -26,3 +26,4 @@ public class RentalDetailResponse
     public string? RoboTypeName { get; set; }
     public string? RentalEventName { get; set; }
 }
+
