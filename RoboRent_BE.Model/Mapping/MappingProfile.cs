@@ -21,7 +21,7 @@ public class MappingProfile : Profile
 
         CreateMap<UpdateOrderRequest, Rental>();
         
-        CreateMap<Rental, OrderResonse>();
+        CreateMap<Rental, OrderResponse>();
 
         CreateMap<CreateEventScheduleRequest, EventSchedule>()
             .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.EventDate));
