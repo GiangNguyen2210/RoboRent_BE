@@ -23,9 +23,11 @@ public class MappingProfile : Profile
         
         CreateMap<Rental, OrderResonse>();
 
-        CreateMap<CreateEventScheduleRequest, EventSchedule>();
+        CreateMap<CreateEventScheduleRequest, EventSchedule>()
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.EventDate));
 
-        CreateMap<UpdateScheduleEventRequest, EventSchedule>();
+        CreateMap<UpdateScheduleEventRequest, EventSchedule>()
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.EventDate));
 
         CreateMap<EventSchedule, EventScheduleResponse>();
 

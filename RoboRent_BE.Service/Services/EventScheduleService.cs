@@ -37,12 +37,26 @@ public class EventScheduleService : IEventScheduleService
 
     public async Task<EventScheduleResponse> UpdateScheduleEvent(UpdateScheduleEventRequest updateScheduleEventRequest)
     {
-        var es = await _eventScheduleRepository.GetDbContext().EventSchedules.FirstOrDefaultAsync(es => es.Id == updateScheduleEventRequest.Id);
-        throw new NotImplementedException();
+        var existingEventSchedule = await _eventScheduleRepository.GetByIdAsync(updateScheduleEventRequest.Id);
+        
+        if (existingEventSchedule == null)
+            throw new ArgumentException($"Event schedule with ID {updateScheduleEventRequest.Id} not found.");
+
+        if (updateScheduleEventRequest.EventDate.Date < DateTime.UtcNow.Date)
+            throw new ArgumentException($"Event date '{updateScheduleEventRequest.EventDate:yyyy-MM-dd}' cannot be in the past.");
+
+        if (updateScheduleEventRequest.StartTime > updateScheduleEventRequest.EndTime)
+            throw new ArgumentException($"StartTime ({updateScheduleEventRequest.StartTime}) must be earlier than EndTime ({updateScheduleEventRequest.EndTime}).");
+
+        _mapper.Map(updateScheduleEventRequest, existingEventSchedule);
+        await _eventScheduleRepository.UpdateAsync(existingEventSchedule);
+        
+        return _mapper.Map<EventScheduleResponse>(existingEventSchedule);
     }
 
-    public Task<List<EventScheduleResponse>> GetEventScheduleByRentalId(int id)
+    public async Task<List<EventScheduleResponse>> GetEventScheduleByRentalId(int id)
     {
-        throw new NotImplementedException();
+        var eventSchedules = await _eventScheduleRepository.GetByRentalIdAsync(id);
+        return _mapper.Map<List<EventScheduleResponse>>(eventSchedules);
     }
 }

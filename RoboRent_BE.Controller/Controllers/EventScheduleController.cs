@@ -18,7 +18,7 @@ public class EventScheduleController : ControllerBase
     }
 
     [HttpPost("customer/create")]
-    public async Task<IActionResult> CreateEventScheudle([FromBody] List<CreateEventScheduleRequest> createEventScheduleRequests)
+    public async Task<IActionResult> CreateEventSchedule([FromBody] List<CreateEventScheduleRequest> createEventScheduleRequests)
     {
         if (!ModelState.IsValid)
         {
@@ -44,6 +44,52 @@ public class EventScheduleController : ControllerBase
         catch (Exception e)
         {
             return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPut("customer/update")]
+    public async Task<IActionResult> UpdateEventSchedule([FromBody] UpdateScheduleEventRequest updateScheduleEventRequest)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        try
+        {
+            var result = await _eventScheduleService.UpdateScheduleEvent(updateScheduleEventRequest);
+
+            return Ok(result);
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
+    }
+
+    [HttpGet("customer/rental/{rentalId}")]
+    public async Task<IActionResult> GetEventSchedulesByRentalId(int rentalId)
+    {
+        try
+        {
+            var result = await _eventScheduleService.GetEventScheduleByRentalId(rentalId);
+
+            return Ok(result);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
         }
     }
 }
