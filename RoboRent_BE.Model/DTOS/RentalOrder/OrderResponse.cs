@@ -1,6 +1,6 @@
 namespace RoboRent_BE.Model.DTOS.RentalOrder;
 
-public class OrderResonse
+public class OrderResponse
 {
     public int Id { get; set; }
 
