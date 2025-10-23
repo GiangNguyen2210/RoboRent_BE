@@ -76,6 +76,51 @@ public class PriceQuoteService : IPriceQuoteService
             CanCreateMore = quotes.Count < 3
         };
     }
+    
+    public async Task<PriceQuoteResponse> AcceptQuoteAsync(int quoteId, int customerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(pq => 
+            pq.Id == quoteId && 
+            pq.IsDeleted != true);
+    
+        if (quote == null)
+        {
+            throw new Exception("Price quote not found");
+        }
+    
+        // Business rule: Can only accept if status is Pending
+        if (quote.Status != "Pending")
+        {
+            throw new Exception($"Cannot accept quote with status: {quote.Status}");
+        }
+    
+        // ✅ 1. Accept this quote
+        quote.Status = "Accepted";
+        await _priceQuoteRepo.UpdateAsync(quote);
+    
+        // ✅ 2. Auto reject other pending quotes of same rental
+        var otherPendingQuotes = await _priceQuoteRepo
+            .GetAllAsync(q => 
+                q.RentalId == quote.RentalId && 
+                q.Id != quoteId && 
+                q.Status == "Pending" &&
+                q.IsDeleted != true);
+    
+        foreach (var otherQuote in otherPendingQuotes)
+        {
+            otherQuote.Status = "Rejected";
+            await _priceQuoteRepo.UpdateAsync(otherQuote);
+        }
+    
+        // Get quote number for response
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes
+            .OrderBy(q => q.CreatedAt)
+            .ToList()
+            .FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
 
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)

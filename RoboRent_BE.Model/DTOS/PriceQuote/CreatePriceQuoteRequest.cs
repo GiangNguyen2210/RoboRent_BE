@@ -26,6 +26,3 @@ public class CreatePriceQuoteRequest
     [MaxLength(2000)]
     public string? ManagerFeedback { get; set; }
 }
-
-
-

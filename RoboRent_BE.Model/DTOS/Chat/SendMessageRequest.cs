@@ -19,5 +19,6 @@ public class SendMessageRequest
     public List<string>? VideoUrls { get; set; }
     
     // Optional: Chỉ dùng khi MessageType = PriceQuoteNotification/ContractNotification
-    public int? RelatedEntityId { get; set; }
+    public int? PriceQuoteId { get; set; }
+    public int? ContractId { get; set; }
 }

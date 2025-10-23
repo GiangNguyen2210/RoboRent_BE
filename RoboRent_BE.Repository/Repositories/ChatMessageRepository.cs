@@ -21,6 +21,7 @@ public class ChatMessageRepository : GenericRepository<ChatMessage>, IChatMessag
 
         var query = DbSet
             .Include(m => m.Sender)
+            .Include(m => m.ChatRoom) 
             .Where(m => m.ChatRoomId == chatRoomId)
             .OrderBy(m => m.CreatedAt);
 
@@ -47,6 +48,7 @@ public class ChatMessageRepository : GenericRepository<ChatMessage>, IChatMessag
         return await DbSet
             .Include(m => m.Sender)
             .Include(m => m.ChatRoom)
+            .ThenInclude(r => r.Rental)
             .FirstOrDefaultAsync(m => m.Id == messageId);
     }
 

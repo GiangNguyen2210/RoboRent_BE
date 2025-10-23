@@ -30,8 +30,8 @@ public class ChatMessage
     // JSON array of URLs cho demo videos/images: ["url1", "url2"]
     public string? MediaUrls { get; set; }
 
-    // Link tới PriceQuote.Id hoặc RentalContract.Id
-    public int? RelatedEntityId { get; set; }
+    public int? PriceQuoteId { get; set; }  // FK to PriceQuotes
+    public int? ContractId { get; set; } // FK to RentalContracts
 
     // Chỉ dùng cho MessageType = Demo: "Pending", "Accepted", "Rejected"
     public string? Status { get; set; }

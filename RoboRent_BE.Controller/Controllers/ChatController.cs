@@ -117,7 +117,7 @@ public class ChatController : ControllerBase
             
             // 2. Controller broadcast status change qua SignalR
             var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(message.ChatRoomId);
-            var roomName = $"rental_{chatRoom.RentalId}";
+            var roomName = $"rental_{message.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, request.Status);
             
             return Ok(message);

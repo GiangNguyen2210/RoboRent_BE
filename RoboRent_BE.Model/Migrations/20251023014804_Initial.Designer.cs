@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251018235754_Initial")]
+    [Migration("20251023014804_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -212,6 +212,9 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -224,7 +227,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int>("MessageType")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("RelatedEntityId")
+                    b.Property<int?>("PriceQuoteId")
                         .HasColumnType("integer");
 
                     b.Property<int>("SenderId")

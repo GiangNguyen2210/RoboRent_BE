@@ -10,8 +10,8 @@ using RoboRent_BE.Controller.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 //variable for google auth
 
-var googleClientId = builder.Configuration["GoogleLoginWeb:Client_id"];
-var googleClientSecret = builder.Configuration["GoogleLoginWeb:Client_secret"];
+// var googleClientId = builder.Configuration["GoogleLoginWeb:Client_id"];
+// var googleClientSecret = builder.Configuration["GoogleLoginWeb:Client_secret"];
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -48,16 +48,16 @@ builder.Services
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
-    })
-    .AddGoogle("Google", options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-        options.Scope.Add("openid");
-        options.Scope.Add("email");
-        options.Scope.Add("profile");
-        options.SignInScheme = IdentityConstants.ExternalScheme;
     });
+    // .AddGoogle("Google", options =>
+    // {
+    //     options.ClientId = googleClientId;
+    //     options.ClientSecret = googleClientSecret;
+    //     options.Scope.Add("openid");
+    //     options.Scope.Add("email");
+    //     options.Scope.Add("profile");
+    //     options.SignInScheme = IdentityConstants.ExternalScheme;
+    // });
 
 builder.Services.AddSignalR();
 
@@ -65,9 +65,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()  // Cho phép mọi origin
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:4200") 
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials(); 
     });
 });
 var app = builder.Build();
@@ -82,6 +83,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -89,7 +91,6 @@ app.MapControllers();
 
 app.MapHub<ChatHub>("/chatHub");
 
-app.UseCors("AllowAll");
 
 app.Use(async (context, next) =>
 {

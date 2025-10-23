@@ -209,6 +209,9 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -221,7 +224,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int>("MessageType")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("RelatedEntityId")
+                    b.Property<int?>("PriceQuoteId")
                         .HasColumnType("integer");
 
                     b.Property<int>("SenderId")

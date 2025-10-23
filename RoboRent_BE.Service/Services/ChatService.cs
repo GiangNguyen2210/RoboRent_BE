@@ -102,7 +102,8 @@ public class ChatService : IChatService
             MessageType = request.MessageType,
             Content = request.Content,
             MediaUrls = request.VideoUrls != null ? JsonSerializer.Serialize(request.VideoUrls) : null,
-            RelatedEntityId = request.RelatedEntityId,
+            PriceQuoteId = request.PriceQuoteId,
+            ContractId = request.ContractId,
             Status = request.MessageType == MessageType.Demo ? "Pending" : null,
             IsRead = false,
             CreatedAt = DateTime.UtcNow
@@ -189,13 +190,15 @@ public class ChatService : IChatService
         {
             Id = message.Id,
             ChatRoomId = message.ChatRoomId,
+            RentalId = message.ChatRoom?.RentalId ?? 0,
             SenderId = message.SenderId,
             SenderName = message.Sender?.FullName ?? "Unknown",
             SenderRole = DetermineSenderRole(message),
             MessageType = message.MessageType,
             Content = message.Content,
             VideoUrls = videoUrls,
-            RelatedEntityId = message.RelatedEntityId,
+            PriceQuoteId = message.PriceQuoteId,
+            ContractId = message.ContractId,
             Status = message.Status,
             IsRead = message.IsRead,
             CreatedAt = message.CreatedAt

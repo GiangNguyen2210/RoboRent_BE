@@ -47,7 +47,7 @@ public class PriceQuotesController : ControllerBase
                 RentalId = request.RentalId,
                 MessageType = MessageType.PriceQuoteNotification,
                 Content = $"Staff đã tạo báo giá #{quote.QuoteNumber}",
-                RelatedEntityId = quote.Id
+                PriceQuoteId = quote.Id
             }, staffId);
             
             // 3. Broadcast notification qua SignalR
@@ -128,6 +128,60 @@ public class PriceQuotesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { Message = "Failed to check quote limit", Error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Customer chấp nhận báo giá
+    /// Tự động reject các báo giá khác của cùng rental
+    /// Gửi notification vào chat
+    /// </summary>
+    [HttpPut("{id}/accept")]
+    public async Task<IActionResult> AcceptQuote(int id)
+    {
+        try
+        {
+            // TODO: Get customerId from authenticated user (JWT token)
+            int customerId = 1; // Replace with: User.FindFirst("AccountId")?.Value
+        
+            // 1. Service accept quote (auto reject others)
+            var quote = await _priceQuoteService.AcceptQuoteAsync(id, customerId);
+        
+            // 2. Send notification to chat
+            var notificationMessage = await _chatService.SendMessageAsync(
+                new SendMessageRequest
+                {
+                    RentalId = quote.RentalId,
+                    MessageType = MessageType.SystemNotification,
+                    Content = $"✅ Customer đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: ${quote.Total:N2}",
+                    PriceQuoteId = quote.Id
+                }, 
+                customerId);
+        
+            // 3. Broadcast qua SignalR
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName)
+                .SendAsync("ReceiveMessage", notificationMessage);
+            await _hubContext.Clients.Group(roomName)
+                .SendAsync("QuoteAccepted", quote.Id);
+        
+            return Ok(new 
+            { 
+                Quote = quote,
+                Message = "Quote accepted successfully. Other pending quotes have been rejected." 
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new 
+            { 
+                Message = "Failed to accept quote", 
+                Error = ex.Message 
+            });
         }
     }
 }

@@ -7,13 +7,15 @@ public class ChatMessageResponse
 {
     public int Id { get; set; }
     public int ChatRoomId { get; set; }
+    public int RentalId { get; set; } 
     public int SenderId { get; set; }
     public string SenderName { get; set; } = string.Empty;
     public string SenderRole { get; set; } = string.Empty; // "Staff" hoặc "Customer"
     public MessageType MessageType { get; set; }
     public string Content { get; set; } = string.Empty;
     public List<string>? VideoUrls { get; set; } // Parsed từ MediaUrls JSON
-    public int? RelatedEntityId { get; set; }
+    public int? PriceQuoteId { get; set; }
+    public int? ContractId { get; set; }
     public string? Status { get; set; } // Cho demo: Pending/Accepted/Rejected
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }

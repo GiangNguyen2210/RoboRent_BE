@@ -541,7 +541,8 @@ namespace RoboRent_BE.Model.Migrations
                     MessageType = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     MediaUrls = table.Column<string>(type: "text", nullable: true),
-                    RelatedEntityId = table.Column<int>(type: "integer", nullable: true),
+                    PriceQuoteId = table.Column<int>(type: "integer", nullable: true),
+                    ContractId = table.Column<int>(type: "integer", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
