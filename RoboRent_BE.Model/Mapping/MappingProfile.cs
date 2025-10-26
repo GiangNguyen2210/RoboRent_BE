@@ -1,10 +1,14 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOS.Admin;
+using RoboRent_BE.Model.DTOS.ContractDrafts;
+using RoboRent_BE.Model.DTOS.ContractTemplates;
+using RoboRent_BE.Model.DTOS.DraftClauses;
 using RoboRent_BE.Model.DTOs.EventSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Model.Entities;
 
 namespace RoboRent_BE.Model.Mapping;
@@ -56,5 +60,34 @@ public class MappingProfile : Profile
         CreateMap<UpdateRentalContractRequest, RentalContract>();
         CreateMap<RentalContract, RentalContractResponse>()
             .ForMember(dest => dest.RentalEventName, opt => opt.MapFrom(src => src.Rental != null ? src.Rental.EventName : null));
+
+        // Draft Clauses mappings
+        CreateMap<CreateDraftClausesRequest, DraftClauses>();
+        CreateMap<UpdateDraftClausesRequest, DraftClauses>();
+        CreateMap<DraftClauses, DraftClausesResponse>()
+            .ForMember(dest => dest.ContractDraftTitle, opt => opt.MapFrom(src => src.ContractDraft != null ? src.ContractDraft.Title : null))
+            .ForMember(dest => dest.TemplateClauseTitle, opt => opt.MapFrom(src => src.TemplateClause != null ? src.TemplateClause.Title : null));
+
+        // Contract Drafts mappings
+        CreateMap<CreateContractDraftsRequest, ContractDrafts>();
+        CreateMap<UpdateContractDraftsRequest, ContractDrafts>();
+        CreateMap<ContractDrafts, ContractDraftsResponse>()
+            .ForMember(dest => dest.ContractTemplateTitle, opt => opt.MapFrom(src => src.ContractTemplate != null ? src.ContractTemplate.Title : null))
+            .ForMember(dest => dest.RentalEventName, opt => opt.MapFrom(src => src.Rental != null ? src.Rental.EventName : null))
+            .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : null))
+            .ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.FullName : null));
+
+        // Contract Templates mappings
+        CreateMap<CreateContractTemplatesRequest, ContractTemplates>();
+        CreateMap<UpdateContractTemplatesRequest, ContractTemplates>();
+        CreateMap<ContractTemplates, ContractTemplatesResponse>()
+            .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.Created != null ? src.Created.FullName : null))
+            .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.Updated != null ? src.Updated.FullName : null));
+
+        // Template Clauses mappings
+        CreateMap<CreateTemplateClausesRequest, TemplateClauses>();
+        CreateMap<UpdateTemplateClausesRequest, TemplateClauses>();
+        CreateMap<TemplateClauses, TemplateClausesResponse>()
+            .ForMember(dest => dest.ContractTemplateTitle, opt => opt.MapFrom(src => src.ContractTemplate != null ? src.ContractTemplate.Title : null));
     }
 }

@@ -25,6 +25,10 @@ public static class DependencyInjection
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
         services.AddTransient<IRentalContractRepository, RentalContractRepository>();
+        services.AddTransient<IDraftClausesRepository, DraftClausesRepository>();
+        services.AddTransient<IContractDraftsRepository, ContractDraftsRepository>();
+        services.AddTransient<IContractTemplatesRepository, ContractTemplatesRepository>();
+        services.AddTransient<ITemplateClausesRepository, TemplateClausesRepository>();
         return services;
     }
 }

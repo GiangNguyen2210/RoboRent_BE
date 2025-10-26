@@ -27,6 +27,10 @@ public static class DependencyInjection
         services.AddTransient<IPayOSService, PayOSService>();
         services.AddTransient<IChatService, ChatService>();
         services.AddTransient<IRentalContractService, RentalContractService>();
+        services.AddTransient<IDraftClausesService, DraftClausesService>();
+        services.AddTransient<IContractDraftsService, ContractDraftsService>();
+        services.AddTransient<IContractTemplatesService, ContractTemplatesService>();
+        services.AddTransient<ITemplateClausesService, TemplateClausesService>();
 
         return services;
     }
