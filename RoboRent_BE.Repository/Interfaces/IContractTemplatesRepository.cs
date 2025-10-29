@@ -9,3 +9,4 @@ public interface IContractTemplatesRepository : IGenericRepository<ContractTempl
     Task<IEnumerable<ContractTemplates>> GetContractTemplatesByVersionAsync(string version);
     Task<IEnumerable<ContractTemplates>> GetAllWithIncludesAsync();
 }
+

@@ -43,3 +43,4 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
             .ToListAsync();
     }
 }
+

@@ -23,3 +23,4 @@ public class UpdateContractTemplatesRequest
     [Required]
     public int? UpdatedBy { get; set; }
 }
+

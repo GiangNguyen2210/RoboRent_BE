@@ -74,3 +74,4 @@ public class DraftClausesService : IDraftClausesService
         return true;
     }
 }
+

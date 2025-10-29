@@ -26,3 +26,4 @@ public class CreateRentalDetailRequest
     public int? RoboTypeId { get; set; }
 }
 
+

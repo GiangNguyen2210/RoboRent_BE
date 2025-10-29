@@ -14,3 +14,4 @@ public interface IContractTemplatesService
     Task<ContractTemplatesResponse?> UpdateContractTemplatesAsync(UpdateContractTemplatesRequest request);
     Task<bool> DeleteContractTemplatesAsync(int id);
 }
+

@@ -73,6 +73,12 @@ public class AuthService : IAuthService
                     return new AuthResultDto { Error = string.Join("; ", createResult.Errors.Select(e => e.Description)) };
                 }
 
+                // Assign Customer role to new users
+                var addRoleResult = await _userManager.AddToRoleAsync(user, "Customer");
+                if (!addRoleResult.Succeeded)
+                {
+                    return new AuthResultDto { Error = string.Join("; ", addRoleResult.Errors.Select(e => e.Description)) };
+                }
                 
                 var addLoginResult = await _userManager.AddLoginAsync(user, info);
                 if (!addLoginResult.Succeeded)
@@ -159,6 +165,13 @@ public class AuthService : IAuthService
         {
             claims.Add(new Claim("accountId", account.Id.ToString()));
             claims.Add(new Claim("accountStatus", account.Status ?? string.Empty));
+        }
+
+        // Add user roles to JWT claims
+        var userRoles = await _userManager.GetRolesAsync(user);
+        foreach (var role in userRoles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
         var jwtToken = new JwtSecurityToken(

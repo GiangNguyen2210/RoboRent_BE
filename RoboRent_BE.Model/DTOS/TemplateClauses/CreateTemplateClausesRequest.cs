@@ -19,3 +19,4 @@ public class CreateTemplateClausesRequest
     [Required]
     public int? ContractTemplatesId { get; set; }
 }
+

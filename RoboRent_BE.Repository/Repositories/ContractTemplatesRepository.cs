@@ -47,3 +47,4 @@ public class ContractTemplatesRepository : GenericRepository<ContractTemplates>,
             .ToListAsync();
     }
 }
+

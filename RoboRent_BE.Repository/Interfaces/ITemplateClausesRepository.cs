@@ -9,3 +9,4 @@ public interface ITemplateClausesRepository : IGenericRepository<TemplateClauses
     Task<IEnumerable<TemplateClauses>> GetTemplateClausesByIsEditableAsync(bool isEditable);
     Task<IEnumerable<TemplateClauses>> GetAllWithIncludesAsync();
 }
+

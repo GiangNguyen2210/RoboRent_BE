@@ -20,3 +20,4 @@ public class CreateContractTemplatesRequest
     [Required]
     public int? CreatedBy { get; set; }
 }
+

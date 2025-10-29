@@ -14,3 +14,4 @@ public interface ITemplateClausesService
     Task<TemplateClausesResponse?> UpdateTemplateClausesAsync(UpdateTemplateClausesRequest request);
     Task<bool> DeleteTemplateClausesAsync(int id);
 }
+

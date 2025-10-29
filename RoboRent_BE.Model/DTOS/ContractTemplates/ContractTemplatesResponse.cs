@@ -28,3 +28,4 @@ public class ContractTemplatesResponse
     public string? CreatedByName { get; set; }
     public string? UpdatedByName { get; set; }
 }
+

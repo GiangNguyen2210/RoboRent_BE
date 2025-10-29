@@ -29,3 +29,4 @@ public class UpdateRentalDetailRequest
     public int? RoboTypeId { get; set; }
 }
 
+

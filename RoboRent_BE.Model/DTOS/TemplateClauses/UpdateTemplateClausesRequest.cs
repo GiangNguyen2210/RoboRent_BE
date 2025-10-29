@@ -22,3 +22,4 @@ public class UpdateTemplateClausesRequest
     [Required]
     public int? ContractTemplatesId { get; set; }
 }
+

@@ -80,3 +80,4 @@ public class TemplateClausesService : ITemplateClausesService
         return true;
     }
 }
+

@@ -103,6 +103,10 @@ namespace RoboRent_BE.Controller.Controllers
                 return NotFound("User not found.");
             }
 
+            // Get user role (single role per user)
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var role = userRoles.FirstOrDefault() ?? "Customer"; // Default to Customer if no role found
+
             return Ok(new
             {
                 userId = user.Id,
@@ -110,7 +114,8 @@ namespace RoboRent_BE.Controller.Controllers
                 userName = user.UserName,
                 accountId = accountId,
                 accountStatus = accountStatus,
-                emailConfirmed = user.EmailConfirmed
+                emailConfirmed = user.EmailConfirmed,
+                role = role
             });
         }
 

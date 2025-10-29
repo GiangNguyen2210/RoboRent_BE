@@ -27,3 +27,4 @@ public class RentalDetailResponse
     public string? RentalEventName { get; set; }
 }
 
+

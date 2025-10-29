@@ -24,7 +24,7 @@ namespace RoboRent_BE.Controller.Controllers
             var userName = User.FindFirst(ClaimTypes.Name)?.Value;
             var accountId = User.FindFirst("accountId")?.Value;
             var accountStatus = User.FindFirst("accountStatus")?.Value;
-
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
             return Ok(new
             {
                 message = "This is a protected endpoint - JWT authentication required",
@@ -34,7 +34,9 @@ namespace RoboRent_BE.Controller.Controllers
                     email = userEmail,
                     name = userName,
                     accountId = accountId,
-                    accountStatus = accountStatus
+                    accountStatus = accountStatus,
+                    role = role
+
                 },
                 claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
             });

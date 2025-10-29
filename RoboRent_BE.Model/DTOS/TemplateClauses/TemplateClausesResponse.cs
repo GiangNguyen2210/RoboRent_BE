@@ -21,3 +21,4 @@ public class TemplateClausesResponse
     // Navigation properties
     public string? ContractTemplateTitle { get; set; }
 }
+

@@ -15,3 +15,4 @@ public interface IContractDraftsService
     Task<ContractDraftsResponse?> UpdateContractDraftsAsync(UpdateContractDraftsRequest request);
     Task<bool> DeleteContractDraftsAsync(int id);
 }
+
