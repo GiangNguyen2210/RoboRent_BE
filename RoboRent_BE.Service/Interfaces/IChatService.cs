@@ -10,4 +10,6 @@ public interface IChatService
     Task<ChatMessageResponse> SendMessageAsync(SendMessageRequest request, int senderId);
     Task<ChatMessageResponse> UpdateMessageStatusAsync(int messageId, UpdateMessageStatusRequest request);
     Task<int> GetUnreadCountAsync(int rentalId, int userId);
+    Task<ChatRoomListResponse> GetChatRoomsByStaffIdAsync(int staffId, int page = 1, int pageSize = 50);
+    Task<ChatRoomListResponse> GetChatRoomsByCustomerIdAsync(int customerId, int page = 1, int pageSize = 50);
 }

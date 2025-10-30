@@ -147,4 +147,45 @@ public class ChatController : ControllerBase
             return BadRequest(new { Message = "Failed to get unread count", Error = ex.Message });
         }
     }
+    
+    /// <summary>
+    /// Lấy danh sách chat rooms của staff (for sidebar)
+    /// </summary>
+    [HttpGet("rooms/staff/{staffId}")]
+    public async Task<IActionResult> GetStaffChatRooms(
+        int staffId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        try
+        {
+            var rooms = await _chatService.GetChatRoomsByStaffIdAsync(staffId, page, pageSize);
+            return Ok(rooms);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get staff chat rooms", Error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Lấy danh sách chat rooms của customer (for sidebar)
+    /// </summary>
+    [HttpGet("rooms/customer/{customerId}")]
+    public async Task<IActionResult> GetCustomerChatRooms(
+        int customerId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        try
+        {
+            var rooms = await _chatService.GetChatRoomsByCustomerIdAsync(customerId, page, pageSize);
+            return Ok(rooms);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get customer chat rooms", Error = ex.Message });
+        }
+    }
+    
 }

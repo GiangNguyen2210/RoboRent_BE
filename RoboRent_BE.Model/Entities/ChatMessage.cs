@@ -7,6 +7,7 @@ namespace RoboRent_BE.Model.Entities;
 public class ChatMessage
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
     [Required]

@@ -41,9 +41,47 @@ public class ChatRoomRepository : GenericRepository<ChatRoom>, IChatRoomReposito
         var query = _dbContext.ChatRooms
             .Include(cr => cr.Customer)
             .Include(cr => cr.Rental)
-            .Include(cr => cr.Messages.OrderByDescending(m => m.CreatedAt).Take(1)) // Chỉ lấy last message
+            .ThenInclude(r => r.RentalPackage)           // ✅ ADD
+            .Include(cr => cr.Rental)
+            .ThenInclude(r => r.EventSchedules)          // ✅ ADD
+            .Include(cr => cr.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
+            .ThenInclude(m => m.Sender)                  // ✅ ADD
             .Where(cr => cr.StaffId == staffId)
-            .OrderByDescending(cr => cr.UpdatedAt ?? cr.CreatedAt); // Sắp xếp theo updated time
+            .OrderByDescending(cr => cr.UpdatedAt ?? cr.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+
+        var rooms = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PageListResponse<ChatRoom>
+        {
+            Items = rooms,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            HasNextPage = (page * pageSize) < totalCount,
+            HasPreviousPage = page > 1
+        };
+    }
+
+    public async Task<PageListResponse<ChatRoom>> GetRoomsByCustomerIdAsync(int customerId, int page = 1, int pageSize = 50)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 50;
+
+        var query = _dbContext.ChatRooms
+            .Include(cr => cr.Staff)
+            .Include(cr => cr.Rental)
+            .ThenInclude(r => r.RentalPackage)           // ✅ ADD
+            .Include(cr => cr.Rental)
+            .ThenInclude(r => r.EventSchedules)          // ✅ ADD
+            .Include(cr => cr.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
+            .ThenInclude(m => m.Sender)                  // ✅ ADD
+            .Where(cr => cr.CustomerId == customerId)
+            .OrderByDescending(cr => cr.UpdatedAt ?? cr.CreatedAt);
 
         var totalCount = await query.CountAsync();
 

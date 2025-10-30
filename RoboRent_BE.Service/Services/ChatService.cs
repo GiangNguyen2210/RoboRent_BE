@@ -110,6 +110,12 @@ public class ChatService : IChatService
         };
 
         await _chatMessageRepo.AddAsync(message);
+        var chatRoom = await _chatRoomRepo.GetByRentalIdAsync(request.RentalId); 
+        if (chatRoom != null)
+        {
+            chatRoom.UpdatedAt = DateTime.UtcNow;
+            await _chatRoomRepo.UpdateAsync(chatRoom);
+        }
         
         var createdMessage = await _chatMessageRepo.GetByIdWithDetailsAsync(message.Id);
         
@@ -149,6 +155,82 @@ public class ChatService : IChatService
 
         return await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, userId);
     }
+    
+    public async Task<ChatRoomListResponse> GetChatRoomsByStaffIdAsync(int staffId, int page = 1, int pageSize = 50)
+{
+    var roomsPage = await _chatRoomRepo.GetRoomsByStaffIdAsync(staffId, page, pageSize);
+    
+    var roomDtos = new List<ChatRoomListItemDto>();
+    
+    foreach (var room in roomsPage.Items)
+    {
+        var lastMessage = room.Messages?.FirstOrDefault();
+        var unreadCount = await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, staffId);
+        
+        roomDtos.Add(new ChatRoomListItemDto
+        {
+            Id = room.Id,
+            RentalId = room.RentalId,
+            CustomerName = room.Customer?.FullName ?? "Unknown Customer",
+            PackageName = room.Rental?.RentalPackage?.Name ?? "Unknown Package",  // ✅ FIX
+            EventDate = room.Rental?.EventSchedules?.OrderBy(es => es.Date)
+                .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",         // ✅ FIX
+            Status = room.Rental?.Status ?? "Unknown",                             // ✅ FIX
+            LastMessage = lastMessage?.Content ?? "No messages yet",
+            LastMessageTime = lastMessage?.CreatedAt,
+            UnreadCount = unreadCount,
+            CreatedAt = room.CreatedAt
+        });
+    }
+    
+    return new ChatRoomListResponse
+    {
+        Rooms = roomDtos,
+        Page = roomsPage.Page,
+        PageSize = roomsPage.PageSize,
+        TotalCount = roomsPage.TotalCount,
+        HasNextPage = roomsPage.HasNextPage,
+        HasPreviousPage = roomsPage.HasPreviousPage
+    };
+}
+
+public async Task<ChatRoomListResponse> GetChatRoomsByCustomerIdAsync(int customerId, int page = 1, int pageSize = 50)
+{
+    var roomsPage = await _chatRoomRepo.GetRoomsByCustomerIdAsync(customerId, page, pageSize);
+    
+    var roomDtos = new List<ChatRoomListItemDto>();
+    
+    foreach (var room in roomsPage.Items)
+    {
+        var lastMessage = room.Messages?.FirstOrDefault();
+        var unreadCount = await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, customerId);
+        
+        roomDtos.Add(new ChatRoomListItemDto
+        {
+            Id = room.Id,
+            RentalId = room.RentalId,
+            StaffName = room.Staff?.FullName ?? "Staff",
+            PackageName = room.Rental?.RentalPackage?.Name ?? "Unknown Package",  // ✅ FIX
+            EventDate = room.Rental?.EventSchedules?.OrderBy(es => es.Date)
+                .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",         // ✅ FIX
+            Status = room.Rental?.Status ?? "Unknown",                             // ✅ FIX
+            LastMessage = lastMessage?.Content ?? "No messages yet",
+            LastMessageTime = lastMessage?.CreatedAt,
+            UnreadCount = unreadCount,
+            CreatedAt = room.CreatedAt
+        });
+    }
+    
+    return new ChatRoomListResponse
+    {
+        Rooms = roomDtos,
+        Page = roomsPage.Page,
+        PageSize = roomsPage.PageSize,
+        TotalCount = roomsPage.TotalCount,
+        HasNextPage = roomsPage.HasNextPage,
+        HasPreviousPage = roomsPage.HasPreviousPage
+    };
+}
 
     // Helper methods
     private ChatRoomResponse MapToChatRoomResponse(ChatRoom room)

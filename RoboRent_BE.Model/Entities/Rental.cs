@@ -36,5 +36,8 @@ public partial class Rental
     [ForeignKey("AccountId")] public virtual Account Account { get; set; } = null!;
     
     [ForeignKey("RentalPackageId")] public virtual RentalPackage RentalPackage { get; set; } = null!;
+    
+    public virtual ICollection<EventSchedule> EventSchedules { get; set; } = new List<EventSchedule>();
+
 
 }
