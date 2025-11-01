@@ -76,6 +76,44 @@ public class PriceQuoteService : IPriceQuoteService
             CanCreateMore = quotes.Count < 3
         };
     }
+
+    public async Task<PriceQuoteResponse> ManagerActionAsync(int quoteId, ManagerActionRequest request, int managerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+        
+        if (quote == null) throw new Exception("Quote not found");
+        if (quote.Status != "PendingManager") 
+            throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
+
+        quote.ManagerId = managerId;
+
+        if (request.Action.ToLower() == "approve")
+        {
+            quote.Status = "PendingCustomer";
+            quote.ManagerApprovedAt = DateTime.UtcNow;
+        }
+        else if (request.Action.ToLower() == "reject")
+        {
+            if (string.IsNullOrWhiteSpace(request.Feedback))
+            {
+                throw new Exception("Feedback is required when rejecting");
+            }
+            
+            quote.Status = "RejectedManager";
+            quote.ManagerFeedback = request.Feedback;
+        }
+        else
+        {
+            throw new Exception("Invalid action. Use 'approve' or 'reject'");
+        }
+
+        await _priceQuoteRepo.UpdateAsync(quote);
+        
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+        
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
     
     public async Task<PriceQuoteResponse> AcceptQuoteAsync(int quoteId, int customerId)
     {

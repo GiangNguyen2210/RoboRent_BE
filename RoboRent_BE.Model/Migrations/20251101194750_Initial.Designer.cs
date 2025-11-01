@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251024083906_Initial")]
+    [Migration("20251101194750_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -480,8 +480,14 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("ManagerApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ManagerFeedback")
                         .HasColumnType("text");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("RentalId")
                         .HasColumnType("integer");
@@ -495,7 +501,12 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("SubmittedToManagerAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
 
                     b.HasIndex("RentalId");
 
@@ -878,7 +889,7 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.EventSchedule", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
-                        .WithMany()
+                        .WithMany("EventSchedules")
                         .HasForeignKey("RentalId");
 
                     b.Navigation("Rental");
@@ -897,11 +908,17 @@ namespace RoboRent_BE.Model.Migrations
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PriceQuote", b =>
                 {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId");
+
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
                         .WithMany()
                         .HasForeignKey("RentalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Manager");
 
                     b.Navigation("Rental");
                 });
@@ -998,6 +1015,11 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.Rental", b =>
+                {
+                    b.Navigation("EventSchedules");
                 });
 #pragma warning restore 612, 618
         }

@@ -32,4 +32,10 @@ public partial class PriceQuote
     public bool? IsDeleted { get; set; } = false;
     
     public string? Status { get; set; } = string.Empty;
+    public int? ManagerId { get; set; }
+    [ForeignKey(nameof(ManagerId))]
+    public virtual Account? Manager { get; set; }
+
+    public DateTime? SubmittedToManagerAt { get; set; }
+    public DateTime? ManagerApprovedAt { get; set; }
 }
