@@ -46,7 +46,7 @@ public class PriceQuotesController : ControllerBase
             {
                 RentalId = request.RentalId,
                 MessageType = MessageType.PriceQuoteNotification,
-                Content = $"Staff đã tạo báo giá #{quote.QuoteNumber}",
+                Content = $"📤 Staff đã tạo báo giá #{quote.QuoteNumber} và gửi lên Manager chờ duyệt",
                 PriceQuoteId = quote.Id
             }, staffId);
             

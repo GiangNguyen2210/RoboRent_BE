@@ -35,7 +35,8 @@ public class PriceQuoteService : IPriceQuoteService
             StaffDescription = request.StaffDescription,
             ManagerFeedback = request.ManagerFeedback,
             CreatedAt = DateTime.UtcNow,
-            Status = "Pending",
+            Status = "PendingManager",
+            SubmittedToManagerAt = DateTime.UtcNow,
             IsDeleted = false
         };
 
