@@ -168,6 +168,41 @@ public class DraftClausesController : ControllerBase
         }
     }
 
+    [HttpPost("custom")]
+    public async Task<IActionResult> CreateCustomDraftClause([FromBody] CreateCustomDraftClauseRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        try
+        {
+            var result = await _draftClausesService.CreateCustomDraftClauseAsync(request);
+            return CreatedAtAction(nameof(GetDraftClausesById), new { id = result.DraftClause.Id }, new
+            {
+                success = true,
+                data = result,
+                message = result.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDraftClauses(int id, [FromBody] UpdateDraftClausesRequest request)
     {

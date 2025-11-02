@@ -11,6 +11,7 @@ public interface IDraftClausesService
     Task<IEnumerable<DraftClausesResponse>> GetDraftClausesByTemplateClauseIdAsync(int templateClauseId);
     Task<IEnumerable<DraftClausesResponse>> GetDraftClausesByIsModifiedAsync(int contractDraftId, bool isModified);
     Task<DraftClausesResponse> CreateDraftClausesAsync(CreateDraftClausesRequest request);
+    Task<CreateCustomDraftClauseResponse> CreateCustomDraftClauseAsync(CreateCustomDraftClauseRequest request);
     Task<DraftClausesResponse?> UpdateDraftClausesAsync(UpdateDraftClausesRequest request);
     Task<bool> DeleteDraftClausesAsync(int id);
 }

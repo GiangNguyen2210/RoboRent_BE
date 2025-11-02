@@ -9,11 +9,16 @@ namespace RoboRent_BE.Service.Services;
 public class DraftClausesService : IDraftClausesService
 {
     private readonly IDraftClausesRepository _draftClausesRepository;
+    private readonly ITemplateClausesRepository _templateClausesRepository;
     private readonly IMapper _mapper;
 
-    public DraftClausesService(IDraftClausesRepository draftClausesRepository, IMapper mapper)
+    public DraftClausesService(
+        IDraftClausesRepository draftClausesRepository,
+        ITemplateClausesRepository templateClausesRepository,
+        IMapper mapper)
     {
         _draftClausesRepository = draftClausesRepository;
+        _templateClausesRepository = templateClausesRepository;
         _mapper = mapper;
     }
 
@@ -60,6 +65,81 @@ public class DraftClausesService : IDraftClausesService
         var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
         
         return _mapper.Map<DraftClausesResponse>(createdDraftClause);
+    }
+
+    public async Task<CreateCustomDraftClauseResponse> CreateCustomDraftClauseAsync(CreateCustomDraftClauseRequest request)
+    {
+        int? createdTemplateClauseId = null;
+        
+        // Step 1: If saveAsTemplate = true, create template clause first
+        if (request.SaveAsTemplate)
+        {
+            // Validate that ContractTemplatesId is provided
+            if (!request.ContractTemplatesId.HasValue || request.ContractTemplatesId.Value == 0)
+            {
+                throw new InvalidOperationException(
+                    "ContractTemplatesId is required when SaveAsTemplate is true.");
+            }
+
+            // Create the template clause
+            var templateClause = new TemplateClauses
+            {
+                ClauseCode = request.ClauseCode,
+                Title = request.Title,
+                Body = request.Body,
+                IsMandatory = request.IsMandatory ?? false,
+                IsEditable = request.IsEditable ?? true,
+                ContractTemplatesId = request.ContractTemplatesId.Value,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdTemplateClause = await _templateClausesRepository.AddAsync(templateClause);
+            createdTemplateClauseId = createdTemplateClause.Id;
+
+            // Step 2: Create draft clause linked to the new template clause
+            var draftClause = new DraftClauses
+            {
+                Title = request.Title,
+                Body = request.Body,
+                IsModified = false, // Fresh copy
+                ContractDraftsId = request.ContractDraftsId,
+                TemplateClausesId = createdTemplateClauseId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
+
+            return new CreateCustomDraftClauseResponse
+            {
+                DraftClause = _mapper.Map<DraftClausesResponse>(createdDraftClause),
+                CreatedTemplateClauseId = createdTemplateClauseId,
+                WasSavedAsTemplate = true,
+                Message = "Custom clause created and saved as template successfully."
+            };
+        }
+        else
+        {
+            // Step 2: Create draft clause only (no template clause)
+            var draftClause = new DraftClauses
+            {
+                Title = request.Title,
+                Body = request.Body,
+                IsModified = false, // Fresh custom clause
+                ContractDraftsId = request.ContractDraftsId,
+                TemplateClausesId = null, // No template link
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
+
+            return new CreateCustomDraftClauseResponse
+            {
+                DraftClause = _mapper.Map<DraftClausesResponse>(createdDraftClause),
+                CreatedTemplateClauseId = null,
+                WasSavedAsTemplate = false,
+                Message = "Custom clause created in draft only (not saved as template)."
+            };
+        }
     }
 
     public async Task<DraftClausesResponse?> UpdateDraftClausesAsync(UpdateDraftClausesRequest request)
