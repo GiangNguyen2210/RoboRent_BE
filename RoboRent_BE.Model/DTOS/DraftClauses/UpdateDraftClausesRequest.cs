@@ -11,7 +11,7 @@ public class UpdateDraftClausesRequest
 
     public string? Body { get; set; } = string.Empty;
 
-    public bool? IsModified { get; set; } = false;
+    // NOTE: IsModified is automatically calculated by the service and should not be set by users
 
     [Required]
     public int? ContractDraftsId { get; set; }

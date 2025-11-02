@@ -8,5 +8,6 @@ public interface ITemplateClausesRepository : IGenericRepository<TemplateClauses
     Task<IEnumerable<TemplateClauses>> GetTemplateClausesByIsMandatoryAsync(bool isMandatory);
     Task<IEnumerable<TemplateClauses>> GetTemplateClausesByIsEditableAsync(bool isEditable);
     Task<IEnumerable<TemplateClauses>> GetAllWithIncludesAsync();
+    Task<IEnumerable<TemplateClauses>> GetAvailableTemplateClausesForDraftAsync(int contractTemplateId, int contractDraftId);
 }
 

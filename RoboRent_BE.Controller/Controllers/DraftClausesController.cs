@@ -112,6 +112,28 @@ public class DraftClausesController : ControllerBase
         }
     }
 
+    [HttpGet("contract-draft/{contractDraftId}/modified/{isModified}")]
+    public async Task<IActionResult> GetDraftClausesByIsModified(int contractDraftId, bool isModified)
+    {
+        try
+        {
+            var result = await _draftClausesService.GetDraftClausesByIsModifiedAsync(contractDraftId, isModified);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateDraftClauses([FromBody] CreateDraftClausesRequest request)
     {

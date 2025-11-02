@@ -134,6 +134,28 @@ public class TemplateClausesController : ControllerBase
         }
     }
 
+    [HttpGet("available/{contractTemplateId}/{contractDraftId}")]
+    public async Task<IActionResult> GetAvailableTemplateClausesForDraft(int contractTemplateId, int contractDraftId)
+    {
+        try
+        {
+            var result = await _templateClausesService.GetAvailableTemplateClausesForDraftAsync(contractTemplateId, contractDraftId);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateTemplateClauses([FromBody] CreateTemplateClausesRequest request)
     {

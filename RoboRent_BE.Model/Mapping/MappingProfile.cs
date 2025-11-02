@@ -66,7 +66,9 @@ public class MappingProfile : Profile
         CreateMap<UpdateDraftClausesRequest, DraftClauses>();
         CreateMap<DraftClauses, DraftClausesResponse>()
             .ForMember(dest => dest.ContractDraftTitle, opt => opt.MapFrom(src => src.ContractDraft != null ? src.ContractDraft.Title : null))
-            .ForMember(dest => dest.TemplateClauseTitle, opt => opt.MapFrom(src => src.TemplateClause != null ? src.TemplateClause.Title : null));
+            .ForMember(dest => dest.TemplateClauseTitle, opt => opt.MapFrom(src => src.TemplateClause != null ? src.TemplateClause.Title : null))
+            .ForMember(dest => dest.TemplateClauseIsMandatory, opt => opt.MapFrom(src => src.TemplateClause != null ? src.TemplateClause.IsMandatory : null))
+            .ForMember(dest => dest.TemplateClauseIsEditable, opt => opt.MapFrom(src => src.TemplateClause != null ? src.TemplateClause.IsEditable : null));
 
         // Contract Drafts mappings
         CreateMap<CreateContractDraftsRequest, ContractDrafts>();
