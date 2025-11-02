@@ -12,3 +12,4 @@ public class CreateCustomDraftClauseResponse
     public string Message { get; set; } = string.Empty;
 }
 
+

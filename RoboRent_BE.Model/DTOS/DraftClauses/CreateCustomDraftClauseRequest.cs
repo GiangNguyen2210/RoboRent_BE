@@ -27,3 +27,4 @@ public class CreateCustomDraftClauseRequest
     public int? ContractTemplatesId { get; set; }
 }
 
+

@@ -203,6 +203,29 @@ public class DraftClausesController : ControllerBase
         }
     }
 
+    [HttpPost("add-template-clause")]
+    public async Task<IActionResult> AddTemplateClauseToDraft([FromQuery] int templateClauseId, [FromQuery] int contractDraftId)
+    {
+        try
+        {
+            var result = await _draftClausesService.AddTemplateClauseToDraftAsync(templateClauseId, contractDraftId);
+            return CreatedAtAction(nameof(GetDraftClausesById), new { id = result.Id }, new
+            {
+                success = true,
+                data = result,
+                message = "Template clause added to draft successfully."
+            });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDraftClauses(int id, [FromBody] UpdateDraftClausesRequest request)
     {

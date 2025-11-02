@@ -57,6 +57,37 @@ public class DraftClausesService : IDraftClausesService
 
     public async Task<DraftClausesResponse> CreateDraftClausesAsync(CreateDraftClausesRequest request)
     {
+        // If creating from a template, validate edit permissions
+        if (request.TemplateClausesId.HasValue)
+        {
+            var templateClause = await _templateClausesRepository.GetAsync(tc => tc.Id == request.TemplateClausesId.Value);
+            if (templateClause == null)
+            {
+                throw new InvalidOperationException("Template clause not found.");
+            }
+
+            // Check if the body or title is being changed from the template
+            bool contentChanged = templateClause.Title != request.Title || 
+                                 templateClause.Body != request.Body;
+
+            if (contentChanged)
+            {
+                // If the clause is mandatory and NOT editable, prevent any changes
+                if (templateClause.IsMandatory == true && templateClause.IsEditable == false)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot modify clause '{templateClause.Title}' during creation. This is a mandatory clause that cannot be modified.");
+                }
+                
+                // Even if not mandatory, if not editable, prevent changes
+                if (templateClause.IsEditable == false)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot modify clause '{templateClause.Title}' during creation. This clause is not editable.");
+                }
+            }
+        }
+
         var draftClause = _mapper.Map<DraftClauses>(request);
         
         // When first creating a draft clause, it's an exact copy from template, so IsModified = false
@@ -140,6 +171,47 @@ public class DraftClausesService : IDraftClausesService
                 Message = "Custom clause created in draft only (not saved as template)."
             };
         }
+    }
+
+    public async Task<DraftClausesResponse> AddTemplateClauseToDraftAsync(int templateClauseId, int contractDraftId)
+    {
+        // Get the template clause
+        var templateClause = await _templateClausesRepository.GetAsync(tc => tc.Id == templateClauseId);
+        if (templateClause == null)
+        {
+            throw new InvalidOperationException($"Template clause with ID {templateClauseId} not found.");
+        }
+
+        // Check if it's mandatory - mandatory clauses should already be in the draft
+        if (templateClause.IsMandatory == true)
+        {
+            throw new InvalidOperationException(
+                $"Cannot add mandatory clause '{templateClause.Title}'. Mandatory clauses are automatically added when the draft is created.");
+        }
+
+        // Check if this template clause is already in the draft (prevent duplicates)
+        var existingDraftClause = await _draftClausesRepository.GetAsync(
+            dc => dc.ContractDraftsId == contractDraftId && dc.TemplateClausesId == templateClauseId);
+        
+        if (existingDraftClause != null)
+        {
+            throw new InvalidOperationException(
+                $"Template clause '{templateClause.Title}' is already in this draft.");
+        }
+
+        // Create the draft clause from the template
+        var draftClause = new DraftClauses
+        {
+            Title = templateClause.Title,
+            Body = templateClause.Body,
+            IsModified = false, // Fresh copy from template
+            ContractDraftsId = contractDraftId,
+            TemplateClausesId = templateClauseId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
+        return _mapper.Map<DraftClausesResponse>(createdDraftClause);
     }
 
     public async Task<DraftClausesResponse?> UpdateDraftClausesAsync(UpdateDraftClausesRequest request)
