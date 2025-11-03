@@ -17,6 +17,7 @@ namespace RoboRent_BE.Controller.Controllers
         private readonly UserManager<ModifyIdentityUser> _userManager;
         private readonly SignInManager<ModifyIdentityUser> _signInManager;
         private readonly IAccountService _accountService;
+        private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
 
@@ -24,12 +25,14 @@ namespace RoboRent_BE.Controller.Controllers
             UserManager<ModifyIdentityUser> userManager,
             SignInManager<ModifyIdentityUser> signInManager,
             IAccountService accountService,
+            IAuthService authService,
             IEmailService emailService,
             IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _accountService = accountService;
+            _authService = authService;
             _emailService = emailService;
             _configuration = configuration;
         }
@@ -47,76 +50,20 @@ namespace RoboRent_BE.Controller.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback([FromQuery] string? returnUrl = null)
         {
-            var info = await _signInManager.GetExternalLoginInfoAsync();
-            if (info == null)
+            var result = await _authService.HandleGoogleCallbackAsync(returnUrl, (userId, token) =>
+                Url.ActionLink("Verify", "Auth", new { userId, token }));
+
+            if (!string.IsNullOrEmpty(result.Error))
             {
-                return BadRequest("External login info not found.");
+                return BadRequest(result.Error);
             }
 
-            // Try to sign in the user with this external login provider
-            var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: true);
-            ModifyIdentityUser user;
-            if (!signInResult.Succeeded)
+            if (!string.IsNullOrEmpty(result.RedirectUrl))
             {
-                // Create the user if not exists
-                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                var name = info.Principal.FindFirstValue(ClaimTypes.Name);
-                if (string.IsNullOrEmpty(email))
-                {
-                    return BadRequest("Email is required from Google.");
-                }
-
-                user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
-                {
-                    user = new ModifyIdentityUser
-                    {
-                        UserName = email,
-                        Email = email,
-                        EmailConfirmed = false,
-                        Status = "PendingVerification"
-                    };
-                    var createResult = await _userManager.CreateAsync(user);
-                    if (!createResult.Succeeded)
-                    {
-                        return BadRequest(createResult.Errors);
-                    }
-
-                    // Link external login
-                    var addLogin = await _userManager.AddLoginAsync(user, info);
-                    if (!addLogin.Succeeded)
-                    {
-                        return BadRequest(addLogin.Errors);
-                    }
-                }
-                else
-                {
-                    // Ensure external login linked
-                    var addLogin = await _userManager.AddLoginAsync(user, info);
-                    // ignore if already linked
-                }
-
-                await _signInManager.SignInAsync(user, isPersistent: true);
-            }
-            else
-            {
-                user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                return Redirect(result.RedirectUrl);
             }
 
-            // Create Account with PendingVerification if not exists
-            var fullName = info.Principal.FindFirstValue(ClaimTypes.Name);
-            var account = await _accountService.CreatePendingAccountAsync(user.Id, fullName);
-
-            // If first time (PendingVerification), send verification email
-            if (account.Status == "PendingVerification")
-            {
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var verifyUrl = Url.ActionLink("Verify", "Auth", new { userId = user.Id, token });
-                var html = $"<p>Hi {fullName},</p><p>Please verify your account:</p><p><a href=\"{verifyUrl}\">Verify Account</a></p>";
-                await _emailService.SendEmailAsync(user.Email!, "Verify your RoboRent account", html);
-            }
-
-            return Redirect(returnUrl ?? "/");
+            return Ok(new { token = result.Token });
         }
 
         [HttpGet("verify")]
@@ -142,6 +89,61 @@ namespace RoboRent_BE.Controller.Controllers
             return Ok(new { message = "Account verified and activated." });
         }
 
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            var accountId = User.FindFirst("accountId")?.Value;
+            var accountStatus = User.FindFirst("accountStatus")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found in token.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Get user role (single role per user)
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var role = userRoles.FirstOrDefault() ?? "Customer"; // Default to Customer if no role found
+
+            return Ok(new
+            {
+                userId = user.Id,
+                email = user.Email,
+                userName = user.UserName,
+                accountId = accountId,
+                accountStatus = accountStatus,
+                emailConfirmed = user.EmailConfirmed,
+                role = role
+            });
+        }
+
+        [HttpPost("refresh-token")]
+        [Authorize]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found in token.");
+            }
+
+            var token = await _authService.GenerateJwtForUserAsync(userId);
+            if (token == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(new { token });
+        }
 
         [HttpPatch("update-phone-number")]
         [Authorize]
