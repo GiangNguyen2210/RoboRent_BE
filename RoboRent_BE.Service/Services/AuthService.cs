@@ -35,10 +35,23 @@ public class AuthService : IAuthService
     string? returnUrl,
     Func<string, string, string?> buildVerifyUrl)
     {
-        var info = await _signInManager.GetExternalLoginInfoAsync();
+        ExternalLoginInfo? info;
+        try
+        {
+            info = await _signInManager.GetExternalLoginInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Clear any stale authentication cookies on exception
+            await _signInManager.SignOutAsync();
+            return new AuthResultDto { Error = $"Authentication error: {ex.Message}. Please try logging in again." };
+        }
+
         if (info == null)
         {
-            return new AuthResultDto { Error = "External login info not found." };
+            // Clear stale cookies when external login info is null
+            await _signInManager.SignOutAsync();
+            return new AuthResultDto { Error = "External login info not found. The authentication session may have expired. Please try logging in again." };
         }
 
         var signInResult = await _signInManager.ExternalLoginSignInAsync(
