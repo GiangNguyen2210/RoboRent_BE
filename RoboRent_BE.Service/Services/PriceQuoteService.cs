@@ -160,6 +160,51 @@ public class PriceQuoteService : IPriceQuoteService
     
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
+    
+    public async Task<PriceQuoteResponse> ApproveQuoteAsync(int quoteId, int managerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+    
+        if (quote == null) throw new Exception("Quote not found");
+        if (quote.Status != "PendingManager") 
+            throw new Exception($"Cannot approve quote with status: {quote.Status}");
+
+        quote.ManagerId = managerId;
+        quote.Status = "PendingCustomer";
+        quote.ManagerApprovedAt = DateTime.UtcNow;
+    
+        await _priceQuoteRepo.UpdateAsync(quote);
+    
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
+
+    public async Task<PriceQuoteResponse> RejectQuoteAsync(int quoteId, string feedback, int managerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+    
+        if (quote == null) throw new Exception("Quote not found");
+        if (quote.Status != "PendingManager") 
+            throw new Exception($"Cannot reject quote with status: {quote.Status}");
+
+        if (string.IsNullOrWhiteSpace(feedback))
+        {
+            throw new Exception("Feedback is required when rejecting");
+        }
+    
+        quote.ManagerId = managerId;
+        quote.Status = "RejectedManager";
+        quote.ManagerFeedback = feedback;
+    
+        await _priceQuoteRepo.UpdateAsync(quote);
+    
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
 
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)
