@@ -16,12 +16,23 @@ public class PriceQuoteService : IPriceQuoteService
 
     public async Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId)
     {
-        // ✅ Business Rule: Check max 3 quotes per rental
-        var existingQuotesCount = await _priceQuoteRepo.CountByRentalIdAsync(request.RentalId);
-        
-        if (existingQuotesCount >= 3)
+        // ✅ Business Rule: Max 3 quotes per rental
+        var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
+
+        if (existingQuotes.Count >= 3)
         {
             throw new Exception($"Maximum 3 quotes reached for rental {request.RentalId}. Cannot create more.");
+        }
+
+        // Check không có quote nào đang active
+        var activeQuote = existingQuotes.FirstOrDefault(q => 
+            q.Status == "PendingManager" || 
+            q.Status == "PendingCustomer" || 
+            q.Status == "Approved");
+
+        if (activeQuote != null)
+        {
+            throw new Exception($"Cannot create new quote. Active quote exists with status: {activeQuote.Status}");
         }
 
         // Create new quote
@@ -43,7 +54,7 @@ public class PriceQuoteService : IPriceQuoteService
         await _priceQuoteRepo.AddAsync(quote);
 
         // ✅ Không tự gửi chat notification nữa - Controller sẽ lo
-        return MapToPriceQuoteResponse(quote, existingQuotesCount + 1);
+        return MapToPriceQuoteResponse(quote, existingQuotes.Count + 1);
     }
 
     public async Task<PriceQuoteResponse> GetPriceQuoteAsync(int id)
@@ -224,7 +235,8 @@ public class PriceQuoteService : IPriceQuoteService
             ManagerFeedback = quote.ManagerFeedback,
             CreatedAt = quote.CreatedAt,
             Status = quote.Status,
-            QuoteNumber = quoteNumber
+            QuoteNumber = quoteNumber,
+            ManagerId = quote.ManagerId
         };
     }
 }

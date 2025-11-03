@@ -15,4 +15,5 @@ public class PriceQuoteResponse
     public DateTime? CreatedAt { get; set; }
     public string? Status { get; set; }
     public int QuoteNumber { get; set; } // Thứ tự: 1, 2, hoặc 3
+    public int? ManagerId { get; set; }
 }
