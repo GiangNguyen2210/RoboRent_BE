@@ -12,6 +12,13 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
         _dbContext = context;
     }
 
+    public async Task<TemplateClauses?> GetByIdAsync(int id)
+    {
+        return await _dbContext.TemplateClauses
+            .Include(tc => tc.ContractTemplate)
+            .FirstOrDefaultAsync(tc => tc.Id == id);
+    }
+
     public async Task<IEnumerable<TemplateClauses>> GetTemplateClausesByContractTemplateIdAsync(int contractTemplateId)
     {
         return await _dbContext.TemplateClauses
@@ -42,7 +49,7 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
             .Include(tc => tc.ContractTemplate)
             .ToListAsync();
     }
-
+// check template clause ko mandatory va chua co trong draft
     public async Task<IEnumerable<TemplateClauses>> GetAvailableTemplateClausesForDraftAsync(int contractTemplateId, int contractDraftId)
     {
         // Get all template clause IDs that are already in the draft

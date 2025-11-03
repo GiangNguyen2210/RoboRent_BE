@@ -14,4 +14,5 @@ public interface IDraftClausesService
     Task<CreateCustomDraftClauseResponse> CreateCustomDraftClauseAsync(CreateCustomDraftClauseRequest request);
     Task<DraftClausesResponse?> UpdateDraftClausesAsync(UpdateDraftClausesRequest request);
     Task<bool> DeleteDraftClausesAsync(int id);
+    Task<DraftClausesResponse> AddTemplateClauseToDraftAsync(int templateClauseId, int contractDraftId);
 }

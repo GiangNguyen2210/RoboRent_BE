@@ -60,7 +60,7 @@ public class DraftClausesService : IDraftClausesService
         // If creating from a template, validate edit permissions
         if (request.TemplateClausesId.HasValue)
         {
-            var templateClause = await _templateClausesRepository.GetAsync(tc => tc.Id == request.TemplateClausesId.Value);
+            var templateClause = await _templateClausesRepository.GetByIdAsync(request.TemplateClausesId.Value);
             if (templateClause == null)
             {
                 throw new InvalidOperationException("Template clause not found.");
@@ -90,7 +90,7 @@ public class DraftClausesService : IDraftClausesService
 
         var draftClause = _mapper.Map<DraftClauses>(request);
         
-        // When first creating a draft clause, it's an exact copy from template, so IsModified = false
+        // When first creating a draft clause IsModified = false
         draftClause.IsModified = false;
         
         var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
@@ -173,47 +173,6 @@ public class DraftClausesService : IDraftClausesService
         }
     }
 
-    public async Task<DraftClausesResponse> AddTemplateClauseToDraftAsync(int templateClauseId, int contractDraftId)
-    {
-        // Get the template clause
-        var templateClause = await _templateClausesRepository.GetAsync(tc => tc.Id == templateClauseId);
-        if (templateClause == null)
-        {
-            throw new InvalidOperationException($"Template clause with ID {templateClauseId} not found.");
-        }
-
-        // Check if it's mandatory - mandatory clauses should already be in the draft
-        if (templateClause.IsMandatory == true)
-        {
-            throw new InvalidOperationException(
-                $"Cannot add mandatory clause '{templateClause.Title}'. Mandatory clauses are automatically added when the draft is created.");
-        }
-
-        // Check if this template clause is already in the draft (prevent duplicates)
-        var existingDraftClause = await _draftClausesRepository.GetAsync(
-            dc => dc.ContractDraftsId == contractDraftId && dc.TemplateClausesId == templateClauseId);
-        
-        if (existingDraftClause != null)
-        {
-            throw new InvalidOperationException(
-                $"Template clause '{templateClause.Title}' is already in this draft.");
-        }
-
-        // Create the draft clause from the template
-        var draftClause = new DraftClauses
-        {
-            Title = templateClause.Title,
-            Body = templateClause.Body,
-            IsModified = false, // Fresh copy from template
-            ContractDraftsId = contractDraftId,
-            TemplateClausesId = templateClauseId,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
-        return _mapper.Map<DraftClausesResponse>(createdDraftClause);
-    }
-
     public async Task<DraftClausesResponse?> UpdateDraftClausesAsync(UpdateDraftClausesRequest request)
     {
         var existingDraftClause = await _draftClausesRepository.GetAsync(dc => dc.Id == request.Id, "ContractDraft,TemplateClause");
@@ -257,6 +216,31 @@ public class DraftClausesService : IDraftClausesService
         var updatedDraftClause = await _draftClausesRepository.UpdateAsync(existingDraftClause);
         
         return _mapper.Map<DraftClausesResponse>(updatedDraftClause);
+    }
+
+    public async Task<DraftClausesResponse> AddTemplateClauseToDraftAsync(int templateClauseId, int contractDraftId)
+    {
+        // Get the template clause
+        var templateClause = await _templateClausesRepository.GetAsync(tc => tc.Id == templateClauseId);
+        if (templateClause == null)
+        {
+            throw new InvalidOperationException("Template clause not found.");
+        }
+
+        // Create a new draft clause from the template
+        var draftClause = new DraftClauses
+        {
+            Title = templateClause.Title,
+            Body = templateClause.Body,
+            IsModified = false,  // Fresh copy from template, not modified yet
+            ContractDraftsId = contractDraftId,
+            TemplateClausesId = templateClause.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdDraftClause = await _draftClausesRepository.AddAsync(draftClause);
+        
+        return _mapper.Map<DraftClausesResponse>(createdDraftClause);
     }
 
     public async Task<bool> DeleteDraftClausesAsync(int id)
