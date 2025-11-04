@@ -186,64 +186,37 @@ public class PriceQuotesController : ControllerBase
     }
     
     /// <summary>
-    /// [MANAGER] Duyệt báo giá
+    /// [MANAGER] Approve hoặc Reject báo giá
     /// </summary>
-    [HttpPut("{id}/approve")]
-    public async Task<IActionResult> ApproveQuote(int id)
+    [HttpPut("{id}/manager-action")]
+    public async Task<IActionResult> ManagerAction(int id, [FromBody] ManagerActionRequest request)
     {
         try
         {
             int managerId = 2;
-            
-            var quote = await _priceQuoteService.ApproveQuoteAsync(id, managerId);
-            
+        
+            var quote = await _priceQuoteService.ManagerActionAsync(id, request, managerId);
+        
+            string content = request.Action.ToLower() == "approve"
+                ? $"✅ Manager đã duyệt báo giá #{quote.QuoteNumber}. Chờ Customer xác nhận."
+                : $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.";
+        
             var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
             {
                 RentalId = quote.RentalId,
                 MessageType = MessageType.SystemNotification,
-                Content = $"✅ Manager đã duyệt báo giá #{quote.QuoteNumber}. Chờ Customer xác nhận.",
+                Content = content,
                 PriceQuoteId = quote.Id
             }, managerId);
-            
+        
             var roomName = $"rental_{quote.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
-            
+        
             return Ok(quote);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to approve quote", Error = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// [MANAGER] Từ chối báo giá
-    /// </summary>
-    [HttpPut("{id}/reject")]
-    public async Task<IActionResult> RejectQuote(int id, [FromBody] ManagerRejectRequest request)
-    {
-        try
-        {
-            int managerId = 2;
-            
-            var quote = await _priceQuoteService.RejectQuoteAsync(id, request.Feedback, managerId);
-            
-            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
-            {
-                RentalId = quote.RentalId,
-                MessageType = MessageType.SystemNotification,
-                Content = $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.",
-                PriceQuoteId = quote.Id
-            }, managerId);
-            
-            var roomName = $"rental_{quote.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
-            
-            return Ok(quote);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { Message = "Failed to reject quote", Error = ex.Message });
+            return BadRequest(new { Message = "Failed to perform manager action", Error = ex.Message });
         }
     }
     
