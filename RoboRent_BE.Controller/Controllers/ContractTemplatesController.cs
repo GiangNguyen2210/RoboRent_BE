@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Service.Interfaces;
+using System.Security.Claims;
 
 namespace RoboRent_BE.Controller.Controllers;
 
@@ -34,6 +36,44 @@ public class ContractTemplatesController : ControllerBase
                 success = false,
                 message = e.Message
             });
+        }
+    }
+
+    [HttpPost("create-with-body")]
+    [Authorize]
+    public async Task<IActionResult> CreateWithBody([FromBody] CreateTemplateFromDefaultRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Invalid request", errors = ModelState });
+            }
+
+            var accountIdClaim = User.FindFirst("accountId")?.Value;
+            if (string.IsNullOrEmpty(accountIdClaim) || !int.TryParse(accountIdClaim, out var accountId))
+            {
+                return Unauthorized(new { success = false, message = "Missing or invalid accountId in token" });
+            }
+
+            var createdByName = User.FindFirst(ClaimTypes.Name)?.Value;
+
+            // Map to the service request, BodyJson intentionally omitted to force default loading
+            var mapped = new CreateTemplateWithParsedClausesRequest
+            {
+                TemplateCode = request.TemplateCode,
+                Title = request.Title,
+                Description = request.Description,
+                BodyJson = null,
+                Version = request.Version
+            };
+
+            var result = await _contractTemplatesService.CreateFromBodyAndGenerateClausesAsync(mapped, accountId, createdByName);
+            return Ok(new { success = true, data = result });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { success = false, message = e.Message });
         }
     }
 
