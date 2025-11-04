@@ -10,5 +10,7 @@ public interface IPriceQuoteService
     Task<PriceQuoteResponse> AcceptQuoteAsync(int quoteId, int customerId); 
     Task<PriceQuoteResponse> ApproveQuoteAsync(int quoteId, int managerId);
     Task<PriceQuoteResponse> RejectQuoteAsync(int quoteId, string feedback, int managerId);
+    Task<PriceQuoteResponse> ApproveQuoteByCustomerAsync(int quoteId, int customerId);
+    Task<PriceQuoteResponse> RejectQuoteByCustomerAsync(int quoteId, string? reason, int customerId);
 
 }

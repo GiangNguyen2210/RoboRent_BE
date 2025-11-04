@@ -216,6 +216,55 @@ public class PriceQuoteService : IPriceQuoteService
     
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
+    
+    public async Task<PriceQuoteResponse> ApproveQuoteByCustomerAsync(int quoteId, int customerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+    
+        if (quote == null) throw new Exception("Quote not found");
+        if (quote.Status != "PendingCustomer") 
+            throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
+
+        // Accept this quote
+        quote.Status = "Approved";
+        await _priceQuoteRepo.UpdateAsync(quote);
+
+        // Auto reject other pending quotes
+        var otherPendingQuotes = await _priceQuoteRepo
+            .GetAllAsync(q => 
+                q.RentalId == quote.RentalId && 
+                q.Id != quoteId && 
+                q.Status == "PendingCustomer" &&
+                q.IsDeleted != true);
+
+        foreach (var otherQuote in otherPendingQuotes)
+        {
+            otherQuote.Status = "RejectedCustomer";
+            await _priceQuoteRepo.UpdateAsync(otherQuote);
+        }
+
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
+
+    public async Task<PriceQuoteResponse> RejectQuoteByCustomerAsync(int quoteId, string? reason, int customerId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+    
+        if (quote == null) throw new Exception("Quote not found");
+        if (quote.Status != "PendingCustomer") 
+            throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
+
+        quote.Status = "RejectedCustomer";
+        await _priceQuoteRepo.UpdateAsync(quote);
+
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
 
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)

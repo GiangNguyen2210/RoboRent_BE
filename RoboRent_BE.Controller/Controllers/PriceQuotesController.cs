@@ -246,4 +246,75 @@ public class PriceQuotesController : ControllerBase
             return BadRequest(new { Message = "Failed to reject quote", Error = ex.Message });
         }
     }
+    
+    /// <summary>
+    /// [CUSTOMER] Chấp nhận báo giá
+    /// </summary>
+    [HttpPut("{id}/approve-quote")]
+    public async Task<IActionResult> ApproveQuoteByCustomer(int id)
+    {
+        try
+        {
+            int customerId = 1;
+            
+            var quote = await _priceQuoteService.ApproveQuoteByCustomerAsync(id, customerId);
+            
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = $"✅ Customer đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: ${quote.Total:N2}",
+                PriceQuoteId = quote.Id
+            }, customerId);
+            
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _hubContext.Clients.Group(roomName).SendAsync("QuoteAccepted", quote.Id);
+            
+            return Ok(new 
+            { 
+                Quote = quote,
+                Message = "Quote accepted successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to approve quote", Error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// [CUSTOMER] Từ chối báo giá
+    /// </summary>
+    [HttpPut("{id}/reject-quote")]
+    public async Task<IActionResult> RejectQuoteByCustomer(int id, [FromBody] CustomerRejectRequest request)
+    {
+        try
+        {
+            int customerId = 1;
+            
+            var quote = await _priceQuoteService.RejectQuoteByCustomerAsync(id, request.Reason, customerId);
+            
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.",
+                PriceQuoteId = quote.Id
+            }, customerId);
+            
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            
+            return Ok(new 
+            { 
+                Quote = quote,
+                Message = "Quote rejected successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to reject quote", Error = ex.Message });
+        }
+    }
 }
