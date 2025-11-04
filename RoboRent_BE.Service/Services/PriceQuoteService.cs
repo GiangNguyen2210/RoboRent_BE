@@ -8,14 +8,23 @@ namespace RoboRent_BE.Service.Services;
 public class PriceQuoteService : IPriceQuoteService
 {
     private readonly IPriceQuoteRepository _priceQuoteRepo;
+    private readonly IRentalRepository _rentalRepo; 
 
-    public PriceQuoteService(IPriceQuoteRepository priceQuoteRepo)
+    public PriceQuoteService(
+        IPriceQuoteRepository priceQuoteRepo,
+        IRentalRepository rentalRepo)
     {
         _priceQuoteRepo = priceQuoteRepo;
+        _rentalRepo = rentalRepo;
     }
 
     public async Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId)
     {
+        // Validate rental status FIRST
+        var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
+        if (rental.Status != "AcceptedDemo")
+            throw new Exception("Chỉ tạo quote sau khi demo được chấp nhận");
+        
         // ✅ Business Rule: Max 3 quotes per rental
         var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
 
@@ -52,6 +61,9 @@ public class PriceQuoteService : IPriceQuoteService
         };
 
         await _priceQuoteRepo.AddAsync(quote);
+        
+        rental.Status = "PendingPriceQuote";
+        await _rentalRepo.UpdateAsync(rental);
 
         // ✅ Không tự gửi chat notification nữa - Controller sẽ lo
         return MapToPriceQuoteResponse(quote, existingQuotes.Count + 1);
@@ -228,6 +240,11 @@ public class PriceQuoteService : IPriceQuoteService
         // Accept this quote
         quote.Status = "Approved";
         await _priceQuoteRepo.UpdateAsync(quote);
+        
+        // Update rental status
+        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+        rental.Status = "AcceptedPriceQuote";
+        await _rentalRepo.UpdateAsync(rental);
 
         // Auto reject other pending quotes
         var otherPendingQuotes = await _priceQuoteRepo
