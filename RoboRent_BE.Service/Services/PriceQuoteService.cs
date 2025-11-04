@@ -139,52 +139,7 @@ public class PriceQuoteService : IPriceQuoteService
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
     
-    public async Task<PriceQuoteResponse> AcceptQuoteAsync(int quoteId, int customerId)
-    {
-        var quote = await _priceQuoteRepo.GetAsync(pq => 
-            pq.Id == quoteId && 
-            pq.IsDeleted != true);
-    
-        if (quote == null)
-        {
-            throw new Exception("Price quote not found");
-        }
-    
-        // Business rule: Can only accept if status is Pending
-        if (quote.Status != "Pending")
-        {
-            throw new Exception($"Cannot accept quote with status: {quote.Status}");
-        }
-    
-        // ✅ 1. Accept this quote
-        quote.Status = "Accepted";
-        await _priceQuoteRepo.UpdateAsync(quote);
-    
-        // ✅ 2. Auto reject other pending quotes of same rental
-        var otherPendingQuotes = await _priceQuoteRepo
-            .GetAllAsync(q => 
-                q.RentalId == quote.RentalId && 
-                q.Id != quoteId && 
-                q.Status == "Pending" &&
-                q.IsDeleted != true);
-    
-        foreach (var otherQuote in otherPendingQuotes)
-        {
-            otherQuote.Status = "Rejected";
-            await _priceQuoteRepo.UpdateAsync(otherQuote);
-        }
-    
-        // Get quote number for response
-        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
-        var quoteNumber = allQuotes
-            .OrderBy(q => q.CreatedAt)
-            .ToList()
-            .FindIndex(q => q.Id == quoteId) + 1;
-    
-        return MapToPriceQuoteResponse(quote, quoteNumber);
-    }
-    
-    public async Task<PriceQuoteResponse> ApproveQuoteByCustomerAsync(int quoteId, int customerId)
+    public async Task<PriceQuoteResponse> CustomerActionAsync(int quoteId, CustomerActionRequest request, int customerId)
     {
         var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
     
@@ -192,45 +147,40 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote.Status != "PendingCustomer") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
 
-        // Accept this quote
-        quote.Status = "Approved";
-        await _priceQuoteRepo.UpdateAsync(quote);
+        if (request.Action.ToLower() == "approve")
+        {
+            // Accept this quote
+            quote.Status = "Approved";
+            await _priceQuoteRepo.UpdateAsync(quote);
         
-        // Update rental status
-        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
-        rental.Status = "AcceptedPriceQuote";
-        await _rentalRepo.UpdateAsync(rental);
+            // Update rental status
+            var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+            rental.Status = "AcceptedPriceQuote";
+            await _rentalRepo.UpdateAsync(rental);
 
-        // Auto reject other pending quotes
-        var otherPendingQuotes = await _priceQuoteRepo
-            .GetAllAsync(q => 
-                q.RentalId == quote.RentalId && 
-                q.Id != quoteId && 
-                q.Status == "PendingCustomer" &&
-                q.IsDeleted != true);
+            // Auto reject other pending quotes
+            var otherPendingQuotes = await _priceQuoteRepo
+                .GetAllAsync(q => 
+                    q.RentalId == quote.RentalId && 
+                    q.Id != quoteId && 
+                    q.Status == "PendingCustomer" &&
+                    q.IsDeleted != true);
 
-        foreach (var otherQuote in otherPendingQuotes)
-        {
-            otherQuote.Status = "RejectedCustomer";
-            await _priceQuoteRepo.UpdateAsync(otherQuote);
+            foreach (var otherQuote in otherPendingQuotes)
+            {
+                otherQuote.Status = "RejectedCustomer";
+                await _priceQuoteRepo.UpdateAsync(otherQuote);
+            }
         }
-
-        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
-        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
-    
-        return MapToPriceQuoteResponse(quote, quoteNumber);
-    }
-
-    public async Task<PriceQuoteResponse> RejectQuoteByCustomerAsync(int quoteId, string? reason, int customerId)
-    {
-        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
-    
-        if (quote == null) throw new Exception("Quote not found");
-        if (quote.Status != "PendingCustomer") 
-            throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
-
-        quote.Status = "RejectedCustomer";
-        await _priceQuoteRepo.UpdateAsync(quote);
+        else if (request.Action.ToLower() == "reject")
+        {
+            quote.Status = "RejectedCustomer";
+            await _priceQuoteRepo.UpdateAsync(quote);
+        }
+        else
+        {
+            throw new Exception("Invalid action. Use 'approve' or 'reject'");
+        }
 
         var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
         var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
