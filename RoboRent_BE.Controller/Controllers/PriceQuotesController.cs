@@ -190,4 +190,35 @@ public class PriceQuotesController : ControllerBase
         }
     }
     
+    /// <summary>
+    /// [STAFF] Update báo giá bị Manager reject - Auto resubmit
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePriceQuote(int id, [FromBody] UpdatePriceQuoteRequest request)
+    {
+        try
+        {
+            int staffId = 1;
+        
+            var quote = await _priceQuoteService.UpdatePriceQuoteAsync(id, request, staffId);
+        
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = $"🔄 Staff đã cập nhật báo giá #{quote.QuoteNumber} và gửi lại Manager",
+                PriceQuoteId = quote.Id
+            }, staffId);
+        
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+        
+            return Ok(quote);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to update price quote", Error = ex.Message });
+        }
+    }
+    
 }

@@ -187,6 +187,37 @@ public class PriceQuoteService : IPriceQuoteService
     
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
+    
+    public async Task<PriceQuoteResponse> UpdatePriceQuoteAsync(int quoteId, UpdatePriceQuoteRequest request, int staffId)
+    {
+        var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
+    
+        if (quote == null) throw new Exception("Quote not found");
+    
+        // Chỉ cho phép update khi status = RejectedManager
+        if (quote.Status != "RejectedManager")
+        {
+            throw new Exception($"Cannot update quote with status: {quote.Status}. Only RejectedManager quotes can be updated.");
+        }
+
+        // Update fields
+        if (request.Delivery.HasValue) quote.Delivery = request.Delivery;
+        if (request.Deposit.HasValue) quote.Deposit = request.Deposit;
+        if (request.Complete.HasValue) quote.Complete = request.Complete;
+        if (request.Service.HasValue) quote.Service = request.Service;
+        if (request.StaffDescription != null) quote.StaffDescription = request.StaffDescription;
+    
+        // Auto submit lại to Manager
+        quote.Status = "PendingManager";
+        quote.SubmittedToManagerAt = DateTime.UtcNow;
+    
+        await _priceQuoteRepo.UpdateAsync(quote);
+    
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+    
+        return MapToPriceQuoteResponse(quote, quoteNumber);
+    }
 
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)
