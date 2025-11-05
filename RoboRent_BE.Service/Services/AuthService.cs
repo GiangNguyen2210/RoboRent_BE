@@ -112,6 +112,17 @@ public class AuthService : IAuthService
                         return new AuthResultDto { Error = string.Join("; ", addLoginResult.Errors.Select(e => e.Description)) };
                     }
                 }
+                
+               
+                var userRoles = await _userManager.GetRolesAsync(user);
+                if (userRoles == null || userRoles.Count == 0)
+                {
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, "Customer");
+                    if (!addRoleResult.Succeeded)
+                    {
+                        return new AuthResultDto { Error = string.Join("; ", addRoleResult.Errors.Select(e => e.Description)) };
+                    }
+                }
             }
 
             await _signInManager.SignInAsync(user, isPersistent: true);
