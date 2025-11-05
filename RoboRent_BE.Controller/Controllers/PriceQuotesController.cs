@@ -158,7 +158,9 @@ public class PriceQuotesController : ControllerBase
         
             string content = request.Action.ToLower() == "approve"
                 ? $"✅ Customer đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: ${quote.Total:N2}"
-                : $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.";
+                : quote.Status == "Expired"
+                    ? $"⏰ Báo giá #{quote.QuoteNumber} đã hết hạn (đã tạo đủ 3 báo giá)"
+                    : $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.";
         
             var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
             {

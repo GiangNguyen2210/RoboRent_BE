@@ -65,8 +65,8 @@ public class PriceQuoteService : IPriceQuoteService
         rental.Status = "PendingPriceQuote";
         await _rentalRepo.UpdateAsync(rental);
 
-        // ✅ Không tự gửi chat notification nữa - Controller sẽ lo
-        return MapToPriceQuoteResponse(quote, existingQuotes.Count + 1);
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        return MapToPriceQuoteResponse(quote, allQuotes.Count);
     }
 
     public async Task<PriceQuoteResponse> GetPriceQuoteAsync(int id)
@@ -87,17 +87,23 @@ public class PriceQuoteService : IPriceQuoteService
     public async Task<RentalQuotesResponse> GetQuotesByRentalIdAsync(int rentalId)
     {
         var quotes = await _priceQuoteRepo.GetByRentalIdAsync(rentalId);
-        
+    
         var quoteResponses = quotes
             .Select((q, index) => MapToPriceQuoteResponse(q, index + 1))
             .ToList();
+
+        // ✅ CanCreateMore: count < 3 VÀ không có quote active
+        var hasActiveQuote = quotes.Any(q => 
+            q.Status == "PendingManager" || 
+            q.Status == "PendingCustomer" || 
+            q.Status == "Approved");
 
         return new RentalQuotesResponse
         {
             RentalId = rentalId,
             Quotes = quoteResponses,
             TotalQuotes = quotes.Count,
-            CanCreateMore = quotes.Count < 3
+            CanCreateMore = quotes.Count < 3 && !hasActiveQuote
         };
     }
 
@@ -142,23 +148,22 @@ public class PriceQuoteService : IPriceQuoteService
     public async Task<PriceQuoteResponse> CustomerActionAsync(int quoteId, CustomerActionRequest request, int customerId)
     {
         var quote = await _priceQuoteRepo.GetAsync(q => q.Id == quoteId && q.IsDeleted != true);
-    
+        
         if (quote == null) throw new Exception("Quote not found");
         if (quote.Status != "PendingCustomer") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
 
         if (request.Action.ToLower() == "approve")
         {
-            // Accept this quote
+            // ✅ Accept this quote
             quote.Status = "Approved";
             await _priceQuoteRepo.UpdateAsync(quote);
-        
-            // Update rental status
+            
             var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
             rental.Status = "AcceptedPriceQuote";
             await _rentalRepo.UpdateAsync(rental);
 
-            // Auto reject other pending quotes
+            // ✅ Auto reject other pending quotes
             var otherPendingQuotes = await _priceQuoteRepo
                 .GetAllAsync(q => 
                     q.RentalId == quote.RentalId && 
@@ -174,7 +179,24 @@ public class PriceQuoteService : IPriceQuoteService
         }
         else if (request.Action.ToLower() == "reject")
         {
-            quote.Status = "RejectedCustomer";
+            // Check xem đã có bao nhiêu quotes
+            var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+            
+            if (allQuotes.Count >= 3)
+            {
+                // Đã 3 quotes rồi → Expired
+                quote.Status = "Expired";
+                
+                var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+                rental.Status = "Canceled";
+                await _rentalRepo.UpdateAsync(rental);
+            }
+            else
+            {
+                // Chưa đủ 3 → RejectedCustomer (staff sẽ tạo quote mới)
+                quote.Status = "RejectedCustomer";
+            }
+            
             await _priceQuoteRepo.UpdateAsync(quote);
         }
         else
@@ -182,9 +204,9 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception("Invalid action. Use 'approve' or 'reject'");
         }
 
-        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
-        var quoteNumber = allQuotes.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
-    
+        var allQuotesForNumber = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+        var quoteNumber = allQuotesForNumber.OrderBy(q => q.CreatedAt).ToList().FindIndex(q => q.Id == quoteId) + 1;
+        
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
     
