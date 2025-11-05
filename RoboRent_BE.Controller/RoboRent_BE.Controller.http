@@ -1,6 +1,76 @@
 @RoboRent_BE.Controller_HostAddress = http://localhost:5165
+@JwtToken = your-jwt-token-here
 
-GET {{RoboRent_BE.Controller_HostAddress}}/weatherforecast/
+### Test Google Login Flow
+# Step 1: Initiate Google OAuth login
+GET {{RoboRent_BE.Controller_HostAddress}}/api/auth/google-login
 Accept: application/json
+
+### Test Google Login with Return URL (for SPA)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/auth/google-login?returnUrl=http://localhost:3000/auth/callback
+Accept: application/json
+
+### Test Email Verification (use token from verification email)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/auth/verify?userId=USER_ID&token=VERIFICATION_TOKEN
+Accept: application/json
+
+### Test Get User Profile (requires JWT token)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/auth/profile
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Refresh Token (requires JWT token)
+POST {{RoboRent_BE.Controller_HostAddress}}/api/auth/refresh-token
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Protected Endpoint with JWT Token
+GET {{RoboRent_BE.Controller_HostAddress}}/api/protected-endpoint
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Public Endpoint (No Authentication Required)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/test/public
+Accept: application/json
+
+### Test Protected Endpoint (JWT Authentication Required)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/test/protected
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Admin Endpoint (Admin Role Required)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/test/admin
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Payment Creation (requires JWT token)
+POST {{RoboRent_BE.Controller_HostAddress}}/api/payment/create?accountId=1
+Authorization: Bearer {{JwtToken}}
+Content-Type: application/json
+
+{
+  "orderCode": 123456789,
+  "amount": 100000,
+  "description": "Test payment",
+  "returnUrl": "http://localhost:3000/payment/success",
+  "cancelUrl": "http://localhost:3000/payment/cancel"
+}
+
+### Test Get Payment Info (requires JWT token)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/payment/info/123456789
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Get Payment History by Account (requires JWT token)
+GET {{RoboRent_BE.Controller_HostAddress}}/api/payment/info/user/1
+Authorization: Bearer {{JwtToken}}
+Accept: application/json
+
+### Test Cancel Payment (requires JWT token)
+POST {{RoboRent_BE.Controller_HostAddress}}/api/payment/cancel/123456789
+Authorization: Bearer {{JwtToken}}
+Content-Type: application/json
+
+"User requested cancellation"
 
 ###

@@ -45,4 +45,22 @@ public class AccountService : IAccountService
         await _accountRepository.UpdateAsync(account);
         return true;
     }
+
+    public async Task<Account?> GetAccountByUserIdAsync(string userId)
+    {
+        return await _accountRepository.GetAsync(a => a.UserId == userId);
+    }
+
+    public async Task<bool> UpdatePhoneNumberAsync(string userId, string phoneNumber)
+    {
+        var account = await _accountRepository.GetAsync(a => a.UserId == userId);
+        if (account == null)
+        {
+            return false;
+        }
+
+        account.PhoneNumber = phoneNumber;
+        await _accountRepository.UpdateAsync(account);
+        return true;
+    }
 }

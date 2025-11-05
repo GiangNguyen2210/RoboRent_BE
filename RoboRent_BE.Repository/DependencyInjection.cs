@@ -10,6 +10,7 @@ public static class DependencyInjection
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddTransient<IEventScheduleRepository, EventScheduleRepository>();
         services.AddTransient<IAccountRepository, AccountRepository>();
         services.AddTransient<IEventRepository, EventRepository>();
         services.AddTransient<IRoboTypeRepository, RoboTypeRepository>();
@@ -23,6 +24,11 @@ public static class DependencyInjection
         services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
+        services.AddTransient<IRentalContractRepository, RentalContractRepository>();
+        services.AddTransient<IDraftClausesRepository, DraftClausesRepository>();
+        services.AddTransient<IContractDraftsRepository, ContractDraftsRepository>();
+        services.AddTransient<IContractTemplatesRepository, ContractTemplatesRepository>();
+        services.AddTransient<ITemplateClausesRepository, TemplateClausesRepository>();
         return services;
     }
 }

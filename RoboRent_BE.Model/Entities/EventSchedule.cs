@@ -17,6 +17,8 @@ public partial class EventSchedule
     
     public TimeOnly EndTime { get; set; }
     
+    public string? EventAddress { get; set; } = string.Empty;
+    
     public bool? IsDeleted { get; set; } =  false;
     
     public int? RentalId { get; set; }
