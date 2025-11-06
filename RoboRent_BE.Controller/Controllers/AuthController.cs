@@ -39,8 +39,12 @@ namespace RoboRent_BE.Controller.Controllers
 
         [HttpGet("google-login")]
         [AllowAnonymous]
-        public IActionResult GoogleLogin([FromQuery] string? returnUrl = null)
+        public async Task<IActionResult> GoogleLogin([FromQuery] string? returnUrl = null)
         {
+            // Clear any stale authentication cookies before starting new login
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
             var redirectUrl = Url.ActionLink("GoogleCallback", "Auth", new { returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
             return Challenge(properties, "Google");
@@ -50,20 +54,63 @@ namespace RoboRent_BE.Controller.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback([FromQuery] string? returnUrl = null)
         {
-            var result = await _authService.HandleGoogleCallbackAsync(returnUrl, (userId, token) =>
-                Url.ActionLink("Verify", "Auth", new { userId, token }));
-
-            if (!string.IsNullOrEmpty(result.Error))
+            try
             {
-                return BadRequest(result.Error);
-            }
+                // Check for error parameters (in case of remote failure)
+                if (Request.Query.ContainsKey("error"))
+                {
+                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return BadRequest(new { error = Request.Query["error"].ToString(), message = "Authentication failed. Please try logging in again." });
+                }
 
-            if (!string.IsNullOrEmpty(result.RedirectUrl))
+                var result = await _authService.HandleGoogleCallbackAsync(returnUrl, (userId, token) =>
+                    Url.ActionLink("Verify", "Auth", new { userId, token }));
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    // Clear cookies on error
+                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return BadRequest(new { error = result.Error, message = "Please try logging in again by visiting the google-login endpoint." });
+                }
+
+                if (!string.IsNullOrEmpty(result.RedirectUrl))
+                {
+                    return Redirect(result.RedirectUrl);
+                }
+
+                return Ok(new { token = result.Token });
+            }
+            catch (Exception ex)
             {
-                return Redirect(result.RedirectUrl);
+                // Clear all authentication cookies on any exception
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                
+                // Log the exception if you have a logger
+                return BadRequest(new 
+                { 
+                    error = "AuthenticationFailureException",
+                    message = "An error occurred during authentication. Please try logging in again.",
+                    details = ex.Message
+                });
             }
+        }
 
-            return Ok(new { token = result.Token });
+        [HttpGet("auth-error")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AuthError([FromQuery] string? error = null)
+        {
+            // Ensure all authentication cookies are cleared
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
+            return BadRequest(new 
+            { 
+                error = error ?? "Authentication failed",
+                message = "There was an error during authentication. Your cookies have been cleared. Please try logging in again."
+            });
         }
 
         [HttpGet("verify")]

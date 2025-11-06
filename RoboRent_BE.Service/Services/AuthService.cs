@@ -35,10 +35,23 @@ public class AuthService : IAuthService
     string? returnUrl,
     Func<string, string, string?> buildVerifyUrl)
     {
-        var info = await _signInManager.GetExternalLoginInfoAsync();
+        ExternalLoginInfo? info;
+        try
+        {
+            info = await _signInManager.GetExternalLoginInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Clear any stale authentication cookies on exception
+            await _signInManager.SignOutAsync();
+            return new AuthResultDto { Error = $"Authentication error: {ex.Message}. Please try logging in again." };
+        }
+
         if (info == null)
         {
-            return new AuthResultDto { Error = "External login info not found." };
+            // Clear stale cookies when external login info is null
+            await _signInManager.SignOutAsync();
+            return new AuthResultDto { Error = "External login info not found. The authentication session may have expired. Please try logging in again." };
         }
 
         var signInResult = await _signInManager.ExternalLoginSignInAsync(
@@ -97,6 +110,17 @@ public class AuthService : IAuthService
                     if (!addLoginResult.Succeeded)
                     {
                         return new AuthResultDto { Error = string.Join("; ", addLoginResult.Errors.Select(e => e.Description)) };
+                    }
+                }
+                
+               
+                var userRoles = await _userManager.GetRolesAsync(user);
+                if (userRoles == null || userRoles.Count == 0)
+                {
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, "Customer");
+                    if (!addRoleResult.Succeeded)
+                    {
+                        return new AuthResultDto { Error = string.Join("; ", addRoleResult.Errors.Select(e => e.Description)) };
                     }
                 }
             }

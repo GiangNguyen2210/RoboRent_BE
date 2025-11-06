@@ -89,6 +89,9 @@ builder.Services
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+        // Allow invalid cookies to be rejected silently rather than throwing exceptions
+        options.Cookie.HttpOnly = true;
+        options.SlidingExpiration = true;
     })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
@@ -117,6 +120,33 @@ builder.Services
         options.Scope.Add("email");
         options.Scope.Add("profile");
         options.SignInScheme = IdentityConstants.ExternalScheme;
+        
+        // Handle remote authentication failures
+        options.Events.OnRemoteFailure = async context =>
+        {
+            // Clear any stale cookies
+            await context.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
+            // Build absolute URL for error endpoint
+            var request = context.Request;
+            var error = context.Failure?.Message ?? "Authentication failed";
+            var errorUrl = $"{request.Scheme}://{request.Host}/api/Auth/auth-error?error={Uri.EscapeDataString(error)}";
+            context.Response.Redirect(errorUrl);
+            context.HandleResponse();
+        };
+        
+        // Handle access denied
+        options.Events.OnAccessDenied = async context =>
+        {
+            await context.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
+            var request = context.Request;
+            var errorUrl = $"{request.Scheme}://{request.Host}/api/Auth/auth-error?error={Uri.EscapeDataString("Access denied")}";
+            context.Response.Redirect(errorUrl);
+            context.HandleResponse();
+        };
     });
 
 builder.Services.AddSignalR();
