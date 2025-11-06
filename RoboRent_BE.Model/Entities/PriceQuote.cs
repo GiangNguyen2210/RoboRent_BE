@@ -26,6 +26,7 @@ public partial class PriceQuote
     public string? StaffDescription { get; set; }
     
     public string? ManagerFeedback { get; set; }
+    public string? CustomerReason { get; set; } 
     
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     

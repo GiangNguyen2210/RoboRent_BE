@@ -19,6 +19,17 @@ public class ChatController : ControllerBase
         _hubContext = hubContext;
     }
 
+    // ✅ Helper method để lấy userId từ Claims
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst("AccountId")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User not authenticated");
+        }
+        return int.Parse(userIdClaim);
+    }
+
     /// <summary>
     /// Tạo hoặc lấy chat room cho rental
     /// </summary>
@@ -84,8 +95,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            // TODO: Get senderId from authenticated user (JWT token)
-            int senderId = 1; // Replace with: User.FindFirst("AccountId")?.Value
+            int senderId = GetCurrentUserId();
             
             // 1. Service lưu message vào DB
             var message = await _chatService.SendMessageAsync(request, senderId);
@@ -136,8 +146,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from authenticated user
-            int userId = 1; // Replace with authenticated userId
+            int userId = GetCurrentUserId();
             
             var count = await _chatService.GetUnreadCountAsync(rentalId, userId);
             return Ok(new { RentalId = rentalId, UnreadCount = count });

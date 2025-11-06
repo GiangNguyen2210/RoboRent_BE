@@ -26,6 +26,16 @@ public class PriceQuotesController : ControllerBase
         _hubContext = hubContext;
     }
 
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst("AccountId")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User not authenticated");
+        }
+        return int.Parse(userIdClaim);
+    }
+
     /// <summary>
     /// Tạo báo giá mới (max 3 lần)
     /// Auto gửi notification vào chat
@@ -35,8 +45,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            // TODO: Get staffId from authenticated user (JWT token)
-            int staffId = 1; // Replace with: User.FindFirst("AccountId")?.Value
+            int staffId = GetCurrentUserId();
             
             // 1. Service tạo quote (check < 3)
             var quote = await _priceQuoteService.CreatePriceQuoteAsync(request, staffId);
@@ -117,7 +126,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int managerId = 2;
+            int managerId = GetCurrentUserId();
         
             var quote = await _priceQuoteService.ManagerActionAsync(id, request, managerId);
         
@@ -152,7 +161,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int customerId = 1;
+            int customerId = GetCurrentUserId();
         
             var quote = await _priceQuoteService.CustomerActionAsync(id, request, customerId);
         
@@ -200,7 +209,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int staffId = 1;
+            int staffId = GetCurrentUserId();
         
             var quote = await _priceQuoteService.UpdatePriceQuoteAsync(id, request, staffId);
         
@@ -220,6 +229,20 @@ public class PriceQuotesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { Message = "Failed to update price quote", Error = ex.Message });
+        }
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetAllQuotes([FromQuery] string? status = null)
+    {
+        try
+        {
+            var quotes = await _priceQuoteService.GetAllQuotesForManagerAsync(status);
+            return Ok(quotes);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get quotes", Error = ex.Message });
         }
     }
     

@@ -12,11 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:RoboRent_BE.Model/Migrations/20251104022753_Initial.Designer.cs
-    [Migration("20251104022753_Initial")]
-========
-    [Migration("20251021202906_Initial")]
->>>>>>>> origin/development:RoboRent_BE.Model/Migrations/20251021202906_Initial.Designer.cs
+    [Migration("20251105192249_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

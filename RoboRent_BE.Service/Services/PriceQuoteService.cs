@@ -22,8 +22,12 @@ public class PriceQuoteService : IPriceQuoteService
     {
         // Validate rental status FIRST
         var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        if (rental.Status != "AcceptedDemo")
-            throw new Exception("Chỉ tạo quote sau khi demo được chấp nhận");
+        //✅ FIX: Cho phép cả "AcceptedDemo" VÀ "PendingPriceQuote"
+        var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote" };
+        if (!validStatuses.Contains(rental.Status))
+        {
+            throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: AcceptedDemo hoặc PendingPriceQuote");
+        }
         
         // ✅ Business Rule: Max 3 quotes per rental
         var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
@@ -37,7 +41,8 @@ public class PriceQuoteService : IPriceQuoteService
         var activeQuote = existingQuotes.FirstOrDefault(q => 
             q.Status == "PendingManager" || 
             q.Status == "PendingCustomer" || 
-            q.Status == "Approved");
+            q.Status == "Approved" ||
+            q.Status == "RejectedCustomer");
 
         if (activeQuote != null)
         {
@@ -240,6 +245,45 @@ public class PriceQuoteService : IPriceQuoteService
     
         return MapToPriceQuoteResponse(quote, quoteNumber);
     }
+    
+    public async Task<List<ManagerQuoteListItemResponse>> GetAllQuotesForManagerAsync(string? status = null)
+    {
+        var quotes = await _priceQuoteRepo.GetAllWithDetailsAsync(status);
+
+        return quotes.Select(pq => 
+        {
+            var allRentalQuotes = _priceQuoteRepo.GetByRentalIdAsync(pq.RentalId).Result
+                .OrderBy(q => q.CreatedAt)
+                .Select(q => q.Id)
+                .ToList();
+        
+            var quoteNumber = allRentalQuotes.IndexOf(pq.Id) + 1;
+            var total = (pq.Delivery ?? 0) + (pq.Deposit ?? 0) + (pq.Complete ?? 0) + (pq.Service ?? 0);
+
+            return new ManagerQuoteListItemResponse
+            {
+                Id = pq.Id,
+                RentalId = pq.RentalId,
+                QuoteNumber = quoteNumber,
+                CustomerName = pq.Rental?.Account?.FullName ?? "Unknown",
+                PackageName = pq.Rental?.RentalPackage?.Name ?? "Unknown",
+            
+                // ✅ ĐỒNG BỘ với ChatService
+                EventDate = pq.Rental?.EventSchedules?.OrderBy(es => es.Date)
+                    .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",
+            
+                Delivery = pq.Delivery,
+                Deposit = pq.Deposit,
+                Complete = pq.Complete,
+                Service = pq.Service,
+                Total = total,
+                StaffDescription = pq.StaffDescription,
+                ManagerFeedback = pq.ManagerFeedback,
+                Status = pq.Status ?? "Unknown",
+                CreatedAt = pq.CreatedAt
+            };
+        }).ToList();
+    }
 
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)
@@ -257,6 +301,7 @@ public class PriceQuoteService : IPriceQuoteService
             Total = total,
             StaffDescription = quote.StaffDescription,
             ManagerFeedback = quote.ManagerFeedback,
+            CustomerReason = quote.CustomerReason,
             CreatedAt = quote.CreatedAt,
             Status = quote.Status,
             QuoteNumber = quoteNumber,

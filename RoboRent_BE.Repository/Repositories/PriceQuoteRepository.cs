@@ -27,4 +27,25 @@ public class PriceQuoteRepository : GenericRepository<PriceQuote>, IPriceQuoteRe
             .OrderBy(pq => pq.CreatedAt)
             .ToListAsync();
     }
+    
+    public async Task<List<PriceQuote>> GetAllWithDetailsAsync(string? status = null)
+    {
+        var query = DbSet
+            .Include(pq => pq.Rental)
+            .ThenInclude(r => r.Account)
+            .Include(pq => pq.Rental)
+            .ThenInclude(r => r.RentalPackage)
+            .Include(pq => pq.Rental)
+            .ThenInclude(r => r.EventSchedules) // ✅ Giống ChatService
+            .Where(pq => pq.IsDeleted != true);
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            query = query.Where(pq => pq.Status == status);
+        }
+
+        return await query
+            .OrderByDescending(pq => pq.CreatedAt)
+            .ToListAsync();
+    }
 }
