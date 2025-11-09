@@ -141,37 +141,36 @@ namespace RoboRent_BE.Controller.Controllers
         public async Task<IActionResult> GetProfile()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
-            var accountId = User.FindFirst("accountId")?.Value;
-            var accountStatus = User.FindFirst("accountStatus")?.Value;
-
             if (string.IsNullOrEmpty(userId))
-            {
                 return Unauthorized("User not found in token.");
-            }
 
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
-            {
                 return NotFound("User not found.");
-            }
 
-            // Get user role (single role per user)
             var userRoles = await _userManager.GetRolesAsync(user);
-            var role = userRoles.FirstOrDefault() ?? "Customer"; // Default to Customer if no role found
+            var role = userRoles.FirstOrDefault() ?? "Customer";
+            var accountId = User.FindFirst("accountId")?.Value;
+            var accountStatus = User.FindFirst("accountStatus")?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var firstName = User.FindFirst(ClaimTypes.GivenName)?.Value;
+            var lastName = User.FindFirst(ClaimTypes.Surname)?.Value;
+            var picture = User.FindFirst("picture")?.Value;
 
             return Ok(new
             {
                 userId = user.Id,
-                email = user.Email,
-                userName = user.UserName,
-                accountId = accountId,
-                accountStatus = accountStatus,
+                email,
+                firstName,
+                lastName,
+                picture,
+                accountId,
+                accountStatus,
                 emailConfirmed = user.EmailConfirmed,
-                role = role
+                role
             });
         }
+
 
         [HttpPost("refresh-token")]
         [Authorize]

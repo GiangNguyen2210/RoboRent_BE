@@ -1,16 +1,17 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using RoboRent_BE.Controller.Hubs;
 using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Model.Mapping;
 using RoboRent_BE.Repository;
 using RoboRent_BE.Service;
-using RoboRent_BE.Controller.Hubs;
-using AutoMapper;
-using RoboRent_BE.Model.Mapping;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 //variable for google auth
@@ -119,15 +120,16 @@ builder.Services
         options.Scope.Add("openid");
         options.Scope.Add("email");
         options.Scope.Add("profile");
+        options.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "given_name");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Surname, "family_name");
+        options.ClaimActions.MapJsonKey("picture", "picture");
         options.SignInScheme = IdentityConstants.ExternalScheme;
-        
         // Handle remote authentication failures
         options.Events.OnRemoteFailure = async context =>
         {
             // Clear any stale cookies
             await context.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
             // Build absolute URL for error endpoint
             var request = context.Request;
             var error = context.Failure?.Message ?? "Authentication failed";
@@ -135,13 +137,11 @@ builder.Services
             context.Response.Redirect(errorUrl);
             context.HandleResponse();
         };
-        
         // Handle access denied
         options.Events.OnAccessDenied = async context =>
         {
             await context.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
             var request = context.Request;
             var errorUrl = $"{request.Scheme}://{request.Host}/api/Auth/auth-error?error={Uri.EscapeDataString("Access denied")}";
             context.Response.Redirect(errorUrl);
