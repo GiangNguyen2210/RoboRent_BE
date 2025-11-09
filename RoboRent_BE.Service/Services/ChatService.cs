@@ -176,6 +176,7 @@ public class ChatService : IChatService
             EventDate = room.Rental?.EventSchedules?.OrderBy(es => es.Date)
                 .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",         // ✅ FIX
             Status = room.Rental?.Status ?? "Unknown",                             // ✅ FIX
+            RentalStatus = room.Rental?.Status ?? "Unknown",  
             LastMessage = lastMessage?.Content ?? "No messages yet",
             LastMessageTime = lastMessage?.CreatedAt,
             UnreadCount = unreadCount,
@@ -214,6 +215,7 @@ public async Task<ChatRoomListResponse> GetChatRoomsByCustomerIdAsync(int custom
             EventDate = room.Rental?.EventSchedules?.OrderBy(es => es.Date)
                 .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",         // ✅ FIX
             Status = room.Rental?.Status ?? "Unknown",                             // ✅ FIX
+            RentalStatus = room.Rental?.Status ?? "Unknown", 
             LastMessage = lastMessage?.Content ?? "No messages yet",
             LastMessageTime = lastMessage?.CreatedAt,
             UnreadCount = unreadCount,

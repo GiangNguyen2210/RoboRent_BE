@@ -222,7 +222,7 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote == null) throw new Exception("Quote not found");
     
         // Chỉ cho phép update khi status = RejectedManager
-        if (quote.Status != "RejectedManager")
+        if (quote.Status != "PendingManager" && quote.Status != "RejectedManager")
         {
             throw new Exception($"Cannot update quote with status: {quote.Status}. Only RejectedManager quotes can be updated.");
         }

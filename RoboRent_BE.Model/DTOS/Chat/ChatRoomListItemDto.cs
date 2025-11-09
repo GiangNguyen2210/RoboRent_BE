@@ -15,6 +15,7 @@ public class ChatRoomListItemDto
     public string? PackageName { get; set; }
     public string? EventDate { get; set; }
     public string? Status { get; set; }
+    public string? RentalStatus { get; set; } 
     
     // Last message info
     public string? LastMessage { get; set; }

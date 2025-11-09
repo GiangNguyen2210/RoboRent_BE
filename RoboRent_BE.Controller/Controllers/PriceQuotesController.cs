@@ -62,6 +62,12 @@ public class PriceQuotesController : ControllerBase
             // 3. Broadcast notification qua SignalR
             var roomName = $"rental_{request.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _hubContext.Clients.Group(roomName).SendAsync("QuoteCreated", new
+            {
+                QuoteId = quote.Id,
+                QuoteNumber = quote.QuoteNumber,
+                Total = quote.Total
+            });
             
             return Ok(quote);
         }
