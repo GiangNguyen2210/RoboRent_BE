@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.Entities;
@@ -94,5 +95,13 @@ public class RentalController : ControllerBase
         if (result == null) return BadRequest("Could not find rental");
         
         return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("my-rentals/{accountId}")]
+    public async Task<IActionResult> GetRentalsByCustomer(int accountId)
+    {
+        var result = await _rentalService.GetRentalsByCustomerAsync(accountId);
+        return Ok(result ?? new List<OrderResponse>());
     }
 }
