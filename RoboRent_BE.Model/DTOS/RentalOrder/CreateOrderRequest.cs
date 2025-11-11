@@ -17,22 +17,39 @@ public partial class CreateOrderRequest
     [EmailAddress(ErrorMessage = "Invalid Email Address")]
     public string? Email { get; set; } = string.Empty;
     
+    [Required]
+    public string? Description { get; set; } = string.Empty;
+    
+    [Required]
+    public string? Address { get; set; } = string.Empty;
+    
+    [Required]
+    public string? City { get; set; } = string.Empty;
+    [Required]
+    public TimeOnly? StartTime { get; set; }
+    [Required]
+    public TimeOnly? EndTime { get; set; }
+    
     public DateTime? CreatedDate { get; set; } =  DateTime.UtcNow;
     
     public DateTime? UpdatedDate { get; set; } =  DateTime.UtcNow;
     
+    public DateTime? RequestedDate { get; set; } =  DateTime.UtcNow;
+    [Required]
+    public DateTime? EventDate { get; set; } =  DateTime.UtcNow;
+    
     [DefaultValue(false)]
     public bool? IsDeleted { get; set; } =  false;
     
-    [DefaultValue("Pending")]
-    public string? Status { get; set; } = "Pending";
+    [DefaultValue("Draft")]
+    public string? Status { get; set; } = "Draft";
     
     [Required]
     public int? AccountId { get; set; }
     
     [Required]
-    public int? EventId { get; set; }
+    public int? EventActivityId { get; set; }
     
     [Required]
-    public int? RentalPackageId  { get; set; }
+    public int? ActivityTypeId  { get; set; }
 }

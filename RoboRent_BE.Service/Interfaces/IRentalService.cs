@@ -11,5 +11,7 @@ public interface IRentalService
     public Task<OrderResponse?> GetRentalAsync(int id);
     public Task<List<OrderResponse>?> GetAllRentalsAsync();
     public Task<dynamic> DeleteRentalAsync(int id);
+    public Task<PageListResponse<OrderResponse>> GetRentalByCustomerIdAsync(int customerId, int page, int pageSize, string? search);
+    public Task<OrderResponse?> CustomerSendRentalAsync(int rentalId);
     public Task<List<OrderResponse>?> GetRentalsByCustomerAsync(int accountId);
 }

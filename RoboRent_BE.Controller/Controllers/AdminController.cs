@@ -40,7 +40,15 @@ public class AdminController : ControllerBase
 
         try
         {
-            var client = _httpClientFactory.CreateClient();
+            // ✅ Ignore SSL certificate
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = 
+                    (sender, cert, chain, sslPolicyErrors) => true
+            };
+            
+            using var client = new HttpClient(handler);
+
             var response = await client.GetAsync(URL);
 
             if (!response.IsSuccessStatusCode)
@@ -74,7 +82,15 @@ public class AdminController : ControllerBase
 
         try
         {
-            var client = _httpClientFactory.CreateClient();
+            // ✅ Ignore SSL certificate
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = 
+                    (sender, cert, chain, sslPolicyErrors) => true
+            };
+            
+            using var client = new HttpClient(handler);
+
             var response = await client.GetAsync(URL);
 
             if (!response.IsSuccessStatusCode)

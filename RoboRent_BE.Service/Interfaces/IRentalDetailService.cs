@@ -9,7 +9,7 @@ public interface IRentalDetailService
     Task<RentalDetailResponse?> GetRentalDetailByIdAsync(int id);
     Task<IEnumerable<RentalDetailResponse>> GetRentalDetailsByRentalIdAsync(int rentalId);
     Task<IEnumerable<RentalDetailResponse>> GetRentalDetailsByRoboTypeIdAsync(int roboTypeId);
-    Task<RentalDetailResponse> CreateRentalDetailAsync(CreateRentalDetailRequest request);
-    Task<RentalDetailResponse?> UpdateRentalDetailAsync(UpdateRentalDetailRequest request);
+    Task<List<RentalDetailResponse>> CreateRentalDetailAsync(List<CreateRentalDetailRequest> request);
+    Task<List<RentalDetailResponse>?> UpdateRentalDetailAsync(int rentalId ,List<UpdateRentalDetailRequest> request);
     Task<bool> DeleteRentalDetailAsync(int id);
 }
