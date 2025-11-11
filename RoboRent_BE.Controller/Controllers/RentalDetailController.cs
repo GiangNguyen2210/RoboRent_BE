@@ -74,6 +74,7 @@ public class RentalDetailController : ControllerBase
         try
         {
             var result = await _rentalDetailService.GetRentalDetailsByRentalIdAsync(rentalId);
+            
             return Ok(new
             {
                 success = true,
@@ -113,7 +114,7 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateRentalDetail([FromBody] CreateRentalDetailRequest request)
+    public async Task<IActionResult> CreateRentalDetail([FromBody] List<CreateRentalDetailRequest> request)
     {
         if (!ModelState.IsValid)
         {
@@ -130,10 +131,10 @@ public class RentalDetailController : ControllerBase
         try
         {
             var result = await _rentalDetailService.CreateRentalDetailAsync(request);
-            return CreatedAtAction(nameof(GetRentalDetailById), new { id = result.Id }, new
+            return Ok(new
             {
                 success = true,
-                data = result
+                data = result  // return list of created details
             });
         }
         catch (Exception e)
@@ -147,17 +148,8 @@ public class RentalDetailController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRentalDetail(int id, [FromBody] UpdateRentalDetailRequest request)
+    public async Task<IActionResult> UpdateRentalDetail(int id, [FromBody] List<UpdateRentalDetailRequest> requests)
     {
-        if (id != request.Id)
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = "ID mismatch"
-            });
-        }
-
         if (!ModelState.IsValid)
         {
             return BadRequest(new
@@ -172,7 +164,7 @@ public class RentalDetailController : ControllerBase
 
         try
         {
-            var result = await _rentalDetailService.UpdateRentalDetailAsync(request);
+            var result = await _rentalDetailService.UpdateRentalDetailAsync(id, requests);
             if (result == null)
             {
                 return NotFound(new

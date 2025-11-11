@@ -95,4 +95,35 @@ public class RentalController : ControllerBase
         
         return Ok(result);
     }
+
+    [HttpGet("customer/{customerId}")]
+    public async Task<IActionResult> GetRentalByCustomerId(int customerId, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 5)
+    {
+        try
+        {
+            var result = await _rentalService.GetRentalByCustomerIdAsync(customerId, page, pageSize, search);
+            return Ok(result);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
+    }
+
+    [HttpPut("customer/send/{rentalId}")]
+    public async Task<IActionResult> SendRequest(int rentalId)
+    {
+        try
+        {
+            var result = await _rentalService.CustomerSendRentalAsync(rentalId);
+            
+            if (result == null) return NotFound("Could not found rental");
+            
+            return Ok(result);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
+    }
 }

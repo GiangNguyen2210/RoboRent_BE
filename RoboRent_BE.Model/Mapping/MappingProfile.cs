@@ -1,13 +1,16 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using RoboRent_BE.Model.DTOs.ActivityType;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Model.DTOS.DraftClauses;
+using RoboRent_BE.Model.DTOs.EventActivity;
 using RoboRent_BE.Model.DTOs.EventSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOs.RoboTypeOfActivity;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Model.Entities;
 
@@ -19,6 +22,13 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
+            .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));
+        
+        CreateMap<EventActivity, EventActivityResponse>();
+
+        CreateMap<ActivityType, ActivityTypeResponse>();
+        
         CreateMap<CreateOrderRequest, Rental>()
             .ForMember(dest => dest.EventName, opt => opt.MapFrom(src => src.EventName))
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
@@ -27,15 +37,9 @@ public class MappingProfile : Profile
 
         CreateMap<UpdateOrderRequest, Rental>();
         
-        CreateMap<Rental, OrderResponse>();
-
-        CreateMap<CreateEventScheduleRequest, EventSchedule>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.EventDate));
-
-        CreateMap<UpdateScheduleEventRequest, EventSchedule>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.EventDate));
-
-        CreateMap<EventSchedule, EventScheduleResponse>();
+        CreateMap<Rental, OrderResponse>()
+            .ForMember(dest => dest.EventActivityName, opt => opt.MapFrom(src => src.EventActivity.Name))
+            .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src => src.ActivityType.Name));
 
         CreateMap<ModifyIdentityUser, UpdateUserResponse>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
@@ -51,10 +55,7 @@ public class MappingProfile : Profile
         // Rental Detail mappings
         CreateMap<CreateRentalDetailRequest, RentalDetail>();
         CreateMap<UpdateRentalDetailRequest, RentalDetail>();
-        CreateMap<RentalDetail, RentalDetailResponse>()
-            .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType != null ? src.RoboType.TypeName : null))
-            .ForMember(dest => dest.RentalEventName, opt => opt.MapFrom(src => src.Rental != null ? src.Rental.EventName : null));
-
+        CreateMap<RentalDetail, RentalDetailResponse>();
         // Rental Contract mappings
         CreateMap<CreateRentalContractRequest, RentalContract>();
         CreateMap<UpdateRentalContractRequest, RentalContract>();

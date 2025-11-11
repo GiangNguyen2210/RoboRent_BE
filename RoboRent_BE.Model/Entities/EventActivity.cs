@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RoboRent_BE.Model.Entities;
 
-public partial class RentalPackage
+public partial class EventActivity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -14,6 +14,4 @@ public partial class RentalPackage
     public string? Description { get; set; } = string.Empty;
     
     public bool? IsDeleted { get; set; } =  false;
-    
-    public string? Status { get; set; } = string.Empty;
 }

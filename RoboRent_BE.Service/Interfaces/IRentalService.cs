@@ -1,3 +1,4 @@
+using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.Entities;
 
@@ -11,4 +12,6 @@ public interface IRentalService
     public Task<OrderResponse?> GetRentalAsync(int id);
     public Task<List<OrderResponse>?> GetAllRentalsAsync();
     public Task<dynamic> DeleteRentalAsync(int id);
+    public Task<PageListResponse<OrderResponse>> GetRentalByCustomerIdAsync(int customerId, int page, int pageSize, string? search);
+    public Task<OrderResponse?> CustomerSendRentalAsync(int rentalId);
 }
