@@ -12,6 +12,13 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
         _dbContext = context;
     }
 
+    public async Task<TemplateClauses?> GetByIdAsync(int id)
+    {
+        return await _dbContext.TemplateClauses
+            .Include(tc => tc.ContractTemplate)
+            .FirstOrDefaultAsync(tc => tc.Id == id);
+    }
+
     public async Task<IEnumerable<TemplateClauses>> GetTemplateClausesByContractTemplateIdAsync(int contractTemplateId)
     {
         return await _dbContext.TemplateClauses
@@ -39,6 +46,23 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
     public async Task<IEnumerable<TemplateClauses>> GetAllWithIncludesAsync()
     {
         return await _dbContext.TemplateClauses
+            .Include(tc => tc.ContractTemplate)
+            .ToListAsync();
+    }
+// check template clause ko mandatory va chua co trong draft
+    public async Task<IEnumerable<TemplateClauses>> GetAvailableTemplateClausesForDraftAsync(int contractTemplateId, int contractDraftId)
+    {
+        // Get all template clause IDs that are already in the draft
+        var existingTemplateClauseIds = await _dbContext.DraftClauses
+            .Where(dc => dc.ContractDraftsId == contractDraftId)
+            .Select(dc => dc.TemplateClausesId)
+            .ToListAsync();
+
+        // Get non-mandatory template clauses from the contract template that are NOT already in the draft
+        return await _dbContext.TemplateClauses
+            .Where(tc => tc.ContractTemplatesId == contractTemplateId
+                      && tc.IsMandatory == false
+                      && !existingTemplateClauseIds.Contains(tc.Id))
             .Include(tc => tc.ContractTemplate)
             .ToListAsync();
     }

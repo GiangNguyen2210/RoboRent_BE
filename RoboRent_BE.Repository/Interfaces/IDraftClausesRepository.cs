@@ -6,5 +6,6 @@ public interface IDraftClausesRepository : IGenericRepository<DraftClauses>
 {
     Task<IEnumerable<DraftClauses>> GetDraftClausesByContractDraftIdAsync(int contractDraftId);
     Task<IEnumerable<DraftClauses>> GetDraftClausesByTemplateClauseIdAsync(int templateClauseId);
+    Task<IEnumerable<DraftClauses>> GetDraftClausesByIsModifiedAsync(int contractDraftId, bool isModified);
     Task<IEnumerable<DraftClauses>> GetAllWithIncludesAsync();
 }

@@ -136,4 +136,12 @@ public class RentalService : IRentalService
         
         return _mapper.Map<OrderResponse>(result);
     }
+
+    public async Task<List<OrderResponse>?> GetRentalsByCustomerAsync(int accountId)
+    {
+        var rentals = await _rentalRepository.GetDbContext().Rentals
+            .Where(r => r.AccountId == accountId && r.IsDeleted == false)
+            .ToListAsync();
+        return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);
+    }
 }

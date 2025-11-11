@@ -9,11 +9,19 @@ namespace RoboRent_BE.Service.Services;
 public class ContractDraftsService : IContractDraftsService
 {
     private readonly IContractDraftsRepository _contractDraftsRepository;
+    private readonly ITemplateClausesRepository _templateClausesRepository;
+    private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly IMapper _mapper;
 
-    public ContractDraftsService(IContractDraftsRepository contractDraftsRepository, IMapper mapper)
+    public ContractDraftsService(
+        IContractDraftsRepository contractDraftsRepository, 
+        ITemplateClausesRepository templateClausesRepository,
+        IDraftClausesRepository draftClausesRepository,
+        IMapper mapper)
     {
         _contractDraftsRepository = contractDraftsRepository;
+        _templateClausesRepository = templateClausesRepository;
+        _draftClausesRepository = draftClausesRepository;
         _mapper = mapper;
     }
 
@@ -58,8 +66,34 @@ public class ContractDraftsService : IContractDraftsService
 
     public async Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request)
     {
+        // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
         var createdContractDraft = await _contractDraftsRepository.AddAsync(contractDraft);
+        
+        // If contract draft is created from a template, automatically copy all mandatory template clauses
+        if (request.ContractTemplatesId.HasValue && request.ContractTemplatesId.Value > 0)
+        {
+            // Get all mandatory template clauses from the contract template
+            var mandatoryTemplateClauses = await _templateClausesRepository
+                .GetTemplateClausesByContractTemplateIdAsync(request.ContractTemplatesId.Value);
+            
+            var mandatoryClauses = mandatoryTemplateClauses.Where(tc => tc.IsMandatory == true);
+            
+            // Create draft clauses for each mandatory template clause
+            foreach (var templateClause in mandatoryClauses)
+            {
+                var draftClause = new DraftClauses
+                {
+                    Title = templateClause.Title,
+                    Body = templateClause.Body,
+                    IsModified = false,  // Fresh copy from template, not modified yet
+                    ContractDraftsId = createdContractDraft.Id,
+                    TemplateClausesId = templateClause.Id
+                };
+                
+                await _draftClausesRepository.AddAsync(draftClause);
+            }
+        }
         
         return _mapper.Map<ContractDraftsResponse>(createdContractDraft);
     }

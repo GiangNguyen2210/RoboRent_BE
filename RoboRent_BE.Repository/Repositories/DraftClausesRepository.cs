@@ -30,6 +30,15 @@ public class DraftClausesRepository : GenericRepository<DraftClauses>, IDraftCla
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<DraftClauses>> GetDraftClausesByIsModifiedAsync(int contractDraftId, bool isModified)
+    {
+        return await _dbContext.DraftClauses
+            .Where(dc => dc.ContractDraftsId == contractDraftId && dc.IsModified == isModified)
+            .Include(dc => dc.ContractDraft)
+            .Include(dc => dc.TemplateClause)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<DraftClauses>> GetAllWithIncludesAsync()
     {
         return await _dbContext.DraftClauses

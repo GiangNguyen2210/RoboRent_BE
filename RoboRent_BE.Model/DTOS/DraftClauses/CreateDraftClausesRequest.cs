@@ -8,7 +8,7 @@ public class CreateDraftClausesRequest
 
     public string? Body { get; set; } = string.Empty;
 
-    public bool? IsModified { get; set; } = false;
+    // NOTE: IsModified is automatically set to false on creation and should not be set by users
 
     [Required]
     public int? ContractDraftsId { get; set; }

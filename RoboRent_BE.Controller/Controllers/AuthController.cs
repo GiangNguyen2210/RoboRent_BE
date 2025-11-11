@@ -17,6 +17,7 @@ namespace RoboRent_BE.Controller.Controllers
         private readonly UserManager<ModifyIdentityUser> _userManager;
         private readonly SignInManager<ModifyIdentityUser> _signInManager;
         private readonly IAccountService _accountService;
+        private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
 
@@ -24,20 +25,26 @@ namespace RoboRent_BE.Controller.Controllers
             UserManager<ModifyIdentityUser> userManager,
             SignInManager<ModifyIdentityUser> signInManager,
             IAccountService accountService,
+            IAuthService authService,
             IEmailService emailService,
             IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _accountService = accountService;
+            _authService = authService;
             _emailService = emailService;
             _configuration = configuration;
         }
 
         [HttpGet("google-login")]
         [AllowAnonymous]
-        public IActionResult GoogleLogin([FromQuery] string? returnUrl = null)
+        public async Task<IActionResult> GoogleLogin([FromQuery] string? returnUrl = null)
         {
+            // Clear any stale authentication cookies before starting new login
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
             var redirectUrl = Url.ActionLink("GoogleCallback", "Auth", new { returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
             return Challenge(properties, "Google");
@@ -47,76 +54,63 @@ namespace RoboRent_BE.Controller.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback([FromQuery] string? returnUrl = null)
         {
-            var info = await _signInManager.GetExternalLoginInfoAsync();
-            if (info == null)
+            try
             {
-                return BadRequest("External login info not found.");
-            }
-
-            // Try to sign in the user with this external login provider
-            var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: true);
-            ModifyIdentityUser user;
-            if (!signInResult.Succeeded)
-            {
-                // Create the user if not exists
-                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                var name = info.Principal.FindFirstValue(ClaimTypes.Name);
-                if (string.IsNullOrEmpty(email))
+                // Check for error parameters (in case of remote failure)
+                if (Request.Query.ContainsKey("error"))
                 {
-                    return BadRequest("Email is required from Google.");
+                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return BadRequest(new { error = Request.Query["error"].ToString(), message = "Authentication failed. Please try logging in again." });
                 }
 
-                user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
-                {
-                    user = new ModifyIdentityUser
-                    {
-                        UserName = email,
-                        Email = email,
-                        EmailConfirmed = false,
-                        Status = "PendingVerification"
-                    };
-                    var createResult = await _userManager.CreateAsync(user);
-                    if (!createResult.Succeeded)
-                    {
-                        return BadRequest(createResult.Errors);
-                    }
+                var result = await _authService.HandleGoogleCallbackAsync(returnUrl, (userId, token) =>
+                    Url.ActionLink("Verify", "Auth", new { userId, token }));
 
-                    // Link external login
-                    var addLogin = await _userManager.AddLoginAsync(user, info);
-                    if (!addLogin.Succeeded)
-                    {
-                        return BadRequest(addLogin.Errors);
-                    }
-                }
-                else
+                if (!string.IsNullOrEmpty(result.Error))
                 {
-                    // Ensure external login linked
-                    var addLogin = await _userManager.AddLoginAsync(user, info);
-                    // ignore if already linked
+                    // Clear cookies on error
+                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return BadRequest(new { error = result.Error, message = "Please try logging in again by visiting the google-login endpoint." });
                 }
 
-                await _signInManager.SignInAsync(user, isPersistent: true);
+                if (!string.IsNullOrEmpty(result.RedirectUrl))
+                {
+                    return Redirect(result.RedirectUrl);
+                }
+
+                return Ok(new { token = result.Token });
             }
-            else
+            catch (Exception ex)
             {
-                user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                // Clear all authentication cookies on any exception
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                
+                // Log the exception if you have a logger
+                return BadRequest(new 
+                { 
+                    error = "AuthenticationFailureException",
+                    message = "An error occurred during authentication. Please try logging in again.",
+                    details = ex.Message
+                });
             }
+        }
 
-            // Create Account with PendingVerification if not exists
-            var fullName = info.Principal.FindFirstValue(ClaimTypes.Name);
-            var account = await _accountService.CreatePendingAccountAsync(user.Id, fullName);
-
-            // If first time (PendingVerification), send verification email
-            if (account.Status == "PendingVerification")
-            {
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var verifyUrl = Url.ActionLink("Verify", "Auth", new { userId = user.Id, token });
-                var html = $"<p>Hi {fullName},</p><p>Please verify your account:</p><p><a href=\"{verifyUrl}\">Verify Account</a></p>";
-                await _emailService.SendEmailAsync(user.Email!, "Verify your RoboRent account", html);
-            }
-
-            return Redirect(returnUrl ?? "/");
+        [HttpGet("auth-error")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AuthError([FromQuery] string? error = null)
+        {
+            // Ensure all authentication cookies are cleared
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
+            return BadRequest(new 
+            { 
+                error = error ?? "Authentication failed",
+                message = "There was an error during authentication. Your cookies have been cleared. Please try logging in again."
+            });
         }
 
         [HttpGet("verify")]
@@ -142,6 +136,60 @@ namespace RoboRent_BE.Controller.Controllers
             return Ok(new { message = "Account verified and activated." });
         }
 
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User not found in token.");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("User not found.");
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var role = userRoles.FirstOrDefault() ?? "Customer";
+            var accountId = User.FindFirst("accountId")?.Value;
+            var accountStatus = User.FindFirst("accountStatus")?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var firstName = User.FindFirst(ClaimTypes.GivenName)?.Value;
+            var lastName = User.FindFirst(ClaimTypes.Surname)?.Value;
+            var picture = User.FindFirst("picture")?.Value;
+
+            return Ok(new
+            {
+                userId = user.Id,
+                email,
+                firstName,
+                lastName,
+                picture,
+                accountId,
+                accountStatus,
+                emailConfirmed = user.EmailConfirmed,
+                role
+            });
+        }
+
+
+        [HttpPost("refresh-token")]
+        [Authorize]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found in token.");
+            }
+
+            var token = await _authService.GenerateJwtForUserAsync(userId);
+            if (token == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(new { token });
+        }
 
         [HttpPatch("update-phone-number")]
         [Authorize]

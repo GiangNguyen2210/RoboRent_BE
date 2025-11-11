@@ -112,6 +112,28 @@ public class DraftClausesController : ControllerBase
         }
     }
 
+    [HttpGet("contract-draft/{contractDraftId}/modified/{isModified}")]
+    public async Task<IActionResult> GetDraftClausesByIsModified(int contractDraftId, bool isModified)
+    {
+        try
+        {
+            var result = await _draftClausesService.GetDraftClausesByIsModifiedAsync(contractDraftId, isModified);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateDraftClauses([FromBody] CreateDraftClausesRequest request)
     {
@@ -134,6 +156,64 @@ public class DraftClausesController : ControllerBase
             {
                 success = true,
                 data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPost("custom")]
+    public async Task<IActionResult> CreateCustomDraftClause([FromBody] CreateCustomDraftClauseRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        try
+        {
+            var result = await _draftClausesService.CreateCustomDraftClauseAsync(request);
+            return CreatedAtAction(nameof(GetDraftClausesById), new { id = result.DraftClause.Id }, new
+            {
+                success = true,
+                data = result,
+                message = result.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPost("add-template-clause")]
+    public async Task<IActionResult> AddTemplateClauseToDraft([FromQuery] int templateClauseId, [FromQuery] int contractDraftId)
+    {
+        try
+        {
+            var result = await _draftClausesService.AddTemplateClauseToDraftAsync(templateClauseId, contractDraftId);
+            return CreatedAtAction(nameof(GetDraftClausesById), new { id = result.Id }, new
+            {
+                success = true,
+                data = result,
+                message = "Template clause added to draft successfully."
             });
         }
         catch (Exception e)

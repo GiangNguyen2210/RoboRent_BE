@@ -19,4 +19,8 @@ public class DraftClausesResponse
     // Navigation properties
     public string? ContractDraftTitle { get; set; }
     public string? TemplateClauseTitle { get; set; }
+    
+    // Template clause properties for validation
+    public bool? TemplateClauseIsMandatory { get; set; }
+    public bool? TemplateClauseIsEditable { get; set; }
 }

@@ -50,6 +50,12 @@ public class TemplateClausesService : ITemplateClausesService
         return _mapper.Map<IEnumerable<TemplateClausesResponse>>(templateClauses);
     }
 
+    public async Task<IEnumerable<TemplateClausesResponse>> GetAvailableTemplateClausesForDraftAsync(int contractTemplateId, int contractDraftId)
+    {
+        var templateClauses = await _templateClausesRepository.GetAvailableTemplateClausesForDraftAsync(contractTemplateId, contractDraftId);
+        return _mapper.Map<IEnumerable<TemplateClausesResponse>>(templateClauses);
+    }
+
     public async Task<TemplateClausesResponse> CreateTemplateClausesAsync(CreateTemplateClausesRequest request)
     {
         var templateClause = _mapper.Map<TemplateClauses>(request);
