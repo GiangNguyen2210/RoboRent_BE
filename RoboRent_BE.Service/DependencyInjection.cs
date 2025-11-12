@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddTransient<IActivityTypeService, ActivityTypeService>();
         services.AddTransient<IEventActivityService, EventActivityService>();
         services.AddTransient<IRobotTypeOfActivityService, RobotTypeOfActivityService>();
+        services.AddTransient<IActivityTypeGroupService, ActivityTypeGroupService>();
         return services;
     }
 }

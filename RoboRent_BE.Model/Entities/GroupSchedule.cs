@@ -13,6 +13,8 @@ public partial class GroupSchedule
 
     public string? EventLocation { get; set; } = string.Empty;
 
+    public string? EventCity { get; set; } =  string.Empty;
+
     public TimeOnly? DeliveryTime { get; set; }
 
     public TimeOnly? StartTime { get; set; }

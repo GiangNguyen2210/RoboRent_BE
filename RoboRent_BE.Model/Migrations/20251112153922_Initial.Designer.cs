@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251108065156_Initial")]
+    [Migration("20251112153922_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1514,6 +1514,9 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<TimeOnly?>("EndTime")
                         .HasColumnType("time without time zone");
+
+                    b.Property<string>("EventCity")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("EventDate")
                         .HasColumnType("timestamp with time zone");
@@ -5239,9 +5242,9 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.EventActivity", "EventActivity")
-                        .WithMany()
+                        .WithMany("ActivityTypes")
                         .HasForeignKey("EventActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EventActivity");
@@ -5250,7 +5253,7 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityType", "ActivityType")
-                        .WithMany()
+                        .WithMany("ActivityTypeGroups")
                         .HasForeignKey("ActivityTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -5439,7 +5442,7 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.GroupSchedule", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityTypeGroup", "ActivityTypeGroup")
-                        .WithMany()
+                        .WithMany("GroupSchedules")
                         .HasForeignKey("ActivityTypeGroupId");
 
                     b.Navigation("ActivityTypeGroup");
@@ -5614,9 +5617,24 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Robot");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
+                {
+                    b.Navigation("ActivityTypeGroups");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>
+                {
+                    b.Navigation("GroupSchedules");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.EventActivity", b =>
+                {
+                    b.Navigation("ActivityTypes");
                 });
 #pragma warning restore 612, 618
         }

@@ -234,7 +234,7 @@ namespace RoboRent_BE.Model.Migrations
                         column: x => x.EventActivityId,
                         principalTable: "EventActivities",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -495,6 +495,7 @@ namespace RoboRent_BE.Model.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     EventDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EventLocation = table.Column<string>(type: "text", nullable: true),
+                    EventCity = table.Column<string>(type: "text", nullable: true),
                     DeliveryTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
                     StartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
                     EndTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),

@@ -135,4 +135,74 @@ public class RentalController : ControllerBase
             return StatusCode(500, e.Message);
         }
     }
+
+    [HttpGet("staff/get/pending/rentals")]
+    public async Task<IActionResult> GetAllPendingRentals()
+    {
+        try
+        {
+            var res = await _rentalService.GetAllPendingRentalsAsync();
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPut("staff/receive/{rentalId}/{staffId}")]
+    public async Task<IActionResult> ReceiveRequest(int rentalId, int staffId)
+    {
+        try
+        {
+            var res = await _rentalService.ReceiveRequestAsync(rentalId, staffId);
+            
+            if (res == null) return BadRequest("Could not find rental");
+
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpGet("staff/get/received/rentals/{staffId}")]
+    public async Task<IActionResult> GetReceivedRequest(int staffId)
+    {
+        try
+        {
+            var res = await _rentalService.GetAllReceivedRentalsByStaffId(staffId);
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

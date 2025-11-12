@@ -144,4 +144,37 @@ public class RentalService : IRentalService
             .ToListAsync();
         return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);
     }
+
+    public async Task<List<OrderResponse>> GetAllPendingRentalsAsync()
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Status == "Pending";
+        var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
+        
+        return rentals.ToList().Select(r => _mapper.Map<OrderResponse>(r)).ToList();
+    }
+
+    public async Task<OrderResponse?> ReceiveRequestAsync(int rentalId, int staffId)
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Id == rentalId;
+
+        var rental = await _rentalRepository.GetAsync(filter);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Received";
+        rental.StaffId = staffId;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Status == "Received" && r.StaffId == staffId;
+        
+        var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
+        
+        return rentals.ToList().Select(r => _mapper.Map<OrderResponse>(r)).ToList();
+    }
 }

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOs.ActivityType;
+using RoboRent_BE.Model.DTOs.ActivityTypeGroup;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
@@ -22,6 +23,16 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
+            .ForMember(dest => dest.ActivityTypeName,
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null))
+            .ForMember(dest => dest.EventActivityId,
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.EventActivityId : (int?)null))
+            .ForMember(dest => dest.EventActivityName,
+                opt => opt.MapFrom(src => src.ActivityType != null && src.ActivityType.EventActivity != null
+                    ? src.ActivityType.EventActivity.Name
+                    : null));
+
         CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
             .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));
         
