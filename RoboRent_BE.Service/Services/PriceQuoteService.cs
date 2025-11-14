@@ -256,7 +256,7 @@ public class PriceQuoteService : IPriceQuoteService
                 .OrderBy(q => q.CreatedAt)
                 .Select(q => q.Id)
                 .ToList();
-        
+    
             var quoteNumber = allRentalQuotes.IndexOf(pq.Id) + 1;
             var total = (pq.Delivery ?? 0) + (pq.Deposit ?? 0) + (pq.Complete ?? 0) + (pq.Service ?? 0);
 
@@ -266,12 +266,8 @@ public class PriceQuoteService : IPriceQuoteService
                 RentalId = pq.RentalId,
                 QuoteNumber = quoteNumber,
                 CustomerName = pq.Rental?.Account?.FullName ?? "Unknown",
-                PackageName = pq.Rental?.RentalPackage?.Name ?? "Unknown",
-            
-                // ✅ ĐỒNG BỘ với ChatService
-                EventDate = pq.Rental?.EventSchedules?.OrderBy(es => es.Date)
-                    .FirstOrDefault()?.Date.ToString("MMM dd, yyyy") ?? "TBD",
-            
+                PackageName = pq.Rental?.ActivityType?.Name ?? "Unknown",        // ✅ FIX
+                EventDate = pq.Rental?.EventDate?.ToString("MMM dd, yyyy") ?? "TBD", // ✅ FIX
                 Delivery = pq.Delivery,
                 Deposit = pq.Deposit,
                 Complete = pq.Complete,

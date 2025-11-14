@@ -34,9 +34,9 @@ public class PriceQuoteRepository : GenericRepository<PriceQuote>, IPriceQuoteRe
             .Include(pq => pq.Rental)
             .ThenInclude(r => r.Account)
             .Include(pq => pq.Rental)
-            .ThenInclude(r => r.RentalPackage)
+            .ThenInclude(r => r.ActivityType)           // ✅ FIX
             .Include(pq => pq.Rental)
-            .ThenInclude(r => r.EventSchedules) // ✅ Giống ChatService
+            .ThenInclude(r => r.EventActivity)          // ✅ FIX
             .Where(pq => pq.IsDeleted != true);
 
         if (!string.IsNullOrEmpty(status))

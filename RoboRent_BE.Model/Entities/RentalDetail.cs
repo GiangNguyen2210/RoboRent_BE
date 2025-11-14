@@ -8,16 +8,6 @@ public class RentalDetail
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-
-    public int? Amount { get; set; } = 0;
-
-    public string? Script { get; set; } = string.Empty;
-    
-    public string? Branding { get; set; } = string.Empty;
-
-    public string? Dance { get; set; } = string.Empty;
-
-    public string? Music { get; set; } = string.Empty;
     
     public bool? IsDeleted { get; set; } = false;
     
@@ -26,6 +16,16 @@ public class RentalDetail
     [Required] public int? RentalId { get; set; }
     
     [Required] public int? RoboTypeId { get; set; }
+    
+    public int? RobotAbilityId { get; set; }
+
+    public string? Script { get; set; } =  string.Empty;
+
+    public string? Branding { get; set; } = string.Empty;
+
+    public string? Scenario { get; set; } =  string.Empty;
+
+    [ForeignKey("RobotAbilityId")] public virtual RobotAbility RobotAbility { get; set; } = null!;
     
     [ForeignKey("RoboTypeId")]  public virtual RoboType RoboType { get; set; } = null!;
     

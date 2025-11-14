@@ -9,7 +9,7 @@ public partial class Robot
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
     
-    public string? RobotId { get; set; } = string.Empty;
+    public int? RoboTypeId { get; set; }
     
     public string? RobotName { get; set; } = string.Empty;
     
@@ -24,4 +24,6 @@ public partial class Robot
     public bool? IsDeleted { get; set; } =  false;
     
     public string? Status { get; set; } = string.Empty;
+    
+    [ForeignKey("RoboTypeId")]  public virtual RoboType RoboType { get; set; } = null!;
 }

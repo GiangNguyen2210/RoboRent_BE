@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
@@ -44,24 +45,49 @@ public class RentalDetailService : IRentalDetailService
         return _mapper.Map<IEnumerable<RentalDetailResponse>>(rentalDetails);
     }
 
-    public async Task<RentalDetailResponse> CreateRentalDetailAsync(CreateRentalDetailRequest request)
+    public async Task<List<RentalDetailResponse>> CreateRentalDetailAsync(List<CreateRentalDetailRequest> requests)
     {
-        var rentalDetail = _mapper.Map<RentalDetail>(request);
-        var createdRentalDetail = await _rentalDetailRepository.AddAsync(rentalDetail);
-        
-        return _mapper.Map<RentalDetailResponse>(createdRentalDetail);
+        List<RentalDetailResponse> rentalDetailResponses = new List<RentalDetailResponse>();
+        foreach (var request in requests)
+        {
+            var rental = await _rentalDetailRepository.GetDbContext().Rentals.AnyAsync(r => r.Id == request.RentalId);
+            var roboType = await _rentalDetailRepository.GetDbContext().RoboTypes.AnyAsync(r => r.Id == request.RoboTypeId);
+
+            if (!rental || !roboType) throw new ArgumentException("Invalid foreign key reference.");
+
+            var rentalDetail = _mapper.Map<RentalDetail>(request);
+
+            await _rentalDetailRepository.AddAsync(rentalDetail);
+            
+            rentalDetailResponses.Add(_mapper.Map<RentalDetailResponse>(rentalDetail));
+        }
+
+        return rentalDetailResponses;
     }
 
-    public async Task<RentalDetailResponse?> UpdateRentalDetailAsync(UpdateRentalDetailRequest request)
+    public async Task<List<RentalDetailResponse>?> UpdateRentalDetailAsync(int rentalId,List<UpdateRentalDetailRequest> requests)
     {
-        var existingRentalDetail = await _rentalDetailRepository.GetAsync(rd => rd.Id == request.Id, "RoboType,Rental");
-        if (existingRentalDetail == null || existingRentalDetail.IsDeleted == true)
-            return null;
+        var rentaldetails = await _rentalDetailRepository.GetDbContext().RentalDetails.AnyAsync(r => r.RentalId == rentalId);
 
-        _mapper.Map(request, existingRentalDetail);
-        var updatedRentalDetail = await _rentalDetailRepository.UpdateAsync(existingRentalDetail);
+        if (!rentaldetails) return null;
         
-        return _mapper.Map<RentalDetailResponse>(updatedRentalDetail);
+        List<RentalDetailResponse> rentalDetailResponses = new List<RentalDetailResponse>();
+        foreach (var request in requests)
+        {
+            var rental = await _rentalDetailRepository.GetDbContext().Rentals.AnyAsync(r => r.Id == request.RentalId);
+            var roboType = await _rentalDetailRepository.GetDbContext().RoboTypes.AnyAsync(r => r.Id == request.RoboTypeId);
+
+            if (!rental || !roboType) throw new ArgumentException("Invalid foreign key reference.");
+
+            var rentalDetail = _rentalDetailRepository.GetDbContext().RentalDetails.FirstOrDefault(r => r.Id == request.Id);
+            rentalDetail = _mapper.Map(request, rentalDetail);
+
+            await _rentalDetailRepository.UpdateAsync(rentalDetail);
+            
+            rentalDetailResponses.Add(_mapper.Map<RentalDetailResponse>(rentalDetail));
+        }
+        
+        return rentalDetailResponses;
     }
 
     public async Task<bool> DeleteRentalDetailAsync(int id)

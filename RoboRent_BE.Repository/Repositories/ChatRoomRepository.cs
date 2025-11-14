@@ -37,15 +37,14 @@ public class ChatRoomRepository : GenericRepository<ChatRoom>, IChatRoomReposito
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 50;
 
-        // Query chat rooms của staff này
         var query = _dbContext.ChatRooms
             .Include(cr => cr.Customer)
             .Include(cr => cr.Rental)
-            .ThenInclude(r => r.RentalPackage)           // ✅ ADD
+                .ThenInclude(r => r.ActivityType)           // ✅ FIX
             .Include(cr => cr.Rental)
-            .ThenInclude(r => r.EventSchedules)          // ✅ ADD
+                .ThenInclude(r => r.EventActivity)          // ✅ FIX
             .Include(cr => cr.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
-            .ThenInclude(m => m.Sender)                  // ✅ ADD
+                .ThenInclude(m => m.Sender)
             .Where(cr => cr.StaffId == staffId)
             .OrderByDescending(cr => cr.UpdatedAt ?? cr.CreatedAt);
 
@@ -75,11 +74,11 @@ public class ChatRoomRepository : GenericRepository<ChatRoom>, IChatRoomReposito
         var query = _dbContext.ChatRooms
             .Include(cr => cr.Staff)
             .Include(cr => cr.Rental)
-            .ThenInclude(r => r.RentalPackage)           // ✅ ADD
+                .ThenInclude(r => r.ActivityType)           // ✅ FIX
             .Include(cr => cr.Rental)
-            .ThenInclude(r => r.EventSchedules)          // ✅ ADD
+                .ThenInclude(r => r.EventActivity)          // ✅ FIX
             .Include(cr => cr.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
-            .ThenInclude(m => m.Sender)                  // ✅ ADD
+                .ThenInclude(m => m.Sender)
             .Where(cr => cr.CustomerId == customerId)
             .OrderByDescending(cr => cr.UpdatedAt ?? cr.CreatedAt);
 

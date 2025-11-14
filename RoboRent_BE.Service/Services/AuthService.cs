@@ -33,7 +33,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResultDto> HandleGoogleCallbackAsync(
     string? returnUrl,
-    Func<string, string, string?> buildVerifyUrl)
+    Func<string, string?, string?> buildVerifyUrl)
     {
         ExternalLoginInfo? info;
         try
@@ -42,14 +42,12 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            // Clear any stale authentication cookies on exception
             await _signInManager.SignOutAsync();
             return new AuthResultDto { Error = $"Authentication error: {ex.Message}. Please try logging in again." };
         }
 
         if (info == null)
         {
-            // Clear stale cookies when external login info is null
             await _signInManager.SignOutAsync();
             return new AuthResultDto { Error = "External login info not found. The authentication session may have expired. Please try logging in again." };
         }
@@ -61,7 +59,11 @@ public class AuthService : IAuthService
         if (!signInResult.Succeeded)
         {
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-            var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+            var fullName = info.Principal.FindFirstValue(ClaimTypes.Name);
+            var givenName = info.Principal.FindFirstValue(ClaimTypes.GivenName);
+            var familyName = info.Principal.FindFirstValue(ClaimTypes.Surname);
+            var picture = info.Principal.FindFirstValue("picture");
+
             if (string.IsNullOrEmpty(email))
             {
                 return new AuthResultDto { Error = "Email is required from Google." };
@@ -71,7 +73,6 @@ public class AuthService : IAuthService
 
             if (user == null)
             {
-                // Create new user
                 user = new ModifyIdentityUser
                 {
                     UserName = email,
@@ -86,13 +87,11 @@ public class AuthService : IAuthService
                     return new AuthResultDto { Error = string.Join("; ", createResult.Errors.Select(e => e.Description)) };
                 }
 
-                // Assign Customer role to new users
                 var addRoleResult = await _userManager.AddToRoleAsync(user, "Customer");
                 if (!addRoleResult.Succeeded)
                 {
                     return new AuthResultDto { Error = string.Join("; ", addRoleResult.Errors.Select(e => e.Description)) };
                 }
-                
                 var addLoginResult = await _userManager.AddLoginAsync(user, info);
                 if (!addLoginResult.Succeeded)
                 {
@@ -101,19 +100,15 @@ public class AuthService : IAuthService
             }
             else
             {
-                // User exists, check if login already exists
                 var existingLogin = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
                 if (existingLogin == null)
                 {
-                    // Add login only if it doesn't exist
                     var addLoginResult = await _userManager.AddLoginAsync(user, info);
                     if (!addLoginResult.Succeeded)
                     {
                         return new AuthResultDto { Error = string.Join("; ", addLoginResult.Errors.Select(e => e.Description)) };
                     }
                 }
-                
-               
                 var userRoles = await _userManager.GetRolesAsync(user);
                 if (userRoles == null || userRoles.Count == 0)
                 {
@@ -132,18 +127,22 @@ public class AuthService : IAuthService
             user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey)!;
         }
 
-        var fullName = info.Principal.FindFirstValue(ClaimTypes.Name);
-        var account = await _accountService.CreatePendingAccountAsync(user.Id, fullName);
+        var fullNameFinal = info.Principal.FindFirstValue(ClaimTypes.Name);
+        var givenNameFinal = info.Principal.FindFirstValue(ClaimTypes.GivenName);
+        var familyNameFinal = info.Principal.FindFirstValue(ClaimTypes.Surname);
+        var pictureFinal = info.Principal.FindFirstValue("picture");
+
+        var account = await _accountService.CreatePendingAccountAsync(user.Id, fullNameFinal);
 
         if (account.Status == "PendingVerification")
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var verifyUrl = buildVerifyUrl(user.Id, token);
-            var html = $"<p>Hi {fullName},</p><p>Please verify your account:</p><p><a href=\"{verifyUrl}\">Verify Account</a></p>";
+            var html = $"<p>Hi {fullNameFinal},</p><p>Please verify your account:</p><p><a href=\"{verifyUrl}\">Verify Account</a></p>";
             await _emailService.SendEmailAsync(user.Email!, "Verify your RoboRent account", html);
         }
 
-        var tokenString = await GenerateJwtForUserInternalAsync(user, account, fullName);
+        var tokenString = await GenerateJwtForUserInternalAsync(user, account, fullNameFinal, givenNameFinal, familyNameFinal, pictureFinal);
 
         if (!string.IsNullOrWhiteSpace(returnUrl))
         {
@@ -167,7 +166,13 @@ public class AuthService : IAuthService
         return await GenerateJwtForUserInternalAsync(user, account, user.UserName);
     }
 
-    private async Task<string> GenerateJwtForUserInternalAsync(ModifyIdentityUser user, Account? account, string? name)
+    private async Task<string> GenerateJwtForUserInternalAsync(
+        ModifyIdentityUser user,
+        Account? account,
+        string? name,
+        string? givenName = null,
+        string? familyName = null,
+        string? picture = null)
     {
         var jwtSection = _configuration.GetSection("Jwt");
         var jwtSecret = jwtSection["Secret"];
@@ -185,13 +190,21 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Name, name ?? user.UserName ?? string.Empty)
         };
 
+        if (!string.IsNullOrEmpty(givenName))
+            claims.Add(new Claim(ClaimTypes.GivenName, givenName));
+
+        if (!string.IsNullOrEmpty(familyName))
+            claims.Add(new Claim(ClaimTypes.Surname, familyName));
+
+        if (!string.IsNullOrEmpty(picture))
+            claims.Add(new Claim("picture", picture));
+
         if (account != null)
         {
             claims.Add(new Claim("accountId", account.Id.ToString()));
             claims.Add(new Claim("accountStatus", account.Status ?? string.Empty));
         }
 
-        // Add user roles to JWT claims
         var userRoles = await _userManager.GetRolesAsync(user);
         foreach (var role in userRoles)
         {
@@ -209,5 +222,3 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(jwtToken);
     }
 }
-
-

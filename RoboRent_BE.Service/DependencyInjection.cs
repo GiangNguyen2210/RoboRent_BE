@@ -16,7 +16,6 @@ public static class DependencyInjection
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IEventRoboTypeService, EventRoboTypeService>();
         services.AddTransient<IEventService, EventService>();
-        services.AddTransient<IEventScheduleService, EventScheduleService>();
         services.AddTransient<IModifyIdentityUserService, ModifyIdentityUserService>();
         services.AddTransient<IPriceQuoteService, PriceQuoteService>();
         services.AddTransient<IRentalDetailService, RentalDetailService>();
@@ -31,7 +30,9 @@ public static class DependencyInjection
         services.AddTransient<IContractDraftsService, ContractDraftsService>();
         services.AddTransient<IContractTemplatesService, ContractTemplatesService>();
         services.AddTransient<ITemplateClausesService, TemplateClausesService>();
-
+        services.AddTransient<IActivityTypeService, ActivityTypeService>();
+        services.AddTransient<IEventActivityService, EventActivityService>();
+        services.AddTransient<IRobotTypeOfActivityService, RobotTypeOfActivityService>();
         return services;
     }
 }
