@@ -12,8 +12,8 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251114045440_Initial")]
-    partial class Initial
+    [Migration("20251116095210_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
