@@ -18,4 +18,5 @@ public interface IRentalService
     public Task<List<OrderResponse>> GetAllPendingRentalsAsync();
     public Task<OrderResponse?> ReceiveRequestAsync(int  rentalId, int staffId);
     public Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId);
+    public Task<OrderResponse?> StaffUpdateRentalInfoAsync(int rentalId, StaffUpdateRequest  staffUpdateRequest);
 }

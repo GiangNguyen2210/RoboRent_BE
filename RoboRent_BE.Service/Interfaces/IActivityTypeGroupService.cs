@@ -7,4 +7,5 @@ public interface IActivityTypeGroupService
     public Task<List<ActivityTypeGroupResponse>> GetAllActivityTypeGroupsAsync();
 
     public Task<List<ActivityTypeGroupResponse>> GetAllActivityTypeGroupsSuitableForRentalAsync(int rentalId);
+    public Task<ActivityTypeGroupResponse?> GetActivityTypeGroupByIdAsync(int activityTypeGroupId);
 }

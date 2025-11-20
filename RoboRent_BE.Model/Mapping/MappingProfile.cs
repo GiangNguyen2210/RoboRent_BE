@@ -8,6 +8,7 @@ using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Model.DTOS.DraftClauses;
 using RoboRent_BE.Model.DTOs.EventActivity;
 using RoboRent_BE.Model.DTOs.EventSchedule;
+using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
@@ -23,6 +24,12 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<StaffUpdateRequest, Rental>();
+        
+        CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
+        
+        CreateMap<GroupSchedule, GroupScheduleResponse>();
+        
         CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
             .ForMember(dest => dest.ActivityTypeName,
                 opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null))

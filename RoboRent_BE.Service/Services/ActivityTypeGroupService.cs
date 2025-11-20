@@ -72,4 +72,10 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
         return orderedGroups.Select(g => _mapper.Map<ActivityTypeGroupResponse>(g)).ToList();
     }
 
+    public async Task<ActivityTypeGroupResponse?> GetActivityTypeGroupByIdAsync(int activityTypeGroupId)
+    {
+        var result = await _repository.GetAsync(a => a.Id == activityTypeGroupId);
+        return _mapper.Map<ActivityTypeGroupResponse>(result);
+    }
+    
 }

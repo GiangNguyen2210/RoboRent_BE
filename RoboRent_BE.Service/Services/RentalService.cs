@@ -55,8 +55,14 @@ public class RentalService : IRentalService
 
         if (rental == null) return null;
 
-        _mapper.Map(updateOrderRequest, rental);
+        if (rental.Status == "Received")
+        {
+            _mapper.Map(updateOrderRequest, rental);
+            rental.Status = "Received"; 
+        }
         
+        _mapper.Map(updateOrderRequest, rental);
+
         rental.UpdatedDate = DateTime.UtcNow;
         
         await _rentalRepository.UpdateAsync(rental);
@@ -140,6 +146,8 @@ public class RentalService : IRentalService
     public async Task<List<OrderResponse>?> GetRentalsByCustomerAsync(int accountId)
     {
         var rentals = await _rentalRepository.GetDbContext().Rentals
+            .Include(r => r.EventActivity)
+            .Include(r => r.ActivityType.EventActivity)
             .Where(r => r.AccountId == accountId && r.IsDeleted == false)
             .ToListAsync();
         return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);
@@ -176,5 +184,20 @@ public class RentalService : IRentalService
         var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
         
         return rentals.ToList().Select(r => _mapper.Map<OrderResponse>(r)).ToList();
+    }
+
+    public async Task<OrderResponse?> StaffUpdateRentalInfoAsync(int rentalId, StaffUpdateRequest   staffUpdateRequest)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        _mapper.Map(staffUpdateRequest, rental);
+
+        rental.UpdatedDate = DateTime.UtcNow;
+        rental.Status = "Received";
+        
+        await _rentalRepository.UpdateAsync(rental);
+        return _mapper.Map<OrderResponse>(rental);
     }
 }

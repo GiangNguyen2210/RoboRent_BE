@@ -32,7 +32,7 @@ public class ActivityTypeGroupController : ControllerBase
             return StatusCode(500, new
             {
                 success = false,
-                message = e.InnerException.Message
+                message = e.Message
             });
         }
     }
@@ -54,7 +54,36 @@ public class ActivityTypeGroupController : ControllerBase
             return StatusCode(500, new
             {
                 success = false,
-                message = e.InnerException.Message
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpGet("staff/get/group/detail/{groupId}")]
+    public async Task<IActionResult> GetActivityTypeGroupByIdAsync(int groupId)
+    {
+        try
+        {
+            var res = await _service.GetActivityTypeGroupByIdAsync(groupId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Activity type group not found"
+            });
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
             });
         }
     }
