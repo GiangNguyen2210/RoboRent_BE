@@ -22,7 +22,7 @@ public class ActualDeliveryService : IActualDeliveryService
     {
         // Validate rental exists and status = AcceptedContract
         var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        
+    
         if (rental == null)
         {
             throw new Exception($"Rental {request.RentalId} not found");
@@ -40,11 +40,14 @@ public class ActualDeliveryService : IActualDeliveryService
             throw new Exception($"Delivery already exists for rental {request.RentalId}");
         }
 
-        // Create delivery
+        // ✅ NEW: Auto assign cho Rental.StaffId và dùng PlannedTimes
         var delivery = new ActualDelivery
         {
             RentalId = request.RentalId,
-            Status = "Planning",
+            StaffId = rental.StaffId, // ✅ Auto assign
+            ScheduledDeliveryTime = rental.PlannedDeliveryTime, // ✅ Dùng planned
+            ScheduledPickupTime = rental.PlannedPickupTime, // ✅ Dùng planned
+            Status = "Assigned", // ✅ Đổi luôn thành Assigned (đã có staff)
             CustomerRequestNotes = request.CustomerRequestNotes,
             CreatedAt = DateTime.UtcNow
         };
@@ -63,16 +66,23 @@ public class ActualDeliveryService : IActualDeliveryService
             throw new Exception("Delivery not found");
         }
 
-        if (delivery.Status != "Planning")
+        // ✅ NEW: Cho phép staff edit scheduled times (status vẫn là Assigned)
+        if (delivery.Status != "Assigned")
         {
-            throw new Exception($"Cannot assign delivery with status: {delivery.Status}. Required: Planning");
+            throw new Exception($"Cannot update delivery with status: {delivery.Status}. Required: Assigned");
+        }
+
+        // ✅ NEW: Chỉ staff owner mới edit được
+        if (delivery.StaffId != staffId)
+        {
+            throw new Exception("You can only update your own deliveries");
         }
 
         var rental = await _rentalRepo.GetAsync(r => r.Id == delivery.RentalId);
 
-        // ✅ SỬA: Cả 2 bên đều DateTime?
-        DateTime? scheduledDeliveryTime = request.ScheduledDeliveryTime ?? rental.PlannedDeliveryTime;
-        DateTime? scheduledPickupTime = request.ScheduledPickupTime ?? rental.PlannedPickupTime;
+        // Staff có thể override scheduled times hoặc giữ nguyên
+        var scheduledDeliveryTime = request.ScheduledDeliveryTime ?? delivery.ScheduledDeliveryTime;
+        var scheduledPickupTime = request.ScheduledPickupTime ?? delivery.ScheduledPickupTime;
 
         // Validate times nếu có EventDate
         if (rental.EventDate.HasValue && scheduledDeliveryTime.HasValue)
@@ -91,12 +101,13 @@ public class ActualDeliveryService : IActualDeliveryService
             }
         }
 
-        // Assign
-        delivery.StaffId = staffId;
+        // Update times (staff điều chỉnh lịch)
         delivery.ScheduledDeliveryTime = scheduledDeliveryTime;
         delivery.ScheduledPickupTime = scheduledPickupTime;
-        delivery.Notes = request.Notes;
-        delivery.Status = "Assigned";
+        if (!string.IsNullOrEmpty(request.Notes))
+        {
+            delivery.Notes = request.Notes;
+        }
 
         await _deliveryRepo.UpdateAsync(delivery);
 

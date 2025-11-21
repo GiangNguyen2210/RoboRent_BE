@@ -43,7 +43,8 @@ public class ActualDeliveryController : ControllerBase
     }
 
     /// <summary>
-    /// [STAFF] Assign delivery và set scheduled times
+    /// [STAFF] Điều chỉnh scheduled times của delivery (đã được auto assign)
+    /// Staff chỉ edit được delivery của mình
     /// </summary>
     [HttpPut("{id}/assign")]
     public async Task<IActionResult> AssignDelivery(int id, [FromBody] AssignDeliveryRequest request)
@@ -56,7 +57,7 @@ public class ActualDeliveryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to assign delivery", Error = ex.Message });
+            return BadRequest(new { Message = "Failed to update delivery schedule", Error = ex.Message });
         }
     }
 
