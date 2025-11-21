@@ -17,3 +17,4 @@ public class CreateTemplateClauseRequest
     public bool? IsEditable { get; set; } = false;
 }
 
+

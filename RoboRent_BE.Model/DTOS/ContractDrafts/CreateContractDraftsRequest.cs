@@ -17,7 +17,6 @@ public class CreateContractDraftsRequest
     [Required]
     public int? RentalId { get; set; }
 
-    [Required]
     public int? StaffId { get; set; }
 
     public int? ManagerId { get; set; }

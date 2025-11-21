@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Service.Interfaces;
+using System.Security.Claims;
 
 namespace RoboRent_BE.Controller.Controllers;
 
@@ -157,6 +159,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateContractDrafts([FromBody] CreateContractDraftsRequest request)
     {
         if (!ModelState.IsValid)
@@ -173,6 +176,20 @@ public class ContractDraftsController : ControllerBase
 
         try
         {
+            // Get staff ID from token (the person who creates this contract draft)
+            var accountIdClaim = User.FindFirst("accountId")?.Value;
+            if (string.IsNullOrEmpty(accountIdClaim) || !int.TryParse(accountIdClaim, out var staffId))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "User not authenticated or invalid account ID"
+                });
+            }
+            
+            // Set staff ID from token
+            request.StaffId = staffId;
+            
             var result = await _contractDraftsService.CreateContractDraftsAsync(request);
             return CreatedAtAction(nameof(GetContractDraftsById), new { id = result.Id }, new
             {

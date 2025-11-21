@@ -11,17 +11,20 @@ public class ContractDraftsService : IContractDraftsService
     private readonly IContractDraftsRepository _contractDraftsRepository;
     private readonly ITemplateClausesRepository _templateClausesRepository;
     private readonly IDraftClausesRepository _draftClausesRepository;
+    private readonly IContractTemplatesRepository _contractTemplatesRepository;
     private readonly IMapper _mapper;
 
     public ContractDraftsService(
         IContractDraftsRepository contractDraftsRepository, 
         ITemplateClausesRepository templateClausesRepository,
         IDraftClausesRepository draftClausesRepository,
+        IContractTemplatesRepository contractTemplatesRepository,
         IMapper mapper)
     {
         _contractDraftsRepository = contractDraftsRepository;
         _templateClausesRepository = templateClausesRepository;
         _draftClausesRepository = draftClausesRepository;
+        _contractTemplatesRepository = contractTemplatesRepository;
         _mapper = mapper;
     }
 
@@ -68,6 +71,33 @@ public class ContractDraftsService : IContractDraftsService
     {
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
+        
+       
+        contractDraft.Status = "draft";
+        
+        // Set CreatedAt to current time
+        contractDraft.CreatedAt = DateTime.UtcNow;
+        
+        // Set UpdatedAt to null for now
+        contractDraft.UpdatedAt = null;
+        
+        // If contract draft is created from a template, get data from template
+        if (request.ContractTemplatesId.HasValue && request.ContractTemplatesId.Value > 0)
+        {
+            // Get contract template
+            var contractTemplate = await _contractTemplatesRepository.GetAsync(
+                ct => ct.Id == request.ContractTemplatesId.Value);
+            
+            if (contractTemplate != null)
+            {
+                // Get manager from contract template (the person who created the contract template)
+                contractDraft.ManagerId = contractTemplate.CreatedBy;
+                
+                // Get the whole body JSON from contract template (always use template's BodyJson when template is provided)
+                contractDraft.BodyJson = contractTemplate.BodyJson;
+            }
+        }
+        
         var createdContractDraft = await _contractDraftsRepository.AddAsync(contractDraft);
         
         // If contract draft is created from a template, automatically copy all mandatory template clauses
@@ -104,8 +134,31 @@ public class ContractDraftsService : IContractDraftsService
         if (existingContractDraft == null)
             return null;
 
-        _mapper.Map(request, existingContractDraft);
+        // Only allow update of Title, BodyJson, and Comments
+        // Update Title if provided (allows empty string to clear the field)
+        if (request.Title != null)
+        {
+            existingContractDraft.Title = request.Title;
+        }
+        
+        // Update BodyJson if provided (allows empty string to clear the field)
+        if (request.BodyJson != null)
+        {
+            existingContractDraft.BodyJson = request.BodyJson;
+        }
+        
+        // Update Comments if provided (allows empty string to clear the field)
+        if (request.Comments != null)
+        {
+            existingContractDraft.Comments = request.Comments;
+        }
+        
+        // Set status to "updated" when updating
+        existingContractDraft.Status = "updated";
+        
+        // Set UpdatedAt to current time when updating
         existingContractDraft.UpdatedAt = DateTime.UtcNow;
+        
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(existingContractDraft);
         
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
