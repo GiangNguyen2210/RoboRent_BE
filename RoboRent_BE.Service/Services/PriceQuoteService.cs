@@ -19,60 +19,87 @@ public class PriceQuoteService : IPriceQuoteService
     }
 
     public async Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId)
+{
+    // Validate rental status FIRST
+    var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
+    var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote" };
+    if (!validStatuses.Contains(rental.Status))
     {
-        // Validate rental status FIRST
-        var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        //✅ FIX: Cho phép cả "AcceptedDemo" VÀ "PendingPriceQuote"
-        var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote" };
-        if (!validStatuses.Contains(rental.Status))
-        {
-            throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: AcceptedDemo hoặc PendingPriceQuote");
-        }
-        
-        // ✅ Business Rule: Max 3 quotes per rental
-        var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
-
-        if (existingQuotes.Count >= 3)
-        {
-            throw new Exception($"Maximum 3 quotes reached for rental {request.RentalId}. Cannot create more.");
-        }
-
-        // Check không có quote nào đang active
-        var activeQuote = existingQuotes.FirstOrDefault(q => 
-            q.Status == "PendingManager" || 
-            q.Status == "PendingCustomer" || 
-            q.Status == "Approved" ||
-            q.Status == "RejectedCustomer");
-
-        if (activeQuote != null)
-        {
-            throw new Exception($"Cannot create new quote. Active quote exists with status: {activeQuote.Status}");
-        }
-
-        // Create new quote
-        var quote = new PriceQuote
-        {
-            RentalId = request.RentalId,
-            Delivery = request.Delivery,
-            Deposit = request.Deposit,
-            Complete = request.Complete,
-            Service = request.Service,
-            StaffDescription = request.StaffDescription,
-            ManagerFeedback = request.ManagerFeedback,
-            CreatedAt = DateTime.UtcNow,
-            Status = "PendingManager",
-            SubmittedToManagerAt = DateTime.UtcNow,
-            IsDeleted = false
-        };
-
-        await _priceQuoteRepo.AddAsync(quote);
-        
-        rental.Status = "PendingPriceQuote";
-        await _rentalRepo.UpdateAsync(rental);
-
-        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
-        return MapToPriceQuoteResponse(quote, allQuotes.Count);
+        throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: AcceptedDemo hoặc PendingPriceQuote");
     }
+    
+    // Business Rule: Max 3 quotes per rental
+    var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
+
+    if (existingQuotes.Count >= 3)
+    {
+        throw new Exception($"Maximum 3 quotes reached for rental {request.RentalId}. Cannot create more.");
+    }
+
+    // Check không có quote nào đang active
+    var activeQuote = existingQuotes.FirstOrDefault(q => 
+        q.Status == "PendingManager" || 
+        q.Status == "PendingCustomer" || 
+        q.Status == "Approved" ||
+        q.Status == "RejectedCustomer");
+
+    if (activeQuote != null)
+    {
+        throw new Exception($"Cannot create new quote. Active quote exists with status: {activeQuote.Status}");
+    }
+
+    // ✅ NEW: Calculate DeliveryFee
+    decimal? deliveryFee = null;
+    int? deliveryDistance = null;
+
+    if (!string.IsNullOrWhiteSpace(rental.Address))
+    {
+        try
+        {
+            var (fee, distance) = CalculateDeliveryFee(rental.Address, request.DeliveryDistance);
+            deliveryFee = fee;
+            deliveryDistance = distance;
+        }
+        catch (ArgumentException ex)
+        {
+            throw new Exception($"Delivery fee calculation failed: {ex.Message}");
+        }
+    }
+
+    // ✅ NEW: Auto calculate PlannedDeliveryTime & PlannedPickupTime
+    if (rental.EventDate.HasValue)
+    {
+        rental.PlannedDeliveryTime = rental.EventDate.Value.AddHours(-2);
+        rental.PlannedPickupTime = rental.EventDate.Value.AddDays(1);
+        await _rentalRepo.UpdateAsync(rental);
+    }
+
+    // Create new quote
+    var quote = new PriceQuote
+    {
+        RentalId = request.RentalId,
+        Delivery = request.Delivery,
+        Deposit = request.Deposit,
+        Complete = request.Complete,
+        Service = request.Service,
+        DeliveryFee = deliveryFee,           // ✅ NEW
+        DeliveryDistance = deliveryDistance, // ✅ NEW
+        StaffDescription = request.StaffDescription,
+        ManagerFeedback = request.ManagerFeedback,
+        CreatedAt = DateTime.UtcNow,
+        Status = "PendingManager",
+        SubmittedToManagerAt = DateTime.UtcNow,
+        IsDeleted = false
+    };
+
+    await _priceQuoteRepo.AddAsync(quote);
+    
+    rental.Status = "PendingPriceQuote";
+    await _rentalRepo.UpdateAsync(rental);
+
+    var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
+    return MapToPriceQuoteResponse(quote, allQuotes.Count);
+}
 
     public async Task<PriceQuoteResponse> GetPriceQuoteAsync(int id)
     {
@@ -294,6 +321,8 @@ public class PriceQuoteService : IPriceQuoteService
             Deposit = quote.Deposit,
             Complete = quote.Complete,
             Service = quote.Service,
+            DeliveryFee = (double?)quote.DeliveryFee,
+            DeliveryDistance = quote.DeliveryDistance,   
             Total = total,
             StaffDescription = quote.StaffDescription,
             ManagerFeedback = quote.ManagerFeedback,
@@ -303,5 +332,42 @@ public class PriceQuoteService : IPriceQuoteService
             QuoteNumber = quoteNumber,
             ManagerId = quote.ManagerId
         };
+    }
+    
+    private (decimal Fee, int? Distance) CalculateDeliveryFee(string address, int? manualDistance = null)
+    {
+        const decimal HCM_FEE = 200000m;
+        const decimal OUTSIDE_HCM_RATE = 15000m;
+
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            throw new ArgumentException("Address is required to calculate delivery fee");
+        }
+
+        var parts = address.Split(',').Select(p => p.Trim()).ToArray();
+        
+        if (parts.Length < 4)
+        {
+            throw new ArgumentException("Invalid address format. Expected: số nhà, tên đường, phường, thành phố");
+        }
+
+        var city = parts[^1].ToLower();
+
+        if (city.Contains("hcm") || 
+            city.Contains("hồ chí minh") || 
+            city.Contains("ho chi minh") ||
+            city.Contains("sài gòn") ||
+            city.Contains("saigon"))
+        {
+            return (HCM_FEE, null);
+        }
+
+        if (!manualDistance.HasValue || manualDistance.Value <= 0)
+        {
+            throw new ArgumentException("Distance is required for deliveries outside HCM");
+        }
+
+        var fee = manualDistance.Value * OUTSIDE_HCM_RATE;
+        return (fee, manualDistance.Value);
     }
 }
