@@ -57,7 +57,7 @@ public class ActualDeliveryService : IActualDeliveryService
     public async Task<ActualDeliveryResponse> AssignDeliveryAsync(int deliveryId, AssignDeliveryRequest request, int staffId)
     {
         var delivery = await _deliveryRepo.GetAsync(d => d.Id == deliveryId);
-        
+    
         if (delivery == null)
         {
             throw new Exception("Delivery not found");
@@ -70,15 +70,22 @@ public class ActualDeliveryService : IActualDeliveryService
 
         var rental = await _rentalRepo.GetAsync(r => r.Id == delivery.RentalId);
 
-        // Validate times
-        if (rental.EventDate.HasValue)
+        // ✅ SỬA: Cả 2 bên đều DateTime?
+        DateTime? scheduledDeliveryTime = request.ScheduledDeliveryTime ?? rental.PlannedDeliveryTime;
+        DateTime? scheduledPickupTime = request.ScheduledPickupTime ?? rental.PlannedPickupTime;
+
+        // Validate times nếu có EventDate
+        if (rental.EventDate.HasValue && scheduledDeliveryTime.HasValue)
         {
-            if (request.ScheduledDeliveryTime >= rental.EventDate.Value.AddHours(-2))
+            if (scheduledDeliveryTime.Value >= rental.EventDate.Value.AddHours(-2))
             {
                 throw new Exception("ScheduledDeliveryTime must be at least 2 hours before EventDate");
             }
+        }
 
-            if (request.ScheduledPickupTime <= rental.EventDate.Value)
+        if (rental.EventDate.HasValue && scheduledPickupTime.HasValue)
+        {
+            if (scheduledPickupTime.Value <= rental.EventDate.Value)
             {
                 throw new Exception("ScheduledPickupTime must be after EventDate");
             }
@@ -86,8 +93,8 @@ public class ActualDeliveryService : IActualDeliveryService
 
         // Assign
         delivery.StaffId = staffId;
-        delivery.ScheduledDeliveryTime = request.ScheduledDeliveryTime;
-        delivery.ScheduledPickupTime = request.ScheduledPickupTime;
+        delivery.ScheduledDeliveryTime = scheduledDeliveryTime;
+        delivery.ScheduledPickupTime = scheduledPickupTime;
         delivery.Notes = request.Notes;
         delivery.Status = "Assigned";
 

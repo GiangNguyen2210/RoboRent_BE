@@ -48,7 +48,7 @@ public class PriceQuoteService : IPriceQuoteService
         throw new Exception($"Cannot create new quote. Active quote exists with status: {activeQuote.Status}");
     }
 
-    // ✅ NEW: Calculate DeliveryFee
+    // Calculate DeliveryFee
     decimal? deliveryFee = null;
     int? deliveryDistance = null;
 
@@ -66,14 +66,6 @@ public class PriceQuoteService : IPriceQuoteService
         }
     }
 
-    // ✅ NEW: Auto calculate PlannedDeliveryTime & PlannedPickupTime
-    if (rental.EventDate.HasValue)
-    {
-        rental.PlannedDeliveryTime = rental.EventDate.Value.AddHours(-2);
-        rental.PlannedPickupTime = rental.EventDate.Value.AddDays(1);
-        await _rentalRepo.UpdateAsync(rental);
-    }
-
     // Create new quote
     var quote = new PriceQuote
     {
@@ -82,8 +74,8 @@ public class PriceQuoteService : IPriceQuoteService
         Deposit = request.Deposit,
         Complete = request.Complete,
         Service = request.Service,
-        DeliveryFee = deliveryFee,           // ✅ NEW
-        DeliveryDistance = deliveryDistance, // ✅ NEW
+        DeliveryFee = deliveryFee,
+        DeliveryDistance = deliveryDistance,
         StaffDescription = request.StaffDescription,
         ManagerFeedback = request.ManagerFeedback,
         CreatedAt = DateTime.UtcNow,
