@@ -1,12 +1,14 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOs.ActivityType;
+using RoboRent_BE.Model.DTOs.ActivityTypeGroup;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Model.DTOS.DraftClauses;
 using RoboRent_BE.Model.DTOs.EventActivity;
 using RoboRent_BE.Model.DTOs.EventSchedule;
+using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
@@ -22,6 +24,27 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<StaffUpdateRequest, Rental>();
+        
+        CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
+        
+        CreateMap<GroupSchedule, GroupScheduleResponse>()
+            .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.Rental.StaffId))
+            .ForMember(dest => dest.StaffFullName, opt => opt.MapFrom(src => src.Rental.Staff.FullName))
+            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.Rental.AccountId))
+            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src => src.Rental.Account.FullName));
+        
+        
+        CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
+            .ForMember(dest => dest.ActivityTypeName,
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null))
+            .ForMember(dest => dest.EventActivityId,
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.EventActivityId : (int?)null))
+            .ForMember(dest => dest.EventActivityName,
+                opt => opt.MapFrom(src => src.ActivityType != null && src.ActivityType.EventActivity != null
+                    ? src.ActivityType.EventActivity.Name
+                    : null));
+
         CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
             .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));
         

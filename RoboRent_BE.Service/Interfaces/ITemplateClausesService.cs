@@ -12,7 +12,8 @@ public interface ITemplateClausesService
     Task<IEnumerable<TemplateClausesResponse>> GetTemplateClausesByIsEditableAsync(bool isEditable);
     Task<IEnumerable<TemplateClausesResponse>> GetAvailableTemplateClausesForDraftAsync(int contractTemplateId, int contractDraftId);
     Task<TemplateClausesResponse> CreateTemplateClausesAsync(CreateTemplateClausesRequest request);
-    Task<TemplateClausesResponse?> UpdateTemplateClausesAsync(UpdateTemplateClausesRequest request);
+    Task<TemplateClausesResponse> CreateTemplateClauseAsync(int contractTemplateId, string titleOrCode, string? body = null, bool? isMandatory = false, bool? isEditable = false);
+    Task<TemplateClausesResponse?> UpdateTemplateClausesAsync(int id, UpdateTemplateClausesRequest request);
     Task<bool> DeleteTemplateClausesAsync(int id);
 }
 

@@ -4,8 +4,8 @@ namespace RoboRent_BE.Model.DTOS.TemplateClauses;
 
 public class UpdateTemplateClausesRequest
 {
-    [Required]
-    public int Id { get; set; }
+    // Id is not needed in body - it comes from route parameter
+    // ContractTemplatesId is not updatable - it's preserved from existing clause
 
     public string? ClauseCode { get; set; } = string.Empty;
 
@@ -18,8 +18,5 @@ public class UpdateTemplateClausesRequest
     public bool? IsMandatory { get; set; } = false;
 
     public bool? IsEditable { get; set; } = false;
-
-    [Required]
-    public int? ContractTemplatesId { get; set; }
 }
 

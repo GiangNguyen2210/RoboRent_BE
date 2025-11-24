@@ -17,4 +17,7 @@ public partial class ActivityType
     public bool? IsDeleted { get; set; } =  false;
     
     [ForeignKey("EventActivityId")] public virtual EventActivity EventActivity { get; set; } = null!;
+    
+    public virtual ICollection<ActivityTypeGroup> ActivityTypeGroups { get; set; } = new List<ActivityTypeGroup>();
+
 }

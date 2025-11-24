@@ -55,8 +55,14 @@ public class RentalService : IRentalService
 
         if (rental == null) return null;
 
-        _mapper.Map(updateOrderRequest, rental);
+        if (rental.Status == "Received")
+        {
+            _mapper.Map(updateOrderRequest, rental);
+            rental.Status = "Received"; 
+        }
         
+        _mapper.Map(updateOrderRequest, rental);
+
         rental.UpdatedDate = DateTime.UtcNow;
         
         await _rentalRepository.UpdateAsync(rental);
@@ -76,8 +82,8 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>?> GetAllRentalsAsync()
     {
-        var result = await _rentalRepository.GetDbContext().Rentals.ToListAsync();
-        return result.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(result);
+        var result = await _rentalRepository.GetAllAsync(null, "EventActivity,ActivityType");
+        return result == null || !result.Any() ? null : _mapper.Map<List<OrderResponse>>(result);
     }
 
     public async Task<dynamic> DeleteRentalAsync(int id)
@@ -140,8 +146,59 @@ public class RentalService : IRentalService
     public async Task<List<OrderResponse>?> GetRentalsByCustomerAsync(int accountId)
     {
         var rentals = await _rentalRepository.GetDbContext().Rentals
+            .Include(r => r.EventActivity)
+            .Include(r => r.ActivityType.EventActivity)
+            .Include(r => r.ActivityType)
             .Where(r => r.AccountId == accountId && r.IsDeleted == false)
             .ToListAsync();
         return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);
+    }
+
+    public async Task<List<OrderResponse>> GetAllPendingRentalsAsync()
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Status == "Pending";
+        var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
+        
+        return rentals.ToList().Select(r => _mapper.Map<OrderResponse>(r)).ToList();
+    }
+
+    public async Task<OrderResponse?> ReceiveRequestAsync(int rentalId, int staffId)
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Id == rentalId;
+
+        var rental = await _rentalRepository.GetAsync(filter);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Received";
+        rental.StaffId = staffId;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
+    {
+        Expression<Func<Rental, bool>> filter = r => r.Status == "Received" && r.StaffId == staffId;
+        
+        var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
+        
+        return rentals.ToList().Select(r => _mapper.Map<OrderResponse>(r)).ToList();
+    }
+
+    public async Task<OrderResponse?> StaffUpdateRentalInfoAsync(int rentalId, StaffUpdateRequest   staffUpdateRequest)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        _mapper.Map(staffUpdateRequest, rental);
+
+        rental.UpdatedDate = DateTime.UtcNow;
+        rental.Status = "Received";
+        
+        await _rentalRepository.UpdateAsync(rental);
+        return _mapper.Map<OrderResponse>(rental);
     }
 }
