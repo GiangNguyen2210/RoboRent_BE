@@ -28,7 +28,12 @@ public class MappingProfile : Profile
         
         CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
         
-        CreateMap<GroupSchedule, GroupScheduleResponse>();
+        CreateMap<GroupSchedule, GroupScheduleResponse>()
+            .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.Rental.StaffId))
+            .ForMember(dest => dest.StaffFullName, opt => opt.MapFrom(src => src.Rental.Staff.FullName))
+            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.Rental.AccountId))
+            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src => src.Rental.Account.FullName));
+        
         
         CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
             .ForMember(dest => dest.ActivityTypeName,

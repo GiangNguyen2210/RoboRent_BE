@@ -39,12 +39,12 @@ public class GroupScheduleController : ControllerBase
         }
     }
 
-    [HttpPost("staff/add/schedule")]
-    public async Task<IActionResult> AddGroupSchedule([FromBody] GroupScheduleCreateRequest request)
+    [HttpPost("staff/add/schedule/{staffId}")]
+    public async Task<IActionResult> AddGroupSchedule([FromBody] GroupScheduleCreateRequest request, int staffId)
     {
         try
         {
-            var res = await _groupScheduleService.CreateGroupSchedule(request);
+            var res = await _groupScheduleService.CreateGroupSchedule(request, staffId);
 
             if (res == null)
             {

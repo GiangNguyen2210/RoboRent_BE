@@ -28,6 +28,10 @@ public partial class GroupSchedule
     public bool IsDeleted { get; set; } =  false;
 
     public int? ActivityTypeGroupId { get; set; }
+
+    public int? RentalId { get; set; }
+    
+    [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } =  null!;
     
     [ForeignKey("ActivityTypeGroupId")] public virtual ActivityTypeGroup ActivityTypeGroup { get; set; } =  null!;
 }

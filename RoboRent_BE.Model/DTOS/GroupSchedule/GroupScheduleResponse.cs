@@ -21,4 +21,14 @@ public class GroupScheduleResponse
     public bool IsDeleted { get; set; } =  false;
 
     public int? ActivityTypeGroupId { get; set; }
+    
+    public int? RentalId { get; set; }
+    
+    public int? StaffId { get; set; }
+
+    public string? StaffFullName { get; set; }
+
+    public int? CustomerId { get; set; }
+
+    public string? CustomerFullName { get; set; }
 }

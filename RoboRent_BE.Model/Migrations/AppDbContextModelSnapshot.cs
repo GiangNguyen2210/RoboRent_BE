@@ -1527,6 +1527,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
                     b.Property<TimeOnly?>("StartTime")
                         .HasColumnType("time without time zone");
 
@@ -1536,6 +1539,8 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityTypeGroupId");
+
+                    b.HasIndex("RentalId");
 
                     b.ToTable("GroupSchedules");
                 });
@@ -5442,7 +5447,13 @@ namespace RoboRent_BE.Model.Migrations
                         .WithMany("GroupSchedules")
                         .HasForeignKey("ActivityTypeGroupId");
 
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
                     b.Navigation("ActivityTypeGroup");
+
+                    b.Navigation("Rental");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentTransaction", b =>

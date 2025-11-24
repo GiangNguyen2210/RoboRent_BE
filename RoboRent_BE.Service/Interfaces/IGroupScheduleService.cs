@@ -5,7 +5,7 @@ namespace RoboRent_BE.Service.Interfaces;
 public interface IGroupScheduleService
 {
     public Task<List<GroupScheduleGroupByDateResponse>> GetGroupScheduleByGroupId(int groupId);
-    public Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreateRequest request);
+    public Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreateRequest request, int staffId);
     public Task<GroupScheduleResponse?> UpdateGroupSchedule(int scheduleId,GroupScheduleUpdateRequest request);
     public Task<GroupScheduleResponse?> CancelGroupScheduleById(int scheduleId);
 }
