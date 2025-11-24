@@ -57,6 +57,7 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<RobotTypeOfActivity> RobotTypeOfEvents { get; set; } = null!;
 
     public virtual DbSet<RobotAbility> RobotAbilities { get; set; } = null!;
+    public virtual DbSet<ActualDelivery> ActualDeliveries { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

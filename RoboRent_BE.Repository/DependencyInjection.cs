@@ -29,6 +29,8 @@ public static class DependencyInjection
         services.AddTransient<IActivityTypeRepository, ActivityTypeRepository>();
         services.AddTransient<IEventActivityRepository, EventActivityRepository>();
         services.AddTransient<IRobotTypeOfActivityRepository, RobotTypeOfActivityRepository>();
+        services.AddTransient<IActualDeliveryRepository, ActualDeliveryRepository>();
+        
         services.AddTransient<IActivityTypeGroupRepository, ActivityTypeGroupRepository>();
         services.AddTransient<IGroupScheduleRepository, GroupScheduleRepository>();
         return services;

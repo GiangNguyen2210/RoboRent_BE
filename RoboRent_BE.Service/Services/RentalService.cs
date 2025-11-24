@@ -15,10 +15,12 @@ public class RentalService : IRentalService
 {
     private readonly IMapper _mapper;
     private readonly IRentalRepository _rentalRepository;
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository)
+    private readonly IChatService _chatService; 
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
+        _chatService = chatService;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
@@ -174,6 +176,8 @@ public class RentalService : IRentalService
         rental.StaffId = staffId;
         
         await _rentalRepository.UpdateAsync(rental);
+        await _chatService.GetOrCreateChatRoomAsync(rentalId, staffId, rental.AccountId!.Value);
+
         
         return _mapper.Map<OrderResponse>(rental);
     }
