@@ -155,9 +155,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()  // Cho phép mọi origin
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins(
+            "http://localhost:3000", "https://localhost:3000",  // CRA
+            "http://localhost:5173", "https://localhost:5173",  // Vite
+            "http://localhost:4200", "https://localhost:4200"   // Angular
+        )
+        .AllowAnyMethod()      // GET, POST, OPTIONS, etc.
+        .AllowAnyHeader()      // Authorization, Content-Type
+        .AllowCredentials();   // Cho SignalR cookies/auth
     });
 });
 var app = builder.Build();
@@ -172,6 +177,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -179,16 +185,7 @@ app.MapControllers();
 
 app.MapHub<ChatHub>("/chatHub");
 
-app.UseCors("AllowAll");
-
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = 200;  // Trả OK ngay
-        return;  // Không forward request (không gọi next())
-    }
-    await next();  // Tiếp tục pipeline cho method khác (GET/POST)
-});
+// FIX: BỎ CUSTOM OPTIONS MIDDLEWARE - Để CORS handle tự động (nó sẽ set headers đúng)
+// app.Use(async (context, next) => { ... });  // Comment out hoặc xóa
 
 app.Run();

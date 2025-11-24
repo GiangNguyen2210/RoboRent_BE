@@ -82,8 +82,8 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>?> GetAllRentalsAsync()
     {
-        var result = await _rentalRepository.GetDbContext().Rentals.ToListAsync();
-        return result.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(result);
+        var result = await _rentalRepository.GetAllAsync(null, "EventActivity,ActivityType");
+        return result == null || !result.Any() ? null : _mapper.Map<List<OrderResponse>>(result);
     }
 
     public async Task<dynamic> DeleteRentalAsync(int id)
@@ -148,6 +148,7 @@ public class RentalService : IRentalService
         var rentals = await _rentalRepository.GetDbContext().Rentals
             .Include(r => r.EventActivity)
             .Include(r => r.ActivityType.EventActivity)
+            .Include(r => r.ActivityType)
             .Where(r => r.AccountId == accountId && r.IsDeleted == false)
             .ToListAsync();
         return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);

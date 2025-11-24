@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -635,13 +635,22 @@ namespace RoboRent_BE.Model.Migrations
                     Service = table.Column<double>(type: "double precision", nullable: true),
                     StaffDescription = table.Column<string>(type: "text", nullable: true),
                     ManagerFeedback = table.Column<string>(type: "text", nullable: true),
+                    CustomerReason = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: true)
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    ManagerId = table.Column<int>(type: "integer", nullable: true),
+                    SubmittedToManagerAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ManagerApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PriceQuotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PriceQuotes_Accounts_ManagerId",
+                        column: x => x.ManagerId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PriceQuotes_Rentals_RentalId",
                         column: x => x.RentalId,
@@ -721,7 +730,8 @@ namespace RoboRent_BE.Model.Migrations
                     MessageType = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     MediaUrls = table.Column<string>(type: "text", nullable: true),
-                    RelatedEntityId = table.Column<int>(type: "integer", nullable: true),
+                    PriceQuoteId = table.Column<int>(type: "integer", nullable: true),
+                    ContractId = table.Column<int>(type: "integer", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -1641,6 +1651,11 @@ namespace RoboRent_BE.Model.Migrations
                 name: "IX_PaymentTransactions_AccountId",
                 table: "PaymentTransactions",
                 column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PriceQuotes_ManagerId",
+                table: "PriceQuotes",
+                column: "ManagerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PriceQuotes_RentalId",

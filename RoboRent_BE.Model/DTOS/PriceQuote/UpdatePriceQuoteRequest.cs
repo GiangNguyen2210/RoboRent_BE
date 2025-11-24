@@ -2,12 +2,8 @@
 
 namespace RoboRent_BE.Model.DTOs.PriceQuote;
 
-// Request tạo báo giá mới
-public class CreatePriceQuoteRequest
+public class UpdatePriceQuoteRequest
 {
-    [Required]
-    public int RentalId { get; set; }
-    
     [Range(0, double.MaxValue, ErrorMessage = "Delivery must be positive")]
     public double? Delivery { get; set; }
     
@@ -22,7 +18,4 @@ public class CreatePriceQuoteRequest
     
     [MaxLength(2000)]
     public string? StaffDescription { get; set; }
-    
-    [MaxLength(2000)]
-    public string? ManagerFeedback { get; set; }
 }

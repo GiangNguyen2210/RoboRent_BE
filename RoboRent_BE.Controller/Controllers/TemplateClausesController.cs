@@ -156,8 +156,10 @@ public class TemplateClausesController : ControllerBase
         }
     }
 
+    
+
     [HttpPost]
-    public async Task<IActionResult> CreateTemplateClauses([FromBody] CreateTemplateClausesRequest request)
+    public async Task<IActionResult> CreateTemplateClause([FromBody] CreateTemplateClauseRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -173,11 +175,25 @@ public class TemplateClausesController : ControllerBase
 
         try
         {
-            var result = await _templateClausesService.CreateTemplateClausesAsync(request);
+            var result = await _templateClausesService.CreateTemplateClauseAsync(
+                request.ContractTemplateId,
+                request.TitleOrCode,
+                request.Body,
+                request.IsMandatory,
+                request.IsEditable
+            );
             return CreatedAtAction(nameof(GetTemplateClausesById), new { id = result.Id }, new
             {
                 success = true,
                 data = result
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = e.Message
             });
         }
         catch (Exception e)
@@ -193,15 +209,6 @@ public class TemplateClausesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTemplateClauses(int id, [FromBody] UpdateTemplateClausesRequest request)
     {
-        if (id != request.Id)
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = "ID mismatch"
-            });
-        }
-
         if (!ModelState.IsValid)
         {
             return BadRequest(new
@@ -216,7 +223,7 @@ public class TemplateClausesController : ControllerBase
 
         try
         {
-            var result = await _templateClausesService.UpdateTemplateClausesAsync(request);
+            var result = await _templateClausesService.UpdateTemplateClausesAsync(id, request);
             if (result == null)
             {
                 return NotFound(new
@@ -230,6 +237,14 @@ public class TemplateClausesController : ControllerBase
             {
                 success = true,
                 data = result
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
             });
         }
         catch (Exception e)

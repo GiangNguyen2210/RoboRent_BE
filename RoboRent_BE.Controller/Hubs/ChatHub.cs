@@ -44,6 +44,17 @@ public class ChatHub : Hub
         var roomName = $"rental_{rentalId}";
         await Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, status);
     }
+    
+    // Notify quote created
+    public async Task NotifyQuoteCreated(int rentalId, int quoteId, int quoteNumber, decimal total)
+    {
+        var roomName = $"rental_{rentalId}";
+        await Clients.Group(roomName).SendAsync("QuoteCreated", new {
+            QuoteId = quoteId,
+            QuoteNumber = quoteNumber,
+            Total = total
+        });
+    }
 
     // Override disconnect
     public override async Task OnDisconnectedAsync(Exception? exception)

@@ -26,6 +26,16 @@ public class PriceQuotesController : ControllerBase
         _hubContext = hubContext;
     }
 
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst("AccountId")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User not authenticated");
+        }
+        return int.Parse(userIdClaim);
+    }
+
     /// <summary>
     /// Tạo báo giá mới (max 3 lần)
     /// Auto gửi notification vào chat
@@ -35,8 +45,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            // TODO: Get staffId from authenticated user (JWT token)
-            int staffId = 1; // Replace with: User.FindFirst("AccountId")?.Value
+            int staffId = GetCurrentUserId();
             
             // 1. Service tạo quote (check < 3)
             var quote = await _priceQuoteService.CreatePriceQuoteAsync(request, staffId);
@@ -46,13 +55,19 @@ public class PriceQuotesController : ControllerBase
             {
                 RentalId = request.RentalId,
                 MessageType = MessageType.PriceQuoteNotification,
-                Content = $"Staff đã tạo báo giá #{quote.QuoteNumber}",
-                RelatedEntityId = quote.Id
+                Content = $"📤 Staff đã tạo báo giá #{quote.QuoteNumber} và gửi lên Manager chờ duyệt",
+                PriceQuoteId = quote.Id
             }, staffId);
             
             // 3. Broadcast notification qua SignalR
             var roomName = $"rental_{request.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _hubContext.Clients.Group(roomName).SendAsync("QuoteCreated", new
+            {
+                QuoteId = quote.Id,
+                QuoteNumber = quote.QuoteNumber,
+                Total = quote.Total
+            });
             
             return Ok(quote);
         }
@@ -107,27 +122,134 @@ public class PriceQuotesController : ControllerBase
             return BadRequest(new { Message = "Failed to get quotes", Error = ex.Message });
         }
     }
-
+    
+    
     /// <summary>
-    /// Check xem có thể tạo thêm quote không
+    /// [MANAGER] Approve hoặc Reject báo giá
     /// </summary>
-    [HttpGet("rental/{rentalId}/can-create")]
-    public async Task<IActionResult> CanCreateMoreQuotes(int rentalId)
+    [HttpPut("{id}/manager-action")]
+    public async Task<IActionResult> ManagerAction(int id, [FromBody] ManagerActionRequest request)
     {
         try
         {
-            var quotes = await _priceQuoteService.GetQuotesByRentalIdAsync(rentalId);
+            int managerId = GetCurrentUserId();
+        
+            var quote = await _priceQuoteService.ManagerActionAsync(id, request, managerId);
+        
+            string content = request.Action.ToLower() == "approve"
+                ? $"✅ Manager đã duyệt báo giá #{quote.QuoteNumber}. Chờ Customer xác nhận."
+                : $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.";
+        
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = content,
+                PriceQuoteId = quote.Id
+            }, managerId);
+        
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+        
+            return Ok(quote);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to perform manager action", Error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// [CUSTOMER] Approve hoặc Reject báo giá
+    /// </summary>
+    [HttpPut("{id}/customer-action")]
+    public async Task<IActionResult> CustomerAction(int id, [FromBody] CustomerActionRequest request)
+    {
+        try
+        {
+            int customerId = GetCurrentUserId();
+        
+            var quote = await _priceQuoteService.CustomerActionAsync(id, request, customerId);
+        
+            string content = request.Action.ToLower() == "approve"
+                ? $"✅ Customer đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: ${quote.Total:N2}"
+                : quote.Status == "Expired"
+                    ? $"⏰ Báo giá #{quote.QuoteNumber} đã hết hạn (đã tạo đủ 3 báo giá)"
+                    : $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.";
+        
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = content,
+                PriceQuoteId = quote.Id
+            }, customerId);
+        
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+        
+            if (request.Action.ToLower() == "approve")
+            {
+                await _hubContext.Clients.Group(roomName).SendAsync("QuoteAccepted", quote.Id);
+            }
+        
             return Ok(new 
             { 
-                RentalId = rentalId,
-                CanCreateMore = quotes.CanCreateMore,
-                CurrentQuoteCount = quotes.TotalQuotes,
-                MaxQuotes = 3
+                Quote = quote,
+                Message = request.Action.ToLower() == "approve" 
+                    ? "Quote accepted successfully" 
+                    : "Quote rejected successfully"
             });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to check quote limit", Error = ex.Message });
+            return BadRequest(new { Message = "Failed to perform customer action", Error = ex.Message });
         }
     }
+    
+    /// <summary>
+    /// [STAFF] Update báo giá bị Manager reject - Auto resubmit
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePriceQuote(int id, [FromBody] UpdatePriceQuoteRequest request)
+    {
+        try
+        {
+            int staffId = GetCurrentUserId();
+        
+            var quote = await _priceQuoteService.UpdatePriceQuoteAsync(id, request, staffId);
+        
+            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
+            {
+                RentalId = quote.RentalId,
+                MessageType = MessageType.SystemNotification,
+                Content = $"🔄 Staff đã cập nhật báo giá #{quote.QuoteNumber} và gửi lại Manager",
+                PriceQuoteId = quote.Id
+            }, staffId);
+        
+            var roomName = $"rental_{quote.RentalId}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+        
+            return Ok(quote);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to update price quote", Error = ex.Message });
+        }
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetAllQuotes([FromQuery] string? status = null)
+    {
+        try
+        {
+            var quotes = await _priceQuoteService.GetAllQuotesForManagerAsync(status);
+            return Ok(quotes);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get quotes", Error = ex.Message });
+        }
+    }
+    
 }

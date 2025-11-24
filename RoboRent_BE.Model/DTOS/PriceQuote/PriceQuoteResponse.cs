@@ -12,7 +12,9 @@ public class PriceQuoteResponse
     public double Total { get; set; } // Calculated: Delivery + Deposit + Complete + Service
     public string? StaffDescription { get; set; }
     public string? ManagerFeedback { get; set; }
+    public string? CustomerReason { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? Status { get; set; }
     public int QuoteNumber { get; set; } // Thứ tự: 1, 2, hoặc 3
+    public int? ManagerId { get; set; }
 }

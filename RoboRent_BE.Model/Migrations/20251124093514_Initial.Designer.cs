@@ -12,8 +12,13 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
+<<<<<<<< HEAD:RoboRent_BE.Model/Migrations/20251124093514_Initial.Designer.cs
     [Migration("20251124093514_Initial")]
     partial class Initial
+========
+    [Migration("20251116095210_init")]
+    partial class init
+>>>>>>>> origin/development:RoboRent_BE.Model/Migrations/20251116095210_init.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1091,6 +1096,9 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1103,7 +1111,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int>("MessageType")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("RelatedEntityId")
+                    b.Property<int?>("PriceQuoteId")
                         .HasColumnType("integer");
 
                     b.Property<int>("SenderId")
@@ -1670,6 +1678,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CustomerReason")
+                        .HasColumnType("text");
+
                     b.Property<double?>("Delivery")
                         .HasColumnType("double precision");
 
@@ -1679,8 +1690,14 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("ManagerApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ManagerFeedback")
                         .HasColumnType("text");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("RentalId")
                         .HasColumnType("integer");
@@ -1694,7 +1711,12 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("SubmittedToManagerAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
 
                     b.HasIndex("RentalId");
 
@@ -5472,11 +5494,17 @@ namespace RoboRent_BE.Model.Migrations
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PriceQuote", b =>
                 {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId");
+
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
                         .WithMany()
                         .HasForeignKey("RentalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Manager");
 
                     b.Navigation("Rental");
                 });

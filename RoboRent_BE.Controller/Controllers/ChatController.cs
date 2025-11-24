@@ -19,6 +19,17 @@ public class ChatController : ControllerBase
         _hubContext = hubContext;
     }
 
+    // ✅ Helper method để lấy userId từ Claims
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst("AccountId")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User not authenticated");
+        }
+        return int.Parse(userIdClaim);
+    }
+
     /// <summary>
     /// Tạo hoặc lấy chat room cho rental
     /// </summary>
@@ -84,8 +95,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            // TODO: Get senderId from authenticated user (JWT token)
-            int senderId = 1; // Replace with: User.FindFirst("AccountId")?.Value
+            int senderId = GetCurrentUserId();
             
             // 1. Service lưu message vào DB
             var message = await _chatService.SendMessageAsync(request, senderId);
@@ -117,7 +127,7 @@ public class ChatController : ControllerBase
             
             // 2. Controller broadcast status change qua SignalR
             var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(message.ChatRoomId);
-            var roomName = $"rental_{chatRoom.RentalId}";
+            var roomName = $"rental_{message.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, request.Status);
             
             return Ok(message);
@@ -136,8 +146,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from authenticated user
-            int userId = 1; // Replace with authenticated userId
+            int userId = GetCurrentUserId();
             
             var count = await _chatService.GetUnreadCountAsync(rentalId, userId);
             return Ok(new { RentalId = rentalId, UnreadCount = count });
@@ -147,4 +156,45 @@ public class ChatController : ControllerBase
             return BadRequest(new { Message = "Failed to get unread count", Error = ex.Message });
         }
     }
+    
+    /// <summary>
+    /// Lấy danh sách chat rooms của staff (for sidebar)
+    /// </summary>
+    [HttpGet("rooms/staff/{staffId}")]
+    public async Task<IActionResult> GetStaffChatRooms(
+        int staffId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        try
+        {
+            var rooms = await _chatService.GetChatRoomsByStaffIdAsync(staffId, page, pageSize);
+            return Ok(rooms);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get staff chat rooms", Error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Lấy danh sách chat rooms của customer (for sidebar)
+    /// </summary>
+    [HttpGet("rooms/customer/{customerId}")]
+    public async Task<IActionResult> GetCustomerChatRooms(
+        int customerId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        try
+        {
+            var rooms = await _chatService.GetChatRoomsByCustomerIdAsync(customerId, page, pageSize);
+            return Ok(rooms);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get customer chat rooms", Error = ex.Message });
+        }
+    }
+    
 }
