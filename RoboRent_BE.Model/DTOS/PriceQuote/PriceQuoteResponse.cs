@@ -9,6 +9,8 @@ public class PriceQuoteResponse
     public double? Deposit { get; set; }
     public double? Complete { get; set; }
     public double? Service { get; set; }
+    public double? DeliveryFee { get; set; }       
+    public int? DeliveryDistance { get; set; }  
     public double Total { get; set; } // Calculated: Delivery + Deposit + Complete + Service
     public string? StaffDescription { get; set; }
     public string? ManagerFeedback { get; set; }

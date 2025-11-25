@@ -1,14 +1,7 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+namespace RoboRent_BE.Model.DTOs.GroupSchedule;
 
-namespace RoboRent_BE.Model.Entities;
-
-public partial class GroupSchedule
+public class GroupScheduleResponse
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-
     public DateTime? EventDate { get; set; } = DateTime.UtcNow;
 
     public string? EventLocation { get; set; } = string.Empty;
@@ -28,10 +21,14 @@ public partial class GroupSchedule
     public bool IsDeleted { get; set; } =  false;
 
     public int? ActivityTypeGroupId { get; set; }
-
+    
     public int? RentalId { get; set; }
     
-    [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } =  null!;
-    
-    [ForeignKey("ActivityTypeGroupId")] public virtual ActivityTypeGroup ActivityTypeGroup { get; set; } =  null!;
+    public int? StaffId { get; set; }
+
+    public string? StaffFullName { get; set; }
+
+    public int? CustomerId { get; set; }
+
+    public string? CustomerFullName { get; set; }
 }
