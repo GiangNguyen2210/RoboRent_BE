@@ -20,4 +20,5 @@ public partial class RentalContract
     public int? RentalId { get; set; }
     
     [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } = null!;
+    public string? ContractUrl { get; set; } = string.Empty;// URL to the store PDF contract
 }

@@ -12,7 +12,8 @@ public static class DependencyInjection
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddTransient<IAccountService, AccountService>();
-            services.AddTransient<IEmailService, EmailService>();
+        services.AddTransient<IAuthService, AuthService>();
+        services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IEventRoboTypeService, EventRoboTypeService>();
         services.AddTransient<IEventService, EventService>();
         services.AddTransient<IModifyIdentityUserService, ModifyIdentityUserService>();
@@ -23,7 +24,15 @@ public static class DependencyInjection
         services.AddTransient<IRoboTypeService, RoboTypeService>();
         services.AddTransient<ITypesOfRoboService, TypesOfRoboService>();
         services.AddTransient<IPayOSService, PayOSService>();
-
+        services.AddTransient<IChatService, ChatService>();
+        services.AddTransient<IRentalContractService, RentalContractService>();
+        services.AddTransient<IDraftClausesService, DraftClausesService>();
+        services.AddTransient<IContractDraftsService, ContractDraftsService>();
+        services.AddTransient<IContractTemplatesService, ContractTemplatesService>();
+        services.AddTransient<ITemplateClausesService, TemplateClausesService>();
+        services.AddTransient<IActivityTypeService, ActivityTypeService>();
+        services.AddTransient<IEventActivityService, EventActivityService>();
+        services.AddTransient<IRobotTypeOfActivityService, RobotTypeOfActivityService>();
         return services;
     }
 }

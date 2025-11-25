@@ -6,4 +6,6 @@ public interface IAccountRepository : IGenericRepository<Account>
 {
     Task<Account?> GetByIdAsync(int accountId);
     // Add custom methods here
+    
+    Task<Account?> GetByUserIdAsync(string userId);
 }

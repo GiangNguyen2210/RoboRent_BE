@@ -18,5 +18,9 @@ public class AccountRepository : GenericRepository<Account>, IAccountRepository
         return await _dbContext.Accounts
             .FirstOrDefaultAsync(a => a.Id == accountId);
     }
-    
+
+    public async Task<Account?> GetByUserIdAsync(string userId)
+    {
+        return await _dbContext.Accounts.FirstOrDefaultAsync(a => a.UserId == userId);
+    }
 }

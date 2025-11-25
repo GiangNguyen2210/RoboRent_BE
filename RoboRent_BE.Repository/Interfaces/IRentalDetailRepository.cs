@@ -4,5 +4,7 @@ namespace RoboRent_BE.Repository.Interfaces;
 
 public interface IRentalDetailRepository : IGenericRepository<RentalDetail>
 {
-    // Add custom methods here
+    Task<IEnumerable<RentalDetail>> GetRentalDetailsByRentalIdAsync(int rentalId);
+    Task<IEnumerable<RentalDetail>> GetRentalDetailsByRoboTypeIdAsync(int roboTypeId);
+    Task<IEnumerable<RentalDetail>> GetAllWithIncludesAsync();
 }

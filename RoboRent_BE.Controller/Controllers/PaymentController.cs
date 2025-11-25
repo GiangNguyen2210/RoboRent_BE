@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RoboRent_BE.Controllers;
 
@@ -24,6 +25,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("create")]
+    [Authorize]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequest request, [FromQuery] int accountId)
     {
         try
@@ -65,6 +67,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("webhook")]
+    [AllowAnonymous] // Webhook should be accessible without authentication
     public async Task<IActionResult> Webhook([FromBody] WebhookType webhookBody)
     {
         try
@@ -116,6 +119,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet("info/{orderCode}")]
+    [Authorize]
     public async Task<IActionResult> GetPaymentInfo(long orderCode)
     {
         try
@@ -131,6 +135,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet("info/user/{accountId}")]
+    [Authorize]
     public async Task<IActionResult> GetPaymentInfoByAccountId(int accountId)
     {
         try
@@ -145,6 +150,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("cancel/{orderCode}")]
+    [Authorize]
     public async Task<IActionResult> CancelPayment(long orderCode, [FromBody] string? cancellationReason = null)
     {
         try
