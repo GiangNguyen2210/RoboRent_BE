@@ -181,6 +181,8 @@ public class TemplateClausesService : ITemplateClausesService
         var contractTemplate = templateClause.ContractTemplate;
         var clauseTitle = templateClause.Title;
         var clauseId = templateClause.Id;
+        var deletedClauseNumber = ExtractClauseNumber(templateClause.ClauseCode ?? templateClause.Title ?? string.Empty);
+        var contractTemplateId = templateClause.ContractTemplatesId;
 
         // Delete the clause from database
         await _templateClausesRepository.DeleteAsync(templateClause);
@@ -191,7 +193,127 @@ public class TemplateClausesService : ITemplateClausesService
             await RemoveClauseFromContractTemplateBodyJsonAsync(contractTemplate, clauseId, clauseTitle);
         }
 
+        // Renumber remaining clauses after the deleted one
+        if (contractTemplateId.HasValue && deletedClauseNumber > 0)
+        {
+            await RenumberClausesAfterDeletionAsync(contractTemplateId.Value, deletedClauseNumber, contractTemplate);
+        }
+
         return true;
+    }
+
+    private async Task RenumberClausesAfterDeletionAsync(int contractTemplateId, int deletedClauseNumber, ContractTemplates? contractTemplate)
+    {
+        // Get all remaining clauses for this contract template
+        var remainingClauses = await _templateClausesRepository.GetTemplateClausesByContractTemplateIdAsync(contractTemplateId);
+        
+        // Find clauses with numbers greater than the deleted clause number
+        var clausesToRenumber = remainingClauses
+            .Where(c => 
+            {
+                var clauseNum = ExtractClauseNumber(c.ClauseCode ?? c.Title ?? string.Empty);
+                return clauseNum > deletedClauseNumber;
+            })
+            .OrderBy(c => ExtractClauseNumber(c.ClauseCode ?? c.Title ?? string.Empty))
+            .ToList();
+
+        if (!clausesToRenumber.Any())
+            return;
+
+        // Reload contract template if not provided
+        if (contractTemplate == null)
+        {
+            contractTemplate = await _contractTemplatesRepository.GetAsync(ct => ct.Id == contractTemplateId);
+            if (contractTemplate == null)
+                return;
+        }
+
+        // First, update all clauses in database
+        var renumberMappings = new List<(TemplateClauses clause, int oldNumber, int newNumber, string oldTitle, string newTitle)>();
+        
+        foreach (var clause in clausesToRenumber)
+        {
+            var oldNumber = ExtractClauseNumber(clause.ClauseCode ?? clause.Title ?? string.Empty);
+            var newNumber = oldNumber - 1;
+
+            // Update ClauseCode and Title with new number
+            var oldClauseCode = clause.ClauseCode ?? string.Empty;
+            var oldTitle = clause.Title ?? string.Empty;
+
+            clause.ClauseCode = FormatClauseCode(oldClauseCode, newNumber);
+            clause.Title = FormatClauseTitle(oldTitle, newNumber);
+
+            // Update in database
+            await _templateClausesRepository.UpdateAsync(clause);
+            
+            // Store mapping for BodyJson update
+            renumberMappings.Add((clause, oldNumber, newNumber, oldTitle, clause.Title));
+        }
+
+        // Then update BodyJson once with all renumberings
+        if (!string.IsNullOrWhiteSpace(contractTemplate.BodyJson) && renumberMappings.Any())
+        {
+            await RenumberClausesInBodyJsonAsync(contractTemplate, renumberMappings);
+        }
+    }
+
+    private async Task RenumberClausesInBodyJsonAsync(ContractTemplates contractTemplate, List<(TemplateClauses clause, int oldNumber, int newNumber, string oldTitle, string newTitle)> renumberMappings)
+    {
+        if (contractTemplate == null || string.IsNullOrWhiteSpace(contractTemplate.BodyJson) || !renumberMappings.Any())
+            return;
+
+        var bodyJson = contractTemplate.BodyJson;
+
+        // Process renumberings in reverse order of clause numbers (from highest to lowest)
+        // This prevents conflicts when replacing (e.g., replacing "Điều 5" before "Điều 6" prevents "Điều 6" becoming "Điều 5" accidentally)
+        var sortedMappings = renumberMappings.OrderByDescending(m => m.oldNumber).ToList();
+
+        foreach (var mapping in sortedMappings)
+        {
+            var clauseId = mapping.clause.Id;
+            var oldNumber = mapping.oldNumber;
+            var newNumber = mapping.newNumber;
+            var oldTitle = mapping.oldTitle;
+            var newTitle = mapping.newTitle;
+
+            // Find the clause by data-clause-id attribute
+            var clauseIdPattern = $@"data-clause-id=[""']?{clauseId}[""']?";
+            var clauseIdMatch = Regex.Match(bodyJson, clauseIdPattern, RegexOptions.IgnoreCase);
+
+            if (clauseIdMatch.Success)
+            {
+                // Find the clause title section and update it
+                // Pattern to match: <p><strong data-clause-id="{clauseId}">Điều {oldNumber}...</strong></p>
+                var titlePattern = $@"(<p>\s*<strong\s+data-clause-id=[""']?{clauseId}[""']?[^>]*>)(Điều\s+{oldNumber}\.)([^<]*)(</strong>\s*</p>)";
+                var titleMatch = Regex.Match(bodyJson, titlePattern, RegexOptions.IgnoreCase);
+
+                if (titleMatch.Success)
+                {
+                    // Replace the clause number in the title
+                    var replacement = $"{titleMatch.Groups[1].Value}Điều {newNumber}.{titleMatch.Groups[3].Value}{titleMatch.Groups[4].Value}";
+                    bodyJson = bodyJson.Substring(0, titleMatch.Index) + replacement + bodyJson.Substring(titleMatch.Index + titleMatch.Length);
+                }
+                else
+                {
+                    // Fallback: replace any occurrence of old title with new title
+                    var escapedOldTitle = Regex.Escape(oldTitle);
+                    var newTitleEscaped = Regex.Escape(newTitle);
+                    bodyJson = Regex.Replace(bodyJson, escapedOldTitle, newTitleEscaped, RegexOptions.IgnoreCase);
+                }
+            }
+            else
+            {
+                // Fallback: try to find by old title and replace
+                var escapedOldTitle = Regex.Escape(oldTitle);
+                var newTitleEscaped = Regex.Escape(newTitle);
+                bodyJson = Regex.Replace(bodyJson, escapedOldTitle, newTitleEscaped, RegexOptions.IgnoreCase);
+            }
+        }
+
+        // Update the contract template once with all changes
+        contractTemplate.BodyJson = bodyJson;
+        contractTemplate.UpdatedAt = DateTime.UtcNow;
+        await _contractTemplatesRepository.UpdateAsync(contractTemplate);
     }
 
     public async Task<TemplateClausesResponse> CreateTemplateClauseAsync(int contractTemplateId, string titleOrCode, string? body = null, bool? isMandatory = false, bool? isEditable = false)
@@ -337,7 +459,7 @@ public class TemplateClausesService : ITemplateClausesService
             clauseHtml += $"{newClause.Body}\n";
         }
         
-        // Append the new clause HTML to the BodyJson
+        // Insert the new clause before the signature section, not after
         // If BodyJson is empty, initialize it with a div wrapper
         if (string.IsNullOrWhiteSpace(currentBody))
         {
@@ -345,14 +467,75 @@ public class TemplateClausesService : ITemplateClausesService
         }
         else
         {
-            // Append before closing </div> if it exists, otherwise just append
-            if (currentBody.TrimEnd().EndsWith("</div>"))
+            // Find signature section markers (signature table, signature section div, or contract-signatures-section)
+            // Look for common signature section patterns
+            var signaturePatterns = new[]
             {
-                contractTemplate.BodyJson = currentBody.TrimEnd().Substring(0, currentBody.TrimEnd().Length - 6) + clauseHtml + "</div>";
+                @"<table[^>]*>\s*<tbody>\s*<tr>\s*<td>\s*<p><strong>ĐẠI DIỆN",
+                @"contract-signatures-section",
+                @"<!-- End Signature Section -->",
+                @"<div[^>]*id=[""']?contract-signatures-section"
+            };
+            
+            int insertPosition = -1;
+            string signatureMarker = string.Empty;
+            
+            // Find the first occurrence of any signature marker
+            foreach (var pattern in signaturePatterns)
+            {
+                var match = Regex.Match(currentBody, pattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    insertPosition = match.Index;
+                    signatureMarker = match.Value;
+                    break;
+                }
+            }
+            
+            // Also check for signature table by looking for "ĐẠI DIỆN" pattern
+            if (insertPosition == -1)
+            {
+                var daiDienMatch = Regex.Match(currentBody, @"ĐẠI DIỆN", RegexOptions.IgnoreCase);
+                if (daiDienMatch.Success)
+                {
+                    // Find the start of the table containing "ĐẠI DIỆN"
+                    var beforeDaiDien = currentBody.Substring(0, daiDienMatch.Index);
+                    var tableStart = beforeDaiDien.LastIndexOf("<table", StringComparison.OrdinalIgnoreCase);
+                    if (tableStart != -1)
+                    {
+                        insertPosition = tableStart;
+                    }
+                }
+            }
+            
+            if (insertPosition != -1)
+            {
+                // Insert clause before signature section
+                var beforeSignature = currentBody.Substring(0, insertPosition).TrimEnd();
+                var afterSignature = currentBody.Substring(insertPosition);
+                
+                // Ensure there's proper spacing before signature
+                if (!beforeSignature.EndsWith("\n") && !beforeSignature.EndsWith("</p>") && !beforeSignature.EndsWith("</ol>"))
+                {
+                    beforeSignature += "\n";
+                }
+                
+                contractTemplate.BodyJson = beforeSignature + clauseHtml + afterSignature;
             }
             else
             {
-                contractTemplate.BodyJson = currentBody + clauseHtml;
+                // No signature section found, insert before the last closing </div> or at the end
+                var lastDivIndex = currentBody.LastIndexOf("</div>", StringComparison.OrdinalIgnoreCase);
+                if (lastDivIndex != -1)
+                {
+                    var beforeLastDiv = currentBody.Substring(0, lastDivIndex).TrimEnd();
+                    var afterLastDiv = currentBody.Substring(lastDivIndex);
+                    contractTemplate.BodyJson = beforeLastDiv + clauseHtml + afterLastDiv;
+                }
+                else
+                {
+                    contractTemplate.BodyJson = currentBody + clauseHtml;
+                }
             }
         }
         
