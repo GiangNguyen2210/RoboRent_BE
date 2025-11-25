@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -234,7 +234,7 @@ namespace RoboRent_BE.Model.Migrations
                         column: x => x.EventActivityId,
                         principalTable: "EventActivities",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -488,32 +488,6 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GroupSchedules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    EventDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EventLocation = table.Column<string>(type: "text", nullable: true),
-                    DeliveryTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
-                    StartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
-                    EndTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
-                    FinishTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    ActivityTypeGroupId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GroupSchedules", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_GroupSchedules_ActivityTypeGroups_ActivityTypeGroupId",
-                        column: x => x.ActivityTypeGroupId,
-                        principalTable: "ActivityTypeGroups",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RobotInGroups",
                 columns: table => new
                 {
@@ -610,6 +584,39 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ContractDrafts_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GroupSchedules",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EventDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EventLocation = table.Column<string>(type: "text", nullable: true),
+                    EventCity = table.Column<string>(type: "text", nullable: true),
+                    DeliveryTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    StartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    EndTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    FinishTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ActivityTypeGroupId = table.Column<int>(type: "integer", nullable: true),
+                    RentalId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GroupSchedules", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GroupSchedules_ActivityTypeGroups_ActivityTypeGroupId",
+                        column: x => x.ActivityTypeGroupId,
+                        principalTable: "ActivityTypeGroups",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_GroupSchedules_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id");
@@ -1634,6 +1641,11 @@ namespace RoboRent_BE.Model.Migrations
                 name: "IX_GroupSchedules_ActivityTypeGroupId",
                 table: "GroupSchedules",
                 column: "ActivityTypeGroupId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GroupSchedules_RentalId",
+                table: "GroupSchedules",
+                column: "RentalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_AccountId",

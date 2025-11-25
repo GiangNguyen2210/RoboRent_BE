@@ -57,6 +57,7 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<RobotTypeOfActivity> RobotTypeOfEvents { get; set; } = null!;
 
     public virtual DbSet<RobotAbility> RobotAbilities { get; set; } = null!;
+    public virtual DbSet<ActualDelivery> ActualDeliveries { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1607,6 +1608,15 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
 
         modelBuilder.Entity<RobotTypeOfActivity>().HasKey(rtoe => new { rtoe.ActivityTypeId, rtoe.RoboTypeId });
 
+        modelBuilder.Entity<ActivityType>()
+            .HasOne(a => a.EventActivity)
+            .WithMany(e => e.ActivityTypes)
+            .HasForeignKey(a => a.EventActivityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ActivityTypeGroup>().Navigation(a => a.ActivityType).AutoInclude();
+        modelBuilder.Entity<ActivityType>().Navigation(a => a.EventActivity).AutoInclude();
+        
         base.OnModelCreating(modelBuilder);
     }
 }
