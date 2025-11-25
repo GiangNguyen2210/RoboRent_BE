@@ -65,4 +65,16 @@ public class ContractDraftsRepository : GenericRepository<ContractDrafts>, ICont
             .Include(cd => cd.Manager)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<ContractDrafts>> GetContractDraftsByCustomerIdAsync(int customerId)
+    {
+        return await _dbContext.ContractDrafts
+            .Where(cd => cd.Rental != null && cd.Rental.AccountId == customerId)
+            .Include(cd => cd.ContractTemplate)
+            .Include(cd => cd.Rental)
+            .ThenInclude(r => r.Account)
+            .Include(cd => cd.Staff)
+            .Include(cd => cd.Manager)
+            .ToListAsync();
+    }
 }
