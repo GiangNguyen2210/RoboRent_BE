@@ -16,31 +16,49 @@ public class RentalService : IRentalService
     private readonly IMapper _mapper;
     private readonly IRentalRepository _rentalRepository;
     private readonly IChatService _chatService; 
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService)
+    private readonly IRentalDetailRepository _rentalDetailRepository;
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
         _chatService = chatService;
+        _rentalDetailRepository = rentalDetailRepository;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
     {
-        // Validate foreign keys first
-        var accountExists = await _rentalRepository.GetDbContext().Accounts.AnyAsync(a => a.Id == createOrderRequest.AccountId);
-        var eventExists = await _rentalRepository.GetDbContext().EventActivities.AnyAsync(e => e.Id == createOrderRequest.EventActivityId);
-        var packageExists = await _rentalRepository.GetDbContext().ActivityTypes.AnyAsync(p => p.Id == createOrderRequest.ActivityTypeId);
+        var db = _rentalRepository.GetDbContext();
+
+        // 1. Validate foreign keys
+        var accountExists = await db.Accounts.AnyAsync(a => a.Id == createOrderRequest.AccountId);
+        var eventExists = await db.EventActivities.AnyAsync(e => e.Id == createOrderRequest.EventActivityId);
+        var packageExists = await db.ActivityTypes.AnyAsync(p => p.Id == createOrderRequest.ActivityTypeId);
 
         if (!accountExists || !eventExists || !packageExists)
-            throw new ArgumentException("Invalid foreign key reference. Please check Account, Event, or RentalPackage ID.");
+            throw new ArgumentException("Invalid foreign key reference.");
 
+        var todayUtc = DateTime.UtcNow.Date;   // current VN date is UTC+7 but comparing UTC ok
+        var minEventDate = todayUtc.AddDays(6);
+
+        if (createOrderRequest.EventDate.Value.Date < minEventDate)
+            throw new ArgumentException("Event date must be at least 6 days from today.");
+
+        TimeSpan start = createOrderRequest.StartTime.Value.ToTimeSpan();
+        TimeSpan end = createOrderRequest.EndTime.Value.ToTimeSpan();
+
+        // End must be at least 1 hour later
+        if (end <= start.Add(TimeSpan.FromHours(1)))
+            throw new ArgumentException("End time must be at least 1 hour after start.");
+
+        // 4. Save rental
         Rental rental = _mapper.Map<Rental>(createOrderRequest);
-        
+
         rental.CreatedDate = DateTime.UtcNow;
         rental.UpdatedDate = DateTime.UtcNow;
 
         await _rentalRepository.AddAsync(rental);
-        
-        return rental == null ? null : _mapper.Map<OrderResponse>(rental);
+
+        return _mapper.Map<OrderResponse>(rental);
     }
 
     public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrderRequest)
@@ -52,15 +70,41 @@ public class RentalService : IRentalService
 
         if (!accountExists || !eventExists || !packageExists)
             throw new ArgumentException("Invalid foreign key reference. Please check Account, Event, or RentalPackage ID.");
+        
+        var todayUtc = DateTime.UtcNow.Date;   // current VN date is UTC+7 but comparing UTC ok
+        var minEventDate = todayUtc.AddDays(6);
 
+        if (updateOrderRequest.EventDate.Value.Date < minEventDate)
+            throw new ArgumentException("Event date must be at least 6 days from today.");
+
+        TimeSpan start = updateOrderRequest.StartTime.Value.ToTimeSpan();
+        TimeSpan end = updateOrderRequest.EndTime.Value.ToTimeSpan();
+
+        // End must be at least 1 hour later
+        if (end <= start.Add(TimeSpan.FromHours(1)))
+            throw new ArgumentException("End time must be at least 1 hour after start.");
+        
         Rental? rental = await _rentalRepository.GetDbContext().Rentals.FirstOrDefaultAsync(r => r.Id == updateOrderRequest.Id);
-
+        
         if (rental == null) return null;
 
+        
+        if (updateOrderRequest.ActivityTypeId != rental.ActivityTypeId)
+        {
+            var list = await _rentalDetailRepository.GetAllAsync(rd => rd.RentalId == updateOrderRequest.Id);
+            _rentalDetailRepository.GetDbContext().RentalDetails.RemoveRange(list);
+            await _rentalDetailRepository.GetDbContext().SaveChangesAsync();
+        }
+        
         if (rental.Status == "Received")
         {
             _mapper.Map(updateOrderRequest, rental);
             rental.Status = "Received"; 
+        }
+
+        if (rental.Status == "Cancelled")
+        {
+            rental.Status = "Draft";
         }
         
         _mapper.Map(updateOrderRequest, rental);
@@ -152,6 +196,7 @@ public class RentalService : IRentalService
             .Include(r => r.ActivityType.EventActivity)
             .Include(r => r.ActivityType)
             .Where(r => r.AccountId == accountId && r.IsDeleted == false)
+            .OrderByDescending(r => r.CreatedDate)
             .ToListAsync();
         return rentals.Count == 0 ? null : _mapper.Map<List<OrderResponse>>(rentals);
     }
@@ -203,6 +248,32 @@ public class RentalService : IRentalService
         rental.Status = "Received";
         
         await _rentalRepository.UpdateAsync(rental);
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<OrderResponse?> CustomerCancelRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Cancelled";
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<OrderResponse?> CustomerDeleteRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.IsDeleted = true;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
         return _mapper.Map<OrderResponse>(rental);
     }
 }
