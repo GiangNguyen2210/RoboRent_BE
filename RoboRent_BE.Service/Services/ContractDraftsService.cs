@@ -67,11 +67,13 @@ public class ContractDraftsService : IContractDraftsService
         return _mapper.Map<IEnumerable<ContractDraftsResponse>>(contractDrafts);
     }
 
-    public async Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request)
+    public async Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request, int staffId)
     {
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
         
+        // Set StaffId from token (the person who creates this contract draft)
+        contractDraft.StaffId = staffId;
        
         contractDraft.Status = "draft";
         
@@ -100,23 +102,22 @@ public class ContractDraftsService : IContractDraftsService
         
         var createdContractDraft = await _contractDraftsRepository.AddAsync(contractDraft);
         
-        // If contract draft is created from a template, automatically copy all mandatory template clauses
+        // If contract draft is created from a template, automatically copy all template clauses
         if (request.ContractTemplatesId.HasValue && request.ContractTemplatesId.Value > 0)
         {
-            // Get all mandatory template clauses from the contract template
-            var mandatoryTemplateClauses = await _templateClausesRepository
+            // Get all template clauses from the contract template
+            var allTemplateClauses = await _templateClausesRepository
                 .GetTemplateClausesByContractTemplateIdAsync(request.ContractTemplatesId.Value);
             
-            var mandatoryClauses = mandatoryTemplateClauses.Where(tc => tc.IsMandatory == true);
-            
-            // Create draft clauses for each mandatory template clause
-            foreach (var templateClause in mandatoryClauses)
+            // Create draft clauses for each template clause
+            foreach (var templateClause in allTemplateClauses)
             {
                 var draftClause = new DraftClauses
                 {
                     Title = templateClause.Title,
                     Body = templateClause.Body,
-                    IsModified = false,  // Fresh copy from template, not modified yet
+                    IsModified = false, 
+                    CreatedAt = DateTime.UtcNow, 
                     ContractDraftsId = createdContractDraft.Id,
                     TemplateClausesId = templateClause.Id
                 };
@@ -154,7 +155,7 @@ public class ContractDraftsService : IContractDraftsService
         }
         
         // Set status to "updated" when updating
-        existingContractDraft.Status = "updated";
+        existingContractDraft.Status = "modified";
         
         // Set UpdatedAt to current time when updating
         existingContractDraft.UpdatedAt = DateTime.UtcNow;

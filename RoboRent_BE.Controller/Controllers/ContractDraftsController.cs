@@ -187,10 +187,7 @@ public class ContractDraftsController : ControllerBase
                 });
             }
             
-            // Set staff ID from token
-            request.StaffId = staffId;
-            
-            var result = await _contractDraftsService.CreateContractDraftsAsync(request);
+            var result = await _contractDraftsService.CreateContractDraftsAsync(request, staffId);
             return CreatedAtAction(nameof(GetContractDraftsById), new { id = result.Id }, new
             {
                 success = true,

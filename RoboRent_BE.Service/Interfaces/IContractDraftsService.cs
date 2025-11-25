@@ -11,7 +11,7 @@ public interface IContractDraftsService
     Task<IEnumerable<ContractDraftsResponse>> GetContractDraftsByStaffIdAsync(int staffId);
     Task<IEnumerable<ContractDraftsResponse>> GetContractDraftsByManagerIdAsync(int managerId);
     Task<IEnumerable<ContractDraftsResponse>> GetContractDraftsByStatusAsync(string status);
-    Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request);
+    Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request, int staffId);
     Task<ContractDraftsResponse?> UpdateContractDraftsAsync(UpdateContractDraftsRequest request);
     Task<bool> DeleteContractDraftsAsync(int id);
 }
