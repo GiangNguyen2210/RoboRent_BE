@@ -78,7 +78,9 @@ public class MappingProfile : Profile
         // Rental Detail mappings
         CreateMap<CreateRentalDetailRequest, RentalDetail>();
         CreateMap<UpdateRentalDetailRequest, RentalDetail>();
-        CreateMap<RentalDetail, RentalDetailResponse>();
+        CreateMap<RentalDetail, RentalDetailResponse>()
+            .ForMember(dest => dest.RobotTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName))
+            .ForMember(dest => dest.RobotTypeDescription, opt => opt.MapFrom(src => src.RoboType.Description));
         // Rental Contract mappings
         CreateMap<CreateRentalContractRequest, RentalContract>();
         CreateMap<UpdateRentalContractRequest, RentalContract>();
