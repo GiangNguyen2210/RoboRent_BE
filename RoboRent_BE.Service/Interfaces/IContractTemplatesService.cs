@@ -14,5 +14,6 @@ public interface IContractTemplatesService
     Task<ContractTemplatesResponse?> UpdateContractTemplatesAsync(UpdateContractTemplatesRequest request);
     Task<bool> DeleteContractTemplatesAsync(int id);
     Task<ContractTemplatesResponse> CreateFromBodyAndGenerateClausesAsync(CreateTemplateWithParsedClausesRequest request, int createdByAccountId, string? createdByName = null);
+    Task<ContractTemplatesResponse?> ActivateContractTemplateAsync(int id);
 }
 

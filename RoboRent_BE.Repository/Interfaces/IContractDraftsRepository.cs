@@ -9,4 +9,5 @@ public interface IContractDraftsRepository : IGenericRepository<ContractDrafts>
     Task<IEnumerable<ContractDrafts>> GetContractDraftsByManagerIdAsync(int managerId);
     Task<IEnumerable<ContractDrafts>> GetContractDraftsByStatusAsync(string status);
     Task<IEnumerable<ContractDrafts>> GetAllWithIncludesAsync();
+    Task<IEnumerable<ContractDrafts>> GetContractDraftsByCustomerIdAsync(int customerId);
 }
