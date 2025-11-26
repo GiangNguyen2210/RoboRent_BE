@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
 using RoboRent_BE.Service.Interfaces;
 
@@ -26,7 +27,8 @@ public class ActualDeliveryController : ControllerBase
     }
 
     /// <summary>
-    /// Auto tạo delivery sau khi customer accept contract
+    /// [AUTO/SYSTEM] Tạo ActualDelivery khi customer accept contract
+    /// Trigger từ contract acceptance flow
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateDelivery([FromBody] CreateActualDeliveryRequest request)
@@ -34,35 +36,82 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.CreateActualDeliveryAsync(request);
-            return Ok(delivery);
+            return Ok(new
+            {
+                success = true,
+                message = "ActualDelivery created successfully",
+                data = delivery
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to create delivery", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to create delivery",
+                error = ex.Message
+            });
         }
     }
 
     /// <summary>
-    /// [STAFF] Điều chỉnh scheduled times của delivery (đã được auto assign)
-    /// Staff chỉ edit được delivery của mình
+    /// [MANAGER] Assign staff technical cho delivery
     /// </summary>
-    [HttpPut("{id}/assign")]
-    public async Task<IActionResult> AssignDelivery(int id, [FromBody] AssignDeliveryRequest request)
+    [HttpPut("{id}/assign-staff")]
+    public async Task<IActionResult> AssignStaff(int id, [FromBody] AssignStaffRequest request)
     {
         try
         {
-            int staffId = GetCurrentUserId();
-            var delivery = await _deliveryService.AssignDeliveryAsync(id, request, staffId);
-            return Ok(delivery);
+            var delivery = await _deliveryService.AssignStaffAsync(id, request);
+            return Ok(new
+            {
+                success = true,
+                message = "Staff assigned successfully",
+                data = delivery
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to update delivery schedule", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to assign staff",
+                error = ex.Message
+            });
         }
     }
 
     /// <summary>
-    /// [STAFF] Update delivery status (Delivering → Delivered → Collecting → Collected → Completed)
+    /// [MANAGER] Check conflict trước khi assign staff
+    /// </summary>
+    [HttpGet("check-conflict")]
+    public async Task<IActionResult> CheckConflict(
+        [FromQuery] int staffId, 
+        [FromQuery] int groupScheduleId)
+    {
+        try
+        {
+            var result = await _deliveryService.CheckStaffConflictAsync(staffId, groupScheduleId);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to check conflict",
+                error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [STAFF] Update delivery status (progress tracking)
+    /// Pending → Assigned → Delivering → Delivered → Collecting → Collected → Completed
     /// </summary>
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateDeliveryStatusRequest request)
@@ -71,11 +120,49 @@ public class ActualDeliveryController : ControllerBase
         {
             int staffId = GetCurrentUserId();
             var delivery = await _deliveryService.UpdateStatusAsync(id, request, staffId);
-            return Ok(delivery);
+            return Ok(new
+            {
+                success = true,
+                message = "Status updated successfully",
+                data = delivery
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to update status", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to update status",
+                error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [STAFF] Update notes only
+    /// </summary>
+    [HttpPut("{id}/notes")]
+    public async Task<IActionResult> UpdateNotes(int id, [FromBody] UpdateDeliveryNotesRequest request)
+    {
+        try
+        {
+            int staffId = GetCurrentUserId();
+            var delivery = await _deliveryService.UpdateNotesAsync(id, request, staffId);
+            return Ok(new
+            {
+                success = true,
+                message = "Notes updated successfully",
+                data = delivery
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to update notes",
+                error = ex.Message
+            });
         }
     }
 
@@ -88,28 +175,56 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.GetByIdAsync(id);
-            return Ok(delivery);
+            return Ok(new
+            {
+                success = true,
+                data = delivery
+            });
         }
         catch (Exception ex)
         {
-            return NotFound(new { Message = $"Delivery {id} not found", Error = ex.Message });
+            return NotFound(new
+            {
+                success = false,
+                message = $"Delivery {id} not found",
+                error = ex.Message
+            });
         }
     }
 
     /// <summary>
-    /// [CUSTOMER] Track delivery by rental ID
+    /// Get delivery by GroupScheduleId
     /// </summary>
-    [HttpGet("rental/{rentalId}")]
-    public async Task<IActionResult> GetByRentalId(int rentalId)
+    [HttpGet("by-schedule/{groupScheduleId}")]
+    public async Task<IActionResult> GetByGroupSchedule(int groupScheduleId)
     {
         try
         {
-            var delivery = await _deliveryService.GetByRentalIdAsync(rentalId);
-            return Ok(delivery);
+            var delivery = await _deliveryService.GetByGroupScheduleIdAsync(groupScheduleId);
+            
+            if (delivery == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = $"No delivery found for GroupSchedule {groupScheduleId}"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = delivery
+            });
         }
         catch (Exception ex)
         {
-            return NotFound(new { Message = $"No delivery found for rental {rentalId}", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to get delivery",
+                error = ex.Message
+            });
         }
     }
 
@@ -123,32 +238,50 @@ public class ActualDeliveryController : ControllerBase
         {
             int staffId = GetCurrentUserId();
             var deliveries = await _deliveryService.GetByStaffIdAsync(staffId);
-            return Ok(deliveries);
+            return Ok(new
+            {
+                success = true,
+                data = deliveries
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to get deliveries", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to get deliveries",
+                error = ex.Message
+            });
         }
     }
 
     /// <summary>
-    /// [STAFF] View calendar by date range
-    /// Query params: from, to, staffId (optional - nếu không truyền thì lấy tất cả)
+    /// [MANAGER/STAFF] View calendar by date range
+    /// Query params: from, to, staffId (optional)
     /// </summary>
     [HttpGet("calendar")]
     public async Task<IActionResult> GetCalendar(
-        [FromQuery] DateTime from, 
+        [FromQuery] DateTime from,
         [FromQuery] DateTime to,
         [FromQuery] int? staffId = null)
     {
         try
         {
             var calendar = await _deliveryService.GetCalendarAsync(from, to, staffId);
-            return Ok(calendar);
+            return Ok(new
+            {
+                success = true,
+                data = calendar
+            });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to get calendar", Error = ex.Message });
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to get calendar",
+                error = ex.Message
+            });
         }
     }
 }
