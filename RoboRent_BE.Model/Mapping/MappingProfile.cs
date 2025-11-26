@@ -24,6 +24,8 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<GroupScheduleUpdateRequest, GroupSchedule>();
+        
         CreateMap<StaffUpdateRequest, Rental>();
         
         CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
@@ -32,7 +34,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.Rental.StaffId))
             .ForMember(dest => dest.StaffFullName, opt => opt.MapFrom(src => src.Rental.Staff.FullName))
             .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.Rental.AccountId))
-            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src => src.Rental.Account.FullName));
+            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src => src.Rental.Account.FullName))
+            .ForMember(dest => dest.EventName, opt => opt.MapFrom(src => src.Rental.EventName));
         
         
         CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()

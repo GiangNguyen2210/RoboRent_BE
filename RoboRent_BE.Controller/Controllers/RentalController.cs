@@ -329,4 +329,36 @@ public class RentalController : ControllerBase
             });
         }
     }
+
+    [HttpPut("staff/request/update/rental/{rentalId}")]
+    public async Task<IActionResult> StaffUpdateRequest(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.StaffRequestRentalUpdateAsync(rentalId);
+
+            if (res == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Could not find rental."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

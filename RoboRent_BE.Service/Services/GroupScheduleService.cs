@@ -25,7 +25,7 @@ public class GroupScheduleService : IGroupScheduleService
     {
         // Lấy toàn bộ schedule trong group
         var schedules = await _groupScheduleRepository
-            .GetAllAsync(gs => gs.ActivityTypeGroupId == groupId, "Rental,Rental.Staff,Rental.Account");
+            .GetAllAsync(gs => gs.ActivityTypeGroupId == groupId && gs.IsDeleted == false, "Rental,Rental.Staff,Rental.Account");
 
         // Group by EventDate
         var grouped = schedules
@@ -47,70 +47,84 @@ public class GroupScheduleService : IGroupScheduleService
         return newDelivery < existFinish &&
                newFinish   > existDelivery;
     }
-
-public async Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreateRequest request, int staffId)
-{
-    var group = await _activityTypeGroupRepository.GetAsync(g => g.Id == request.ActivityTypeGroupId);
-    var rental = await _rentalRepository.GetAsync(r => r.Id == request.RentalId);
-    var checkExist = await _groupScheduleRepository.GetAsync(gs => gs.RentalId == rental.Id);
-
-    if (rental.StaffId != staffId)
-        throw new Exception("The staff does not assign for this rental request.");
-        
-    if (checkExist != null)
-        throw new Exception("Group Schedule already exist for this rental.");
-        
-    if (group == null || rental == null)
-        return null;
-
-    var newSchedule = _mapper.Map<GroupSchedule>(request);
-
-    // Assign from rental
-    newSchedule.EventCity = rental.City;
-    newSchedule.EventDate = rental.EventDate;
-    newSchedule.EventLocation = rental.Address;
-    newSchedule.IsDeleted = false;
-    newSchedule.Status = "planned";
-    newSchedule.RentalId = rental.Id;
-
-    // ================================
-    // ✅ Validate timeline order
-    // ================================
-    if (!(newSchedule.DeliveryTime < newSchedule.StartTime
-          && newSchedule.StartTime < newSchedule.EndTime
-          && newSchedule.EndTime < newSchedule.FinishTime))
+    
+        public async Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreateRequest request, int staffId)
     {
-        throw new Exception("Ensure DeliveryTime < StartTime < EndTime < FinishTime");
-    }
+        var group = await _activityTypeGroupRepository.GetAsync(g => g.Id == request.ActivityTypeGroupId);
+        var rental = await _rentalRepository.GetAsync(r => r.Id == request.RentalId);
+        var existing = await _groupScheduleRepository.GetByRentalAsync(request.RentalId.Value);
 
-    var newDelivery = newSchedule.DeliveryTime!.Value;
-    var newFinish   = newSchedule.FinishTime!.Value;
+        if (group == null || rental == null)
+            throw new Exception("Invalid group or rental.");
 
-    // Get schedules same group + same day
-    var existingSchedules = await _groupScheduleRepository.GetAllAsync(
-        gs => gs.ActivityTypeGroupId == request.ActivityTypeGroupId
-              && gs.EventDate == newSchedule.EventDate
-              && !gs.IsDeleted
-    );
+        if (rental.StaffId != staffId)
+            throw new Exception("The staff is not assigned to this rental.");
 
-    // Overlap check
-    foreach (var item in existingSchedules)
-    {
-        if (IsOverlapping(newDelivery, newFinish,
-                item.DeliveryTime!.Value, item.FinishTime!.Value))
+        GroupSchedule schedule;
+
+        // A — Active schedule exists → BLOCK
+        if (existing != null && existing.IsDeleted == false)
+            throw new Exception("Group Schedule already exist for this rental.");
+
+        // B — Soft-deleted schedule exists → RESTORE
+        if (existing != null && existing.IsDeleted == true)
         {
-            throw new Exception(
-                $"Lịch bị trùng với lịch ID {item.Id} " +
-                $"({item.DeliveryTime} - {item.FinishTime})"
-            );
+            schedule = existing;
+
+            _mapper.Map(request, schedule);            // update fields
+            schedule.IsDeleted = false;
+            schedule.Status = "planned";
+
+            // attach existing for EF
+            _groupScheduleRepository.Attach(schedule);
+            await _groupScheduleRepository.UpdateNotGenericAsync(schedule);
         }
+        else
+        {
+            // C — Create new schedule
+            schedule = _mapper.Map<GroupSchedule>(request);
+            schedule.IsDeleted = false;
+            schedule.Status = "planned";
+
+            await _groupScheduleRepository.AddAsync(schedule);
+        }
+
+        // Auto-fill from rental
+        schedule.EventCity = rental.City;
+        schedule.EventDate = rental.EventDate;
+        schedule.EventLocation = rental.Address;
+        schedule.RentalId = rental.Id;
+
+        // Timeline validation
+        if (!(schedule.DeliveryTime < schedule.StartTime &&
+              schedule.StartTime < schedule.EndTime &&
+              schedule.EndTime < schedule.FinishTime))
+        {
+            throw new Exception("Ensure DeliveryTime < StartTime < EndTime < FinishTime");
+        }
+
+        // Overlap check ONLY on new or restored
+        if (existing == null || existing.IsDeleted == true)
+        {
+            var sameDay = await _groupScheduleRepository.GetSameDaySchedulesAsync(
+                request.ActivityTypeGroupId.Value,
+                schedule.EventDate.Value
+            );
+
+            foreach (var item in sameDay)
+            {
+                if (IsOverlapping(schedule.DeliveryTime.Value, schedule.FinishTime.Value,
+                                  item.DeliveryTime.Value, item.FinishTime.Value))
+                {
+                    throw new Exception($"Overlap with schedule ID {item.Id}");
+                }
+            }
+        }
+
+        await _groupScheduleRepository.SaveChangesAsync();
+
+        return _mapper.Map<GroupScheduleResponse>(schedule);
     }
-
-    await _groupScheduleRepository.AddAsync(newSchedule);
-
-    return _mapper.Map<GroupScheduleResponse>(newSchedule);
-}
-
 
     public async Task<GroupScheduleResponse?> UpdateGroupSchedule(int scheduleId, GroupScheduleUpdateRequest request)
     {
@@ -163,5 +177,14 @@ public async Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreat
         var gs = await _groupScheduleRepository.GetAsync(gs => gs.Id == scheduleId);
         
         return gs == null ? null : _mapper.Map<GroupScheduleResponse>(gs);
+    }
+
+    public async Task<GroupScheduleResponse?> CustomerGetGroupScheduleByRentalId(int rentalId)
+    {
+        var res = await _groupScheduleRepository.GetAsync(gs => gs.RentalId == rentalId && gs.IsDeleted == false, "Rental,Rental.Staff,Rental.Account");
+        
+        if (res == null) return null;
+        
+        return _mapper.Map<GroupScheduleResponse>(res);
     }
 }
