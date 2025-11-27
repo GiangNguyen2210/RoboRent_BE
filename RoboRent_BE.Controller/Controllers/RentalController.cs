@@ -329,4 +329,41 @@ public class RentalController : ControllerBase
             });
         }
     }
+    
+    /// <summary>
+    /// [STAFF/MANAGER] Mark rental as completed after event finished
+    /// This will trigger Full payment creation
+    /// </summary>
+    [HttpPut("{rentalId}/complete")]
+    public async Task<IActionResult> CompleteRental(int rentalId)
+    {
+        try
+        {
+            var result = await _rentalService.CompleteRentalAsync(rentalId);
+        
+            if (result == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Rental not found"
+                });
+            }
+        
+            return Ok(new
+            {
+                success = true,
+                message = "Rental completed successfully",
+                data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

@@ -7,6 +7,7 @@ using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Repository.Repositories;
+using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
@@ -17,12 +18,15 @@ public class RentalService : IRentalService
     private readonly IRentalRepository _rentalRepository;
     private readonly IChatService _chatService; 
     private readonly IRentalDetailRepository _rentalDetailRepository;
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository)
+    private readonly IPaymentService _paymentService;
+
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository, IPaymentService paymentService)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
         _chatService = chatService;
         _rentalDetailRepository = rentalDetailRepository;
+        _paymentService = paymentService;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
@@ -276,4 +280,38 @@ public class RentalService : IRentalService
         
         return _mapper.Map<OrderResponse>(rental);
     }
+    
+    public async Task<RentalCompletionResponse> CompleteRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+    
+        if (rental == null)
+            throw new Exception("Rental not found");
+
+        if (rental.Status != "DeliveryScheduled")
+            throw new Exception($"Cannot complete rental. Status must be 'DeliveryScheduled'. Current: {rental.Status}");
+
+        // Update status
+        rental.Status = "Completed";
+        rental.UpdatedDate = DateTime.UtcNow;
+    
+        await _rentalRepository.UpdateAsync(rental);
+
+        // ✅ TẠO FULL PAYMENT VÀ LẤY RESULT
+        var paymentResult = await _paymentService.CreateFullPaymentAsync(rentalId);
+
+        // ✅ TRẢ VỀ CẢ RENTAL VÀ PAYMENT INFO
+        return new RentalCompletionResponse
+        {
+            Rental = _mapper.Map<OrderResponse>(rental),
+            FullPayment = new FullPaymentInfo
+            {
+                OrderCode = paymentResult.OrderCode,
+                Amount = paymentResult.Amount,
+                CheckoutUrl = paymentResult.CheckoutUrl,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15)
+            }
+        };
+    }
+    
 }
