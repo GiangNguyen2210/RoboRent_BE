@@ -36,21 +36,11 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.CreateActualDeliveryAsync(request);
-            return Ok(new
-            {
-                success = true,
-                message = "ActualDelivery created successfully",
-                data = delivery
-            });
+            return Ok(delivery);  // ✅ Trả trực tiếp
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to create delivery",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to create delivery", Error = ex.Message });
         }
     }
 
@@ -63,21 +53,11 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.AssignStaffAsync(id, request);
-            return Ok(new
-            {
-                success = true,
-                message = "Staff assigned successfully",
-                data = delivery
-            });
+            return Ok(delivery);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to assign staff",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to assign staff", Error = ex.Message });
         }
     }
 
@@ -92,20 +72,11 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var result = await _deliveryService.CheckStaffConflictAsync(staffId, groupScheduleId);
-            return Ok(new
-            {
-                success = true,
-                data = result
-            });
+            return Ok(result);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to check conflict",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to check conflict", Error = ex.Message });
         }
     }
 
@@ -120,21 +91,11 @@ public class ActualDeliveryController : ControllerBase
         {
             int staffId = GetCurrentUserId();
             var delivery = await _deliveryService.UpdateStatusAsync(id, request, staffId);
-            return Ok(new
-            {
-                success = true,
-                message = "Status updated successfully",
-                data = delivery
-            });
+            return Ok(delivery);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to update status",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to update status", Error = ex.Message });
         }
     }
 
@@ -148,21 +109,11 @@ public class ActualDeliveryController : ControllerBase
         {
             int staffId = GetCurrentUserId();
             var delivery = await _deliveryService.UpdateNotesAsync(id, request, staffId);
-            return Ok(new
-            {
-                success = true,
-                message = "Notes updated successfully",
-                data = delivery
-            });
+            return Ok(delivery);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to update notes",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to update notes", Error = ex.Message });
         }
     }
 
@@ -175,20 +126,11 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.GetByIdAsync(id);
-            return Ok(new
-            {
-                success = true,
-                data = delivery
-            });
+            return Ok(delivery);  // ✅
         }
         catch (Exception ex)
         {
-            return NotFound(new
-            {
-                success = false,
-                message = $"Delivery {id} not found",
-                error = ex.Message
-            });
+            return NotFound(new { Message = $"Delivery {id} not found", Error = ex.Message });
         }
     }
 
@@ -201,30 +143,17 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.GetByGroupScheduleIdAsync(groupScheduleId);
-            
+        
             if (delivery == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = $"No delivery found for GroupSchedule {groupScheduleId}"
-                });
+                return NotFound(new { Message = $"No delivery found for GroupSchedule {groupScheduleId}" });
             }
 
-            return Ok(new
-            {
-                success = true,
-                data = delivery
-            });
+            return Ok(delivery);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to get delivery",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to get delivery", Error = ex.Message });
         }
     }
 
@@ -268,20 +197,11 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var calendar = await _deliveryService.GetCalendarAsync(from, to, staffId);
-            return Ok(new
-            {
-                success = true,
-                data = calendar
-            });
+            return Ok(calendar);  // ✅
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Failed to get calendar",
-                error = ex.Message
-            });
+            return BadRequest(new { Message = "Failed to get calendar", Error = ex.Message });
         }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.Entities;
 
@@ -12,4 +13,10 @@ public interface IModifyIdentityUserService
     public Task<ModifyIdentityUser?> GetUserByEmailAsync(string email);
     
     public Task<UpdateUserResponse?> UpdateUserAsync(UpdateUserRequest updateUserRequest);
+
+    Task<PageListResponse<StaffListItemResponse>> GetStaffListAsync(
+        int page, 
+        int pageSize, 
+        string? status = null, 
+        string? searchTerm = null);
 }
