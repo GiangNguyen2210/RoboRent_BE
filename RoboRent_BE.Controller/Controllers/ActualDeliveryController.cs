@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RoboRent_BE.Controller.Helpers;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
 using RoboRent_BE.Service.Interfaces;
 
@@ -14,16 +15,6 @@ public class ActualDeliveryController : ControllerBase
     public ActualDeliveryController(IActualDeliveryService deliveryService)
     {
         _deliveryService = deliveryService;
-    }
-
-    private int GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst("AccountId")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
-        return int.Parse(userIdClaim);
     }
 
     /// <summary>
@@ -89,7 +80,7 @@ public class ActualDeliveryController : ControllerBase
     {
         try
         {
-            int staffId = GetCurrentUserId();
+            int staffId = AuthHelper.GetCurrentUserId(User);
             var delivery = await _deliveryService.UpdateStatusAsync(id, request, staffId);
             return Ok(delivery);  // ✅
         }
@@ -107,7 +98,7 @@ public class ActualDeliveryController : ControllerBase
     {
         try
         {
-            int staffId = GetCurrentUserId();
+            int staffId = AuthHelper.GetCurrentUserId(User);
             var delivery = await _deliveryService.UpdateNotesAsync(id, request, staffId);
             return Ok(delivery);  // ✅
         }
@@ -165,7 +156,7 @@ public class ActualDeliveryController : ControllerBase
     {
         try
         {
-            int staffId = GetCurrentUserId();
+            int staffId = AuthHelper.GetCurrentUserId(User);
             var deliveries = await _deliveryService.GetByStaffIdAsync(staffId);
             return Ok(new
             {
