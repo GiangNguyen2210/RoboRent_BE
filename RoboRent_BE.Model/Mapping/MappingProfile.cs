@@ -65,7 +65,8 @@ public class MappingProfile : Profile
         
         CreateMap<Rental, OrderResponse>()
             .ForMember(dest => dest.EventActivityName, opt => opt.MapFrom(src => src.EventActivity.Name))
-            .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src => src.ActivityType.Name));
+            .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src => src.ActivityType.Name))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Account.FullName));
 
         CreateMap<ModifyIdentityUser, UpdateUserResponse>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));

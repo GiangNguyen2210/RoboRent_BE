@@ -123,7 +123,7 @@ public class RentalService : IRentalService
         Expression<Func<Rental, bool>> filter = r =>
             r.Id == id;
 
-        var rentals = await _rentalRepository.GetAllAsync(filter,"EventActivity,ActivityType");
+        var rentals = await _rentalRepository.GetAllAsync(filter,"EventActivity,ActivityType,Account");
         var rental = _mapper.Map<OrderResponse>(rentals.FirstOrDefault());
         return rental;
     }
@@ -234,7 +234,7 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
     {
-        Expression<Func<Rental, bool>> filter = r => r.StaffId == staffId;
+        Expression<Func<Rental, bool>> filter = r => r.StaffId == staffId && r.Status != "Draft";
         
         var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
         
@@ -284,17 +284,19 @@ public class RentalService : IRentalService
 
     public async Task<OrderResponse?> StaffRequestRentalUpdateAsync(int rentalId)
     {
-        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId, "ActivityType,EventActivity");
         var gs = await _groupScheduleRepository.GetAsync(g => g.RentalId == rentalId);
         
         if (rental == null) return null;
-        
         rental.Status = "Draft";
-        
-        gs.IsDeleted = true;
+
+        if (gs != null)
+        {
+            gs.IsDeleted = true;
+            await _groupScheduleRepository.UpdateAsync(gs);
+        }
         
         await _rentalRepository.UpdateAsync(rental);
-        await _groupScheduleRepository.UpdateAsync(gs);
 
         return _mapper.Map<OrderResponse>(rental);
     }
