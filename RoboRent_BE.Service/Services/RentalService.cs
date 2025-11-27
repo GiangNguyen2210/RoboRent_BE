@@ -234,7 +234,7 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
     {
-        Expression<Func<Rental, bool>> filter = r => r.Status == "Received" && r.StaffId == staffId;
+        Expression<Func<Rental, bool>> filter = r => r.StaffId == staffId;
         
         var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
         

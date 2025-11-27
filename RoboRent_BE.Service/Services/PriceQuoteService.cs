@@ -56,7 +56,7 @@ public class PriceQuoteService : IPriceQuoteService
     {
         try
         {
-            var (fee, distance) = CalculateDeliveryFee(rental.Address, request.DeliveryDistance);
+            var (fee, distance) = CalculateDeliveryFee(rental.Address + "," + rental.City, request.DeliveryDistance * 1000);
             deliveryFee = fee;
             deliveryDistance = distance;
         }
@@ -85,9 +85,12 @@ public class PriceQuoteService : IPriceQuoteService
     };
 
     await _priceQuoteRepo.AddAsync(quote);
-    
-    rental.Status = "PendingPriceQuote";
-    await _rentalRepo.UpdateAsync(rental);
+
+    if (rental.Status != "PendingPriceQuote")
+    {
+        rental.Status = "PendingPriceQuote";
+        await _rentalRepo.UpdateAsync(rental);   
+    }
 
     var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
     return MapToPriceQuoteResponse(quote, allQuotes.Count);
@@ -139,10 +142,13 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote.Status != "PendingManager") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
 
+        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+
         quote.ManagerId = managerId;
 
         if (request.Action.ToLower() == "approve")
         {
+            rental.Status = "AcceptedPriceQuote";
             quote.Status = "PendingCustomer";
             quote.ManagerApprovedAt = DateTime.UtcNow;
         }
@@ -153,6 +159,7 @@ public class PriceQuoteService : IPriceQuoteService
                 throw new Exception("Feedback is required when rejecting");
             }
             
+            rental.Status = "RejectedPriceQuote";
             quote.Status = "RejectedManager";
             quote.ManagerFeedback = request.Feedback;
         }
@@ -161,6 +168,7 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception("Invalid action. Use 'approve' or 'reject'");
         }
 
+        await _rentalRepo.UpdateAsync(rental);
         await _priceQuoteRepo.UpdateAsync(quote);
         
         var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
@@ -326,7 +334,7 @@ public class PriceQuoteService : IPriceQuoteService
         };
     }
     
-    private (decimal Fee, int? Distance) CalculateDeliveryFee(string address, int? manualDistance = null)
+    private (decimal Fee, int? Distance) CalculateDeliveryFee(string address, int? manualDistance)
     {
         const decimal HCM_FEE = 200000m;
         const decimal OUTSIDE_HCM_RATE = 15000m;

@@ -121,6 +121,10 @@ public class GroupScheduleService : IGroupScheduleService
             }
         }
 
+        rental.Status = "Scheduled";
+
+        await _rentalRepository.UpdateAsync(rental);
+        
         await _groupScheduleRepository.SaveChangesAsync();
 
         return _mapper.Map<GroupScheduleResponse>(schedule);
