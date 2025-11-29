@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.SignalR;
 using RoboRent_BE.Model.DTOs.Chat;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Controller.Hubs;
+using RoboRent_BE.Controller.Helpers;
+using System.Security.Claims;
 
 namespace RoboRent_BE.Controller.Controllers;
 
@@ -17,17 +19,6 @@ public class ChatController : ControllerBase
     {
         _chatService = chatService;
         _hubContext = hubContext;
-    }
-
-    // ✅ Helper method để lấy userId từ Claims
-    private int GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst("AccountId")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
-        return int.Parse(userIdClaim);
     }
 
     /// <summary>
@@ -95,7 +86,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            int senderId = GetCurrentUserId();
+            int senderId = AuthHelper.GetCurrentUserId(User);
             
             // 1. Service lưu message vào DB
             var message = await _chatService.SendMessageAsync(request, senderId);
@@ -126,7 +117,6 @@ public class ChatController : ControllerBase
             var message = await _chatService.UpdateMessageStatusAsync(messageId, request);
             
             // 2. Controller broadcast status change qua SignalR
-            var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(message.ChatRoomId);
             var roomName = $"rental_{message.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, request.Status);
             
@@ -146,7 +136,7 @@ public class ChatController : ControllerBase
     {
         try
         {
-            int userId = GetCurrentUserId();
+            int userId = AuthHelper.GetCurrentUserId(User);
             
             var count = await _chatService.GetUnreadCountAsync(rentalId, userId);
             return Ok(new { RentalId = rentalId, UnreadCount = count });
@@ -158,43 +148,32 @@ public class ChatController : ControllerBase
     }
     
     /// <summary>
-    /// Lấy danh sách chat rooms của staff (for sidebar)
+    /// Lấy danh sách chat rooms của user hiện tại (tự động phân biệt Staff/Customer)
     /// </summary>
-    [HttpGet("rooms/staff/{staffId}")]
-    public async Task<IActionResult> GetStaffChatRooms(
-        int staffId,
+    [HttpGet("rooms")]
+    public async Task<IActionResult> GetMyChatRooms(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
         try
         {
-            var rooms = await _chatService.GetChatRoomsByStaffIdAsync(staffId, page, pageSize);
-            return Ok(rooms);
+            int userId = AuthHelper.GetCurrentUserId(User);
+            string role = AuthHelper.GetCurrentUserRole(User);
+            
+            if (role == "Staff")
+            {
+                var rooms = await _chatService.GetChatRoomsByStaffIdAsync(userId, page, pageSize);
+                return Ok(rooms);
+            }
+            else // Customer hoặc role khác
+            {
+                var rooms = await _chatService.GetChatRoomsByCustomerIdAsync(userId, page, pageSize);
+                return Ok(rooms);
+            }
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Message = "Failed to get staff chat rooms", Error = ex.Message });
+            return BadRequest(new { Message = "Failed to get chat rooms", Error = ex.Message });
         }
     }
-    
-    /// <summary>
-    /// Lấy danh sách chat rooms của customer (for sidebar)
-    /// </summary>
-    [HttpGet("rooms/customer/{customerId}")]
-    public async Task<IActionResult> GetCustomerChatRooms(
-        int customerId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
-    {
-        try
-        {
-            var rooms = await _chatService.GetChatRoomsByCustomerIdAsync(customerId, page, pageSize);
-            return Ok(rooms);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { Message = "Failed to get customer chat rooms", Error = ex.Message });
-        }
-    }
-    
 }

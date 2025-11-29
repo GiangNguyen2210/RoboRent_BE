@@ -20,6 +20,7 @@ public class RentalController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> AddRental([FromBody] CreateOrderRequest createOrderRequest)
     {
+        try{
         if (!ModelState.IsValid)
         {
             return BadRequest(new
@@ -31,40 +32,76 @@ public class RentalController : ControllerBase
                     .ToList()
             });
         }
-        
+
         var result = await _rentalService.CreateRentalAsync(createOrderRequest);
 
         if (result == null)
         {
             return BadRequest("Could not create new rental");
         }
-        
+
         return Ok(result);
+        }
+        catch (ArgumentException ex)   // ⬅⬅⬅ CATCH VALIDATION ERRORS PROPERLY
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = new List<string> { ex.Message }
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
     }
 
     [HttpPut("update")]
     public async Task<IActionResult> UpdateRental([FromBody] UpdateOrderRequest updateOrderRequest)
     {
-        if (!ModelState.IsValid)
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList()
+                });
+            }
+
+            var result = await _rentalService.UpdateRentalAsync(updateOrderRequest);
+
+            if (result == null)
+            {
+                return BadRequest("Could not find valid data");
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)   // ⬅⬅⬅ CATCH VALIDATION ERRORS PROPERLY
         {
             return BadRequest(new
             {
                 success = false,
-                errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList()
+                errors = new List<string> { ex.Message }
             });
         }
-        
-        var result = await _rentalService.UpdateRentalAsync(updateOrderRequest);
-
-        if (result == null)
+        catch (Exception e)
         {
-            return BadRequest("Could not find valid data");
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
         }
-        
-        return Ok(result);
     }
 
     [HttpGet("{id}")]
@@ -97,7 +134,7 @@ public class RentalController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize]
+    // [Authorize]
     [HttpGet("my-rentals/{accountId}")]
     public async Task<IActionResult> GetRentalsByCustomer(int accountId)
     {
@@ -219,6 +256,96 @@ public class RentalController : ControllerBase
                 message = "Could not find rental"
             });
             
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPut("customer/cancel/rental/{rentalId}")]
+    public async Task<IActionResult> CustomerCancelRental(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.CustomerCancelRentalAsync(rentalId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Could not find rental"
+            });
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+    
+    [HttpPut("customer/delete/rental/{rentalId}")]
+    public async Task<IActionResult> CustomerDeleteRental(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.CustomerDeleteRentalAsync(rentalId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Could not find rental"
+            });
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPut("staff/request/update/rental/{rentalId}")]
+    public async Task<IActionResult> StaffUpdateRequest(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.StaffRequestRentalUpdateAsync(rentalId);
+
+            if (res == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Could not find rental."
+                });
+            }
+
             return Ok(new
             {
                 success = true,

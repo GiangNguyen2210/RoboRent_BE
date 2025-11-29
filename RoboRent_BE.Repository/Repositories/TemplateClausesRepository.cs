@@ -24,6 +24,7 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
         return await _dbContext.TemplateClauses
             .Where(tc => tc.ContractTemplatesId == contractTemplateId)
             .Include(tc => tc.ContractTemplate)
+            .OrderBy(tc => tc.Id)
             .ToListAsync();
     }
 
@@ -47,6 +48,7 @@ public class TemplateClausesRepository : GenericRepository<TemplateClauses>, ITe
     {
         return await _dbContext.TemplateClauses
             .Include(tc => tc.ContractTemplate)
+            .OrderBy(tc => tc.Id)
             .ToListAsync();
     }
 // check template clause ko mandatory va chua co trong draft

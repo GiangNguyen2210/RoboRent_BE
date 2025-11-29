@@ -12,15 +12,18 @@ public class ChatService : IChatService
     private readonly IChatRoomRepository _chatRoomRepo;
     private readonly IChatMessageRepository _chatMessageRepo;
     private readonly IGenericRepository<Account> _accountRepo;
+    private readonly IRentalRepository _rentalRepo;
 
     public ChatService(
         IChatRoomRepository chatRoomRepo,
         IChatMessageRepository chatMessageRepo,
-        IGenericRepository<Account> accountRepo)
+        IGenericRepository<Account> accountRepo,
+        IRentalRepository rentalRepo)
     {
         _chatRoomRepo = chatRoomRepo;
         _chatMessageRepo = chatMessageRepo;
         _accountRepo = accountRepo;
+        _rentalRepo = rentalRepo;
     }
 
     public async Task<ChatRoomResponse> GetOrCreateChatRoomAsync(int rentalId, int staffId, int customerId)
@@ -83,6 +86,8 @@ public class ChatService : IChatService
     public async Task<ChatMessageResponse> SendMessageAsync(SendMessageRequest request, int senderId)
     {
         var room = await _chatRoomRepo.GetByRentalIdAsync(request.RentalId);
+
+        var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
         
         if (room == null)
         {
@@ -95,6 +100,12 @@ public class ChatService : IChatService
             throw new Exception($"Sender account not found");
         }
 
+        if (rental.Status != "PendingDemo" && request.MessageType == MessageType.Demo)
+        {
+            rental.Status = "PendingDemo";
+            await _rentalRepo.UpdateAsync(rental);
+        }
+        
         var message = new ChatMessage
         {
             ChatRoomId = room.Id,
@@ -137,6 +148,18 @@ public class ChatService : IChatService
             throw new Exception("Only demo messages can have status updated");
         }
 
+        var rental = await _rentalRepo.GetAsync(r => r.Id == message.ChatRoom.RentalId);
+
+        if (request.Status == "Accepted")
+        {
+            rental.Status = "AcceptedDemo";
+        } else if (request.Status == "Rejected")
+        {
+            rental.Status = "DeniedDemo";
+        }
+        
+        await _rentalRepo.UpdateAsync(rental);
+        
         message.Status = request.Status;
         await _chatMessageRepo.UpdateAsync(message);
 

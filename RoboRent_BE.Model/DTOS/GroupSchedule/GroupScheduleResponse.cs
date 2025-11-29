@@ -2,6 +2,10 @@ namespace RoboRent_BE.Model.DTOs.GroupSchedule;
 
 public class GroupScheduleResponse
 {
+    public int Id { get; set; }
+
+    public string? EventName { get; set; } = string.Empty;
+
     public DateTime? EventDate { get; set; } = DateTime.UtcNow;
 
     public string? EventLocation { get; set; } = string.Empty;
