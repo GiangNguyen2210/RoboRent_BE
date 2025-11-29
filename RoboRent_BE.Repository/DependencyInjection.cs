@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RoboRent_BE.Repository.Interface;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Repository.Repositories;
 
@@ -18,7 +17,7 @@ public static class DependencyInjection
         services.AddTransient<IRentalDetailRepository, RentalDetailRepository>();
         services.AddTransient<IRobotRepository, RobotRepository>();
         services.AddTransient<ITypesOfRoboRepository, TypesOfRoboRepository>();
-        services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        // services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
         services.AddTransient<IRentalContractRepository, RentalContractRepository>();
@@ -34,6 +33,7 @@ public static class DependencyInjection
         services.AddTransient<IActivityTypeGroupRepository, ActivityTypeGroupRepository>();
         services.AddTransient<IGroupScheduleRepository, GroupScheduleRepository>();
         services.AddTransient<IContractReportsRepository, ContractReportsRepository>();
+        services.AddTransient<IPaymentRecordRepository, PaymentRecordRepository>();
         return services;
     }
 }

@@ -9,13 +9,7 @@ namespace RoboRent_BE.Service.Interface;
 
 public interface IPayOSService
 {
-    Task<PaymentResponse> CreatePaymentLink(PaymentRequest request, int accountId);
     Task<PaymentLinkInformation> GetPaymentLinkInformation(long orderCode);
     Task<PaymentLinkInformation> CancelPaymentLink(long orderCode, string cancellationReason = null);
     WebhookData VerifyWebhookData(WebhookType webhookBody);
-    Task<List<PaymentHistory>> GetPaymentTransactionByAccountId(int accountId);
-    Task<AccountDto?> GetAccountByIdAsync(int accountId);
-    Task<PaymentTransactionDto?> GetTransactionByOrderCodeAsync(long orderCode);
-    Task UpdateTransactionStatusAsync(long orderCode, string status);
-    Task UpdateAccountSubscriptionAsync(int accountId, int amount);
 }
