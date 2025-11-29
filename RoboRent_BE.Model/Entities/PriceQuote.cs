@@ -8,8 +8,14 @@ public partial class PriceQuote
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
+    
+    [Required]
+    public int RentalId { get; set; }
+    
+    [ForeignKey(nameof(RentalId))]
+    public virtual Rental Rental { get; set; } = null!;
 
-    public string? Delivery { get; set; }  = string.Empty;
+    public Double? Delivery { get; set; }  = 0;
 
     public Double? Deposit { get; set; } = 0;
 

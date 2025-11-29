@@ -1,3 +1,4 @@
+using RoboRent_BE.Model.DTOs.PriceQuote;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Configuration;

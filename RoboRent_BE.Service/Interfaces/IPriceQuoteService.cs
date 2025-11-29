@@ -1,4 +1,4 @@
-using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Model.DTOs.PriceQuote;
 
 namespace RoboRent_BE.Service.Interfaces;
 
