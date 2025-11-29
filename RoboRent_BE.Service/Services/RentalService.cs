@@ -18,16 +18,13 @@ public class RentalService : IRentalService
     private readonly IChatService _chatService; 
     private readonly IRentalDetailRepository _rentalDetailRepository;
     private readonly IGroupScheduleRepository _groupScheduleRepository;
-    private readonly IPaymentService _paymentService;
-
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository, IPaymentService paymentService, IGroupScheduleRepository groupScheduleRepository)
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository,  IGroupScheduleRepository groupScheduleRepository)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
         _chatService = chatService;
         _rentalDetailRepository = rentalDetailRepository;
         _groupScheduleRepository = groupScheduleRepository;
-        _paymentService = paymentService;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
@@ -258,38 +255,4 @@ public class RentalService : IRentalService
 
         return _mapper.Map<OrderResponse>(rental);
     }
-    
-    public async Task<RentalCompletionResponse> CompleteRentalAsync(int rentalId)
-    {
-        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
-    
-        if (rental == null)
-            throw new Exception("Rental not found");
-
-        if (rental.Status != "DeliveryScheduled")
-            throw new Exception($"Cannot complete rental. Status must be 'DeliveryScheduled'. Current: {rental.Status}");
-
-        // Update status
-        rental.Status = "Completed";
-        rental.UpdatedDate = DateTime.UtcNow;
-    
-        await _rentalRepository.UpdateAsync(rental);
-
-        // ✅ TẠO FULL PAYMENT VÀ LẤY RESULT
-        var paymentResult = await _paymentService.CreateFullPaymentAsync(rentalId);
-
-        // ✅ TRẢ VỀ CẢ RENTAL VÀ PAYMENT INFO
-        return new RentalCompletionResponse
-        {
-            Rental = _mapper.Map<OrderResponse>(rental),
-            FullPayment = new FullPaymentInfo
-            {
-                OrderCode = paymentResult.OrderCode,
-                Amount = paymentResult.Amount,
-                CheckoutUrl = paymentResult.CheckoutUrl,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(15)
-            }
-        };
-    }
-    
 }

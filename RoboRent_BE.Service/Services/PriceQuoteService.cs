@@ -56,7 +56,7 @@ public class PriceQuoteService : IPriceQuoteService
     {
         try
         {
-            var (fee, distance) = CalculateDeliveryFee(rental.Address, request.DeliveryDistance);
+            var (fee, distance) = CalculateDeliveryFee(rental.Address + "," + rental.City, request.DeliveryDistance * 1000);
             deliveryFee = fee;
             deliveryDistance = distance;
         }
@@ -85,9 +85,12 @@ public class PriceQuoteService : IPriceQuoteService
     };
 
     await _priceQuoteRepo.AddAsync(quote);
-    
-    rental.Status = "PendingPriceQuote";
-    await _rentalRepo.UpdateAsync(rental);
+
+    if (rental.Status != "PendingPriceQuote")
+    {
+        rental.Status = "PendingPriceQuote";
+        await _rentalRepo.UpdateAsync(rental);   
+    }
 
     var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
     return MapToPriceQuoteResponse(quote, allQuotes.Count);
