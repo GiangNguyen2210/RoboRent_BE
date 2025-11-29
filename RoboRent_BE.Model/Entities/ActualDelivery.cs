@@ -1,34 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace RoboRent_BE.Model.Entities;
+﻿namespace RoboRent_BE.Model.Entities;
 
 public class ActualDelivery
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-    
-    [Required]
-    public int GroupScheduleId { get; set; }
-    
+    public int RentalId { get; set; }
     public int? StaffId { get; set; }
     
+    public DateTime? ScheduledDeliveryTime { get; set; }
     public DateTime? ActualDeliveryTime { get; set; }
+    public DateTime? ScheduledPickupTime { get; set; }
     public DateTime? ActualPickupTime { get; set; }
     
-    [Required]
-    public string Status { get; set; } = "Pending";
-    
+    public string Status { get; set; } = "Planning";
+    public string? CustomerRequestNotes { get; set; }
     public string? Notes { get; set; }
     
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     
-    // Navigation Properties
-    [ForeignKey(nameof(GroupScheduleId))]
-    public virtual GroupSchedule GroupSchedule { get; set; } = null!;
-    
-    [ForeignKey(nameof(StaffId))]
-    public virtual Account? Staff { get; set; }
+    // Navigation
+    public Rental Rental { get; set; }
+    public Account? Staff { get; set; }
 }

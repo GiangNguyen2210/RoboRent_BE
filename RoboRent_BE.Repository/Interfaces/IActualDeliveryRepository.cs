@@ -4,28 +4,7 @@ namespace RoboRent_BE.Repository.Interfaces;
 
 public interface IActualDeliveryRepository : IGenericRepository<ActualDelivery>
 {
-    /// <summary>
-    /// Get ActualDelivery by GroupScheduleId
-    /// </summary>
-    Task<ActualDelivery?> GetByGroupScheduleIdAsync(int groupScheduleId);
-    
-    /// <summary>
-    /// Get all deliveries of a staff
-    /// </summary>
+    Task<ActualDelivery?> GetByRentalIdAsync(int rentalId);
     Task<List<ActualDelivery>> GetByStaffIdAsync(int staffId);
-    
-    /// <summary>
-    /// Get deliveries by date range
-    /// </summary>
     Task<List<ActualDelivery>> GetByDateRangeAsync(DateTime from, DateTime to);
-    
-    /// <summary>
-    /// Get deliveries by staff + date range (for conflict checking)
-    /// </summary>
-    Task<List<ActualDelivery>> GetByStaffAndDateRangeAsync(int staffId, DateTime from, DateTime to);
-    
-    /// <summary>
-    /// Get delivery with full navigation properties
-    /// </summary>
-    Task<ActualDelivery?> GetWithDetailsAsync(int id);
 }

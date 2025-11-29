@@ -26,4 +26,6 @@ public class CreatePriceQuoteRequest
     [MaxLength(2000)]
     public string? ManagerFeedback { get; set; }
     
+    [Range(50, int.MaxValue, ErrorMessage = "Distance must be at least 50km for outside HCM")]
+    public int? DeliveryDistance { get; set; }
 }

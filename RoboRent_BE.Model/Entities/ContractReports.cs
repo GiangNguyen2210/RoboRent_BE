@@ -45,6 +45,5 @@ public partial class ContractReports
 
     public int? PaymentId { get; set; }
     
-    [ForeignKey("PaymentId")] 
-    public virtual PaymentRecord PaymentRecord { get; set; } = null!;
+    [ForeignKey("PaymentId")] public virtual PaymentTransaction PaymentTransaction { get; set; } = null!;
 }

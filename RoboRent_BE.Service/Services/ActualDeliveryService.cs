@@ -8,111 +8,121 @@ namespace RoboRent_BE.Service.Services;
 public class ActualDeliveryService : IActualDeliveryService
 {
     private readonly IActualDeliveryRepository _deliveryRepo;
-    private readonly IGroupScheduleRepository _groupScheduleRepo;
+    private readonly IRentalRepository _rentalRepo;
 
     public ActualDeliveryService(
         IActualDeliveryRepository deliveryRepo,
-        IGroupScheduleRepository groupScheduleRepo)
+        IRentalRepository rentalRepo)
     {
         _deliveryRepo = deliveryRepo;
-        _groupScheduleRepo = groupScheduleRepo;
+        _rentalRepo = rentalRepo;
     }
 
     public async Task<ActualDeliveryResponse> CreateActualDeliveryAsync(CreateActualDeliveryRequest request)
     {
-        // Validate GroupSchedule exists
-        var groupSchedule = await _groupScheduleRepo.GetAsync(
-            gs => gs.Id == request.GroupScheduleId,
-            includeProperties: "Rental,Rental.Account"
-        );
-
-        if (groupSchedule == null)
+        // Validate rental exists and status = AcceptedContract
+        var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
+    
+        if (rental == null)
         {
-            throw new Exception($"GroupSchedule {request.GroupScheduleId} not found");
+            throw new Exception($"Rental {request.RentalId} not found");
         }
 
-        if (groupSchedule.Status != "planned")
+        if (rental.Status != "AcceptedContract")
         {
-            throw new Exception($"Cannot create delivery. GroupSchedule status must be 'planned'. Current: {groupSchedule.Status}");
+            throw new Exception($"Cannot create delivery. Rental status: {rental.Status}. Required: AcceptedContract");
         }
 
-        // Check if ActualDelivery already exists for this GroupSchedule
-        var existing = await _deliveryRepo.GetByGroupScheduleIdAsync(request.GroupScheduleId);
-        if (existing != null)
+        // Check if delivery already exists
+        var existingDelivery = await _deliveryRepo.GetByRentalIdAsync(request.RentalId);
+        if (existingDelivery != null)
         {
-            throw new Exception($"ActualDelivery already exists for GroupSchedule {request.GroupScheduleId}");
+            throw new Exception($"Delivery already exists for rental {request.RentalId}");
         }
 
-        // Change GroupSchedule status to "scheduled"
-        groupSchedule.Status = "scheduled";
-        await _groupScheduleRepo.UpdateAsync(groupSchedule);
-
-        // Create ActualDelivery
+        // ✅ NEW: Auto assign cho Rental.StaffId và dùng PlannedTimes
         var delivery = new ActualDelivery
         {
-            GroupScheduleId = request.GroupScheduleId,
-            StaffId = null,
-            Status = "Pending",
+            RentalId = request.RentalId,
+            StaffId = rental.StaffId, // ✅ Auto assign
+            ScheduledDeliveryTime = rental.PlannedDeliveryTime, // ✅ Dùng planned
+            ScheduledPickupTime = rental.PlannedPickupTime, // ✅ Dùng planned
+            Status = "Assigned", // ✅ Đổi luôn thành Assigned (đã có staff)
+            CustomerRequestNotes = request.CustomerRequestNotes,
             CreatedAt = DateTime.UtcNow
         };
 
         await _deliveryRepo.AddAsync(delivery);
 
-        return await MapToResponseAsync(delivery.Id);
+        return await MapToResponseAsync(delivery);
     }
 
-    public async Task<ActualDeliveryResponse> AssignStaffAsync(int deliveryId, AssignStaffRequest request)
+    public async Task<ActualDeliveryResponse> AssignDeliveryAsync(int deliveryId, AssignDeliveryRequest request, int staffId)
     {
-        var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
-
+        var delivery = await _deliveryRepo.GetAsync(d => d.Id == deliveryId);
+    
         if (delivery == null)
         {
-            throw new Exception($"ActualDelivery {deliveryId} not found");
+            throw new Exception("Delivery not found");
         }
 
-        if (delivery.Status != "Pending")
+        // ✅ NEW: Cho phép staff edit scheduled times (status vẫn là Assigned)
+        if (delivery.Status != "Assigned")
         {
-            throw new Exception($"Cannot assign staff. Delivery status must be 'Pending'. Current: {delivery.Status}");
+            throw new Exception($"Cannot update delivery with status: {delivery.Status}. Required: Assigned");
         }
 
-        // Check staff conflict
-        var conflictCheck = await CheckStaffConflictAsync(request.StaffId, delivery.GroupScheduleId);
-        if (conflictCheck.HasConflict)
+        // ✅ NEW: Chỉ staff owner mới edit được
+        if (delivery.StaffId != staffId)
         {
-            var conflictMessages = conflictCheck.Conflicts
-                .Select(c => $"- {c.EventName} ({c.ScheduledStart:g} - {c.ScheduledEnd:g})")
-                .ToList();
-            
-            throw new Exception(
-                $"Staff {request.StaffId} has schedule conflict:\n" + 
-                string.Join("\n", conflictMessages)
-            );
+            throw new Exception("You can only update your own deliveries");
         }
 
-        // Assign staff
-        delivery.StaffId = request.StaffId;
-        delivery.Status = "Assigned";
-        delivery.Notes = request.Notes;
-        delivery.UpdatedAt = DateTime.UtcNow;
+        var rental = await _rentalRepo.GetAsync(r => r.Id == delivery.RentalId);
+
+        // Staff có thể override scheduled times hoặc giữ nguyên
+        var scheduledDeliveryTime = request.ScheduledDeliveryTime ?? delivery.ScheduledDeliveryTime;
+        var scheduledPickupTime = request.ScheduledPickupTime ?? delivery.ScheduledPickupTime;
+
+        // Validate times nếu có EventDate
+        if (rental.EventDate.HasValue && scheduledDeliveryTime.HasValue)
+        {
+            if (scheduledDeliveryTime.Value >= rental.EventDate.Value.AddHours(-2))
+            {
+                throw new Exception("ScheduledDeliveryTime must be at least 2 hours before EventDate");
+            }
+        }
+
+        if (rental.EventDate.HasValue && scheduledPickupTime.HasValue)
+        {
+            if (scheduledPickupTime.Value <= rental.EventDate.Value)
+            {
+                throw new Exception("ScheduledPickupTime must be after EventDate");
+            }
+        }
+
+        // Update times (staff điều chỉnh lịch)
+        delivery.ScheduledDeliveryTime = scheduledDeliveryTime;
+        delivery.ScheduledPickupTime = scheduledPickupTime;
+        if (!string.IsNullOrEmpty(request.Notes))
+        {
+            delivery.Notes = request.Notes;
+        }
 
         await _deliveryRepo.UpdateAsync(delivery);
 
-        return await MapToResponseAsync(delivery.Id);
+        return await MapToResponseAsync(delivery);
     }
 
-    public async Task<ActualDeliveryResponse> UpdateStatusAsync(
-        int deliveryId, 
-        UpdateDeliveryStatusRequest request, 
-        int staffId)
+    public async Task<ActualDeliveryResponse> UpdateStatusAsync(int deliveryId, UpdateDeliveryStatusRequest request, int staffId)
     {
-        var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
-
+        var delivery = await _deliveryRepo.GetAsync(d => d.Id == deliveryId);
+        
         if (delivery == null)
         {
-            throw new Exception($"ActualDelivery {deliveryId} not found");
+            throw new Exception("Delivery not found");
         }
 
-        // Validate staff ownership
         if (delivery.StaffId != staffId)
         {
             throw new Exception("You can only update your own deliveries");
@@ -121,7 +131,7 @@ public class ActualDeliveryService : IActualDeliveryService
         // Validate status transition
         var validTransitions = new Dictionary<string, string[]>
         {
-            { "Pending", new[] { "Assigned" } },
+            { "Planning", new[] { "Assigned" } },
             { "Assigned", new[] { "Delivering" } },
             { "Delivering", new[] { "Delivered" } },
             { "Delivered", new[] { "Collecting" } },
@@ -136,10 +146,7 @@ public class ActualDeliveryService : IActualDeliveryService
 
         if (!validTransitions[delivery.Status].Contains(request.Status))
         {
-            throw new Exception(
-                $"Cannot transition from {delivery.Status} to {request.Status}. " +
-                $"Valid transitions: {string.Join(", ", validTransitions[delivery.Status])}"
-            );
+            throw new Exception($"Cannot transition from {delivery.Status} to {request.Status}");
         }
 
         // Update status
@@ -159,68 +166,46 @@ public class ActualDeliveryService : IActualDeliveryService
             delivery.ActualPickupTime = DateTime.UtcNow;
         }
 
-        delivery.UpdatedAt = DateTime.UtcNow;
-
         await _deliveryRepo.UpdateAsync(delivery);
 
-        return await MapToResponseAsync(delivery.Id);
-    }
-
-    public async Task<ActualDeliveryResponse> UpdateNotesAsync(
-        int deliveryId, 
-        UpdateDeliveryNotesRequest request, 
-        int staffId)
-    {
-        var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
-
-        if (delivery == null)
-        {
-            throw new Exception($"ActualDelivery {deliveryId} not found");
-        }
-
-        if (delivery.StaffId != staffId)
-        {
-            throw new Exception("You can only update your own deliveries");
-        }
-
-        delivery.Notes = request.Notes;
-        delivery.UpdatedAt = DateTime.UtcNow;
-
-        await _deliveryRepo.UpdateAsync(delivery);
-
-        return await MapToResponseAsync(delivery.Id);
+        return await MapToResponseAsync(delivery);
     }
 
     public async Task<ActualDeliveryResponse> GetByIdAsync(int id)
     {
-        var delivery = await _deliveryRepo.GetWithDetailsAsync(id);
-
+        var delivery = await _deliveryRepo.GetAsync(
+            d => d.Id == id,
+            includeProperties: "Rental,Rental.Account,Staff"
+        );
+        
         if (delivery == null)
         {
-            throw new Exception($"ActualDelivery {id} not found");
+            throw new Exception("Delivery not found");
         }
 
         return MapToResponse(delivery);
     }
 
-    public async Task<ActualDeliveryResponse?> GetByGroupScheduleIdAsync(int groupScheduleId)
+    public async Task<ActualDeliveryResponse> GetByRentalIdAsync(int rentalId)
     {
-        var delivery = await _deliveryRepo.GetByGroupScheduleIdAsync(groupScheduleId);
+        var delivery = await _deliveryRepo.GetByRentalIdAsync(rentalId);
+        
+        if (delivery == null)
+        {
+            throw new Exception($"No delivery found for rental {rentalId}");
+        }
 
-        return delivery == null ? null : MapToResponse(delivery);
+        return MapToResponse(delivery);
     }
 
     public async Task<List<ActualDeliveryResponse>> GetByStaffIdAsync(int staffId)
     {
         var deliveries = await _deliveryRepo.GetByStaffIdAsync(staffId);
-
+        
         return deliveries.Select(MapToResponse).ToList();
     }
 
-    public async Task<List<DeliveryCalendarResponse>> GetCalendarAsync(
-        DateTime from, 
-        DateTime to, 
-        int? staffId = null)
+    public async Task<List<DeliveryCalendarResponse>> GetCalendarAsync(DateTime from, DateTime to, int? staffId = null)
     {
         var deliveries = await _deliveryRepo.GetByDateRangeAsync(from, to);
 
@@ -230,11 +215,11 @@ public class ActualDeliveryService : IActualDeliveryService
         }
 
         var grouped = deliveries
-            .GroupBy(d => d.GroupSchedule.EventDate?.Date)
+            .GroupBy(d => d.ScheduledDeliveryTime?.Date)
             .OrderBy(g => g.Key)
             .Select(g => new DeliveryCalendarResponse
             {
-                Date = g.Key?.ToString("yyyy-MM-dd") ?? "TBD",
+                Date = g.Key?.ToString("MMM dd, yyyy") ?? "TBD",
                 Deliveries = g.Select(MapToResponse).ToList(),
                 TotalDeliveries = g.Count()
             })
@@ -243,133 +228,36 @@ public class ActualDeliveryService : IActualDeliveryService
         return grouped;
     }
 
-    public async Task<ConflictCheckResponse> CheckStaffConflictAsync(int staffId, int groupScheduleId)
-    {
-        // Get target schedule
-        var targetSchedule = await _groupScheduleRepo.GetAsync(gs => gs.Id == groupScheduleId);
-        if (targetSchedule == null)
-        {
-            throw new Exception($"GroupSchedule {groupScheduleId} not found");
-        }
-
-        if (!targetSchedule.EventDate.HasValue || 
-            !targetSchedule.DeliveryTime.HasValue || 
-            !targetSchedule.FinishTime.HasValue)
-        {
-            throw new Exception("GroupSchedule must have EventDate, DeliveryTime, and FinishTime");
-        }
-
-        // Calculate target time range
-        var targetStart = targetSchedule.EventDate.Value.Date + targetSchedule.DeliveryTime.Value.ToTimeSpan();
-        var targetEnd = targetSchedule.EventDate.Value.Date + targetSchedule.FinishTime.Value.ToTimeSpan();
-
-        // Get all deliveries of this staff around same date
-        var staffDeliveries = await _deliveryRepo.GetByStaffAndDateRangeAsync(
-            staffId,
-            targetSchedule.EventDate.Value.AddDays(-1),
-            targetSchedule.EventDate.Value.AddDays(1)
-        );
-
-        var conflicts = new List<ConflictDetail>();
-
-        foreach (var delivery in staffDeliveries)
-        {
-            var schedule = delivery.GroupSchedule;
-
-            if (!schedule.EventDate.HasValue || 
-                !schedule.DeliveryTime.HasValue || 
-                !schedule.FinishTime.HasValue)
-            {
-                continue;
-            }
-
-            var existStart = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
-            var existEnd = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
-
-            // Check overlap
-            if (targetStart < existEnd && targetEnd > existStart)
-            {
-                conflicts.Add(new ConflictDetail
-                {
-                    DeliveryId = delivery.Id,
-                    EventName = schedule.Rental?.EventName ?? "Unknown Event",
-                    ScheduledStart = existStart,
-                    ScheduledEnd = existEnd
-                });
-            }
-        }
-
-        return new ConflictCheckResponse
-        {
-            HasConflict = conflicts.Any(),
-            Conflicts = conflicts
-        };
-    }
-
     // Helper methods
-    private async Task<ActualDeliveryResponse> MapToResponseAsync(int deliveryId)
+    private async Task<ActualDeliveryResponse> MapToResponseAsync(ActualDelivery delivery)
     {
-        var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
-        return MapToResponse(delivery!);
+        var fullDelivery = await _deliveryRepo.GetAsync(
+            d => d.Id == delivery.Id,
+            includeProperties: "Rental,Rental.Account,Staff"
+        );
+        
+        return MapToResponse(fullDelivery);
     }
 
     private ActualDeliveryResponse MapToResponse(ActualDelivery delivery)
     {
-        var schedule = delivery.GroupSchedule;
-        var rental = schedule?.Rental;
-
-        DateTime? scheduledDeliveryTime = null;
-        DateTime? scheduledPickupTime = null;
-
-        if (schedule?.EventDate.HasValue == true)
-        {
-            if (schedule.DeliveryTime.HasValue)
-            {
-                scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
-            }
-            if (schedule.FinishTime.HasValue)
-            {
-                scheduledPickupTime = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
-            }
-        }
-
         return new ActualDeliveryResponse
         {
             Id = delivery.Id,
-            GroupScheduleId = delivery.GroupScheduleId,
+            RentalId = delivery.RentalId,
+            RentalEventName = delivery.Rental?.EventName ?? "Unknown",
+            CustomerName = delivery.Rental?.Account?.FullName ?? "Unknown",
             StaffId = delivery.StaffId,
             StaffName = delivery.Staff?.FullName,
-            
-            ScheduledDeliveryTime = scheduledDeliveryTime,
-            ScheduledPickupTime = scheduledPickupTime,
-            
+            ScheduledDeliveryTime = delivery.ScheduledDeliveryTime,
             ActualDeliveryTime = delivery.ActualDeliveryTime,
+            ScheduledPickupTime = delivery.ScheduledPickupTime,
             ActualPickupTime = delivery.ActualPickupTime,
-            
             Status = delivery.Status,
+            CustomerRequestNotes = delivery.CustomerRequestNotes,
             Notes = delivery.Notes,
-            
             CreatedAt = delivery.CreatedAt,
-            UpdatedAt = delivery.UpdatedAt,
-            
-            ScheduleInfo = schedule == null ? null : new GroupScheduleInfo
-            {
-                EventDate = schedule.EventDate,
-                EventLocation = schedule.EventLocation,
-                EventCity = schedule.EventCity,
-                DeliveryTime = schedule.DeliveryTime,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                FinishTime = schedule.FinishTime
-            },
-            
-            RentalInfo = rental == null ? null : new RentalInfo
-            {
-                RentalId = rental.Id,
-                EventName = rental.EventName,
-                CustomerName = rental.Account?.FullName,
-                PhoneNumber = rental.PhoneNumber
-            }
+            UpdatedAt = delivery.UpdatedAt
         };
     }
 }

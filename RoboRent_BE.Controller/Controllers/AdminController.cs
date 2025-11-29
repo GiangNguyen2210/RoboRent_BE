@@ -155,22 +155,4 @@ public class AdminController : ControllerBase
         
         return Ok(new { message = "User updated successfully", account = result});
     }
-    
-    // AdminController - Thêm endpoint này
-    /// <summary>
-    /// [MANAGER] Get list of staff for delivery assignment
-    /// </summary>
-    [HttpGet("staff")]
-    public async Task<IActionResult> GetStaffList(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? status = null,
-        [FromQuery] string? searchTerm = null)
-    {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-
-        var result = await _modifyIdentityUserService.GetStaffListAsync(page, pageSize, status, searchTerm);
-        return Ok(result);
-    }
 }

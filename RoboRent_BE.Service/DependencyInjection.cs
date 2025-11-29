@@ -36,7 +36,6 @@ public static class DependencyInjection
         services.AddTransient<IActualDeliveryService, ActualDeliveryService>();
         services.AddTransient<IActivityTypeGroupService, ActivityTypeGroupService>();
         services.AddTransient<IGroupScheduleService, GroupScheduleService>();
-        services.AddTransient<IPaymentService, PaymentService>();
         return services;
     }
 }

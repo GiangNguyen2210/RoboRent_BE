@@ -29,14 +29,4 @@ public class ContractDraftsResponse
     public string? RentalEventName { get; set; }
     public string? StaffName { get; set; }
     public string? ManagerName { get; set; }
-    
-    public DepositPaymentInfo? DepositPayment { get; set; } 
-}
-
-public class DepositPaymentInfo
-{
-    public long OrderCode { get; set; }
-    public decimal Amount { get; set; }
-    public string CheckoutUrl { get; set; }
-    public DateTime ExpiresAt { get; set; } // Để frontend biết còn bao lâu
 }
