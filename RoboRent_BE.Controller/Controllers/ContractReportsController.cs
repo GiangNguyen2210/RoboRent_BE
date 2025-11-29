@@ -20,7 +20,7 @@ public class ContractReportsController : ControllerBase
 
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("AccountId")?.Value;
+        var userIdClaim = User.FindFirst("accountId")?.Value;
         if (string.IsNullOrEmpty(userIdClaim))
         {
             throw new UnauthorizedAccessException("User not authenticated");

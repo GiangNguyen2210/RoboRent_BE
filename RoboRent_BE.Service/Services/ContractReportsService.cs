@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using RoboRent_BE.Model.DTOS;
+using Net.payOS;
+using Net.payOS.Types;
 using RoboRent_BE.Model.DTOS.ContractReports;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
-using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
@@ -15,7 +16,10 @@ public class ContractReportsService : IContractReportsService
     private readonly IContractReportsRepository _contractReportsRepository;
     private readonly IAccountRepository _accountRepository;
     private readonly IDraftClausesRepository _draftClausesRepository;
-    private readonly IPayOSService _payOSService;
+    private readonly IPaymentRecordRepository _paymentRecordRepository;
+    private readonly PayOS _payOS;
+    private readonly string _returnUrl;
+    private readonly string _cancelUrl;
     private readonly UserManager<ModifyIdentityUser> _userManager;
     private readonly ILogger<ContractReportsService> _logger;
 
@@ -23,22 +27,37 @@ public class ContractReportsService : IContractReportsService
         IContractReportsRepository contractReportsRepository,
         IAccountRepository accountRepository,
         IDraftClausesRepository draftClausesRepository,
-        IPayOSService payOSService,
+        IPaymentRecordRepository paymentRecordRepository,
+        IConfiguration config,
         UserManager<ModifyIdentityUser> userManager,
         ILogger<ContractReportsService> logger)
     {
         _contractReportsRepository = contractReportsRepository;
         _accountRepository = accountRepository;
         _draftClausesRepository = draftClausesRepository;
-        _payOSService = payOSService;
+        _paymentRecordRepository = paymentRecordRepository;
         _userManager = userManager;
         _logger = logger;
+
+        // Initialize PayOS
+        var clientId = config["PayOSCredentials:ClientId"];
+        var apiKey = config["PayOSCredentials:ApiKey"];
+        var checksumKey = config["PayOSCredentials:ChecksumKey"];
+
+        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
+        {
+            throw new ArgumentNullException("PayOSCredentials", "PayOS credentials are not configured in appsettings.json");
+        }
+
+        _payOS = new PayOS(clientId, apiKey, checksumKey);
+        _returnUrl = config["PayOSSettings:ReturnUrl"];
+        _cancelUrl = config["PayOSSettings:CancelUrl"];
     }
 
     public async Task<IEnumerable<ContractReportResponse>> GetAllContractReportsAsync()
     {
         var reports = await _contractReportsRepository.GetAllAsync(
-            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
         
         return reports.Select(MapToResponse).ToList();
     }
@@ -47,7 +66,7 @@ public class ContractReportsService : IContractReportsService
     {
         var report = await _contractReportsRepository.GetAsync(
             cr => cr.Id == id,
-            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
         
         if (report == null)
             return null;
@@ -99,7 +118,7 @@ public class ContractReportsService : IContractReportsService
         // Reload with includes
         var reportWithIncludes = await _contractReportsRepository.GetAsync(
             cr => cr.Id == createdReport.Id,
-            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
 
         return MapToResponse(reportWithIncludes);
     }
@@ -109,76 +128,88 @@ public class ContractReportsService : IContractReportsService
         ResolveContractReportRequest request, 
         int managerId)
     {
-        // var report = await _contractReportsRepository.GetAsync(
-        //     cr => cr.Id == id,
-        //     includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
-        //
-        // if (report == null)
-        //     throw new Exception("Contract report not found");
-        //
-        // if (report.Status != "Pending")
-        //     throw new Exception($"Cannot resolve report with status: {report.Status}");
-        //
-        // // Get accused account for payment
-        // var accused = await _accountRepository.GetByIdAsync(report.AccusedId ?? 0);
-        // if (accused == null)
-        //     throw new Exception("Accused account not found");
-        //
-        // // Get user email from ModifyIdentityUser
-        // var user = await _userManager.FindByIdAsync(accused.UserId ?? "");
-        // var userEmail = user?.Email ?? "";
-        //
-        // // Create PayOS payment
-        // var paymentRequest = new PaymentRequest
-        // {
-        //     OrderCode = 0, // Will be auto-generated by PayOSService
-        //     Amount = 100000, // Default amount - adjust as needed
-        //     Description = $"Payment for Contract Report #{id} Resolution",
-        //     BuyerName = accused.FullName ?? "Unknown",
-        //     BuyerEmail = userEmail,
-        //     BuyerPhone = accused.PhoneNumber ?? "",
-        //     Items = new List<Net.payOS.Types.ItemData>
-        //     {
-        //         new Net.payOS.Types.ItemData(
-        //             name: $"Contract Report Resolution #{id}",
-        //             quantity: 1,
-        //             price: 100000
-        //         )
-        //     }
-        // };
-        //
-        // var paymentResponse = await _payOSService.CreatePaymentLink(paymentRequest, accused.Id);
-        //
-        // if (paymentResponse.Code != "PENDING")
-        //     throw new Exception($"Failed to create payment link: {paymentResponse.Desc}");
-        //
-        // // Get the payment transaction to get its ID
-        // var dbContext = _contractReportsRepository.GetDbContext();
-        // var paymentTransaction = await dbContext.PaymentTransactions
-        //     .FirstOrDefaultAsync(pt => pt.PaymentLinkId == paymentResponse.Data.PaymentLinkId);
-        //
-        // if (paymentTransaction == null)
-        //     throw new Exception("Payment transaction not found after creation");
-        //
-        // // Update report
-        // report.Status = "Resolved";
-        // report.Resolution = request.Resolution;
-        // report.ReviewedBy = managerId;
-        // report.ReviewedAt = DateTime.UtcNow;
-        // report.PaymentId = paymentTransaction.Id;
-        //
-        // await _contractReportsRepository.UpdateAsync(report);
-        //
-        // // Reload with includes
-        // var updatedReport = await _contractReportsRepository.GetAsync(
-        //     cr => cr.Id == id,
-        //     includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
-        //
-        // var response = MapToResponse(updatedReport);
-        // response.PaymentLink = paymentResponse.Data.CheckoutUrl;
-        //
-        // return response;
-        return new ContractReportResponse();
+        var report = await _contractReportsRepository.GetAsync(
+            cr => cr.Id == id,
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
+
+        if (report == null)
+            throw new Exception("Contract report not found");
+
+        if (report.Status != "Pending")
+            throw new Exception($"Cannot resolve report with status: {report.Status}");
+
+        // Get accused account for payment
+        var accused = await _accountRepository.GetByIdAsync(report.AccusedId ?? 0);
+        if (accused == null)
+            throw new Exception("Accused account not found");
+
+        // Get user email from ModifyIdentityUser
+        var user = await _userManager.FindByIdAsync(accused.UserId ?? "");
+        var userEmail = user?.Email ?? "";
+
+        // Generate unique OrderCode
+        var lastOrderCode = await _paymentRecordRepository.GetLastOrderCodeAsync();
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
+
+        // Create PayOS payment link
+        var paymentAmount = 100000; // Default amount - adjust as needed
+        var paymentData = new PaymentData(
+            orderCode: newOrderCode,
+            amount: paymentAmount,
+            description: $"Report #{id} Resolution",
+            items: new List<ItemData>
+            {
+                new ItemData("Report Resolution", 1, paymentAmount)
+            },
+            returnUrl: _returnUrl,
+            cancelUrl: _cancelUrl,
+            buyerName: accused.FullName ?? "Unknown",
+            buyerPhone: accused.PhoneNumber ?? "",
+            expiredAt: (int)(DateTime.UtcNow.AddDays(7) - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds
+        );
+
+        _logger.LogInformation($"Creating PayOS payment link for Contract Report Resolution - OrderCode: {newOrderCode}");
+        var createPaymentResult = await _payOS.createPaymentLink(paymentData);
+
+        if (createPaymentResult.status != "PENDING")
+        {
+            _logger.LogError($"PayOS returned error - Status: {createPaymentResult.status}");
+            throw new Exception($"PayOS error: {createPaymentResult.description}");
+        }
+
+        // Save PaymentRecord
+        var paymentRecord = new PaymentRecord
+        {
+            RentalId =  null, // Contract reports don't have rental
+            PaymentType = "ContractReportResolution",
+            Amount = paymentAmount,
+            OrderCode = newOrderCode,
+            PaymentLinkId = createPaymentResult.paymentLinkId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _paymentRecordRepository.AddAsync(paymentRecord);
+
+        // Update report
+        report.Status = "Resolved";
+        report.Resolution = request.Resolution;
+        report.ReviewedBy = managerId;
+        report.ReviewedAt = DateTime.UtcNow;
+        report.PaymentId = paymentRecord.Id;
+
+        await _contractReportsRepository.UpdateAsync(report);
+
+        // Reload with includes
+        var updatedReport = await _contractReportsRepository.GetAsync(
+            cr => cr.Id == id,
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
+
+        var response = MapToResponse(updatedReport);
+        response.PaymentLink = createPaymentResult.checkoutUrl;
+
+        return response;
     }
 
     public async Task<ContractReportResponse> RejectContractReportAsync(
@@ -188,7 +219,7 @@ public class ContractReportsService : IContractReportsService
     {
         var report = await _contractReportsRepository.GetAsync(
             cr => cr.Id == id,
-            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
 
         if (report == null)
             throw new Exception("Contract report not found");
@@ -207,7 +238,7 @@ public class ContractReportsService : IContractReportsService
         // Reload with includes
         var updatedReport = await _contractReportsRepository.GetAsync(
             cr => cr.Id == id,
-            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentTransaction");
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
 
         return MapToResponse(updatedReport);
     }

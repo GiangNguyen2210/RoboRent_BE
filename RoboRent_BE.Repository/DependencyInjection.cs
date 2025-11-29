@@ -17,7 +17,7 @@ public static class DependencyInjection
         services.AddTransient<IRentalDetailRepository, RentalDetailRepository>();
         services.AddTransient<IRobotRepository, RobotRepository>();
         services.AddTransient<ITypesOfRoboRepository, TypesOfRoboRepository>();
-        // services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
         services.AddTransient<IRentalContractRepository, RentalContractRepository>();

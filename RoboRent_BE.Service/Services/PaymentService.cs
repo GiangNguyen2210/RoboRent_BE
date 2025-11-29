@@ -298,9 +298,9 @@ public class PaymentService : IPaymentService
         _logger.LogInformation($"Updated PaymentRecord {orderCode} to {paymentStatus}");
 
         // Process business logic based on payment type
-        if (paymentStatus == "Paid" && paymentRecord.PaymentType == "Deposit")
+        if (paymentStatus == "Paid" && paymentRecord.PaymentType == "Deposit" && paymentRecord.RentalId.HasValue)
         {
-            await HandleDepositPaidAsync(paymentRecord.RentalId);
+            await HandleDepositPaidAsync(paymentRecord.RentalId.Value);
         }
     }
 

@@ -21,7 +21,7 @@ public class ContractReportsRepository : GenericRepository<ContractReports>, ICo
             .Include(cr => cr.Account)
             .Include(cr => cr.Accused)
             .Include(cr => cr.Manager)
-            // .Include(cr => cr.PaymentTransaction)
+            .Include(cr => cr.PaymentRecord)
             .ToListAsync();
     }
 
@@ -33,5 +33,6 @@ public class ContractReportsRepository : GenericRepository<ContractReports>, ICo
             .ToListAsync();
     }
 }
+
 
 
