@@ -19,6 +19,9 @@ public class RentalDetailResponse
     public string? Branding { get; set; } = string.Empty;
 
     public string? Scenario { get; set; } =  string.Empty;
+    public string? RobotTypeName { get; set; } =  string.Empty;
+    
+    public string? RobotTypeDescription { get; set; } =  string.Empty;
 }
 
 

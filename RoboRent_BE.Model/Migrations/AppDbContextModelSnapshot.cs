@@ -1073,6 +1073,48 @@ namespace RoboRent_BE.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActualDelivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualDeliveryTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualPickupTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GroupScheduleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupScheduleId");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("ActualDeliveries");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -1232,9 +1274,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("PaymentId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReportCategory")
-                        .HasColumnType("text");
-
                     b.Property<string>("ReportRole")
                         .HasColumnType("text");
 
@@ -1242,9 +1281,6 @@ namespace RoboRent_BE.Model.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Resolution")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResolutionType")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ReviewedAt")
@@ -1515,6 +1551,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<TimeOnly?>("EndTime")
                         .HasColumnType("time without time zone");
 
+                    b.Property<string>("EventCity")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("EventDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -1527,6 +1566,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
                     b.Property<TimeOnly?>("StartTime")
                         .HasColumnType("time without time zone");
 
@@ -1536,6 +1578,8 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityTypeGroupId");
+
+                    b.HasIndex("RentalId");
 
                     b.ToTable("GroupSchedules");
                 });
@@ -1607,7 +1651,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentTransaction", b =>
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1615,24 +1659,30 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AccountId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<long>("OrderCode")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PaymentLinkId")
                         .HasColumnType("text");
+
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PriceQuoteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1643,9 +1693,11 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId");
+                    b.HasIndex("PriceQuoteId");
 
-                    b.ToTable("PaymentTransactions");
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("PaymentRecords");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PriceQuote", b =>
@@ -1667,6 +1719,12 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<double?>("Delivery")
                         .HasColumnType("double precision");
+
+                    b.Property<int?>("DeliveryDistance")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("DeliveryFee")
+                        .HasColumnType("numeric");
 
                     b.Property<double?>("Deposit")
                         .HasColumnType("double precision");
@@ -5253,9 +5311,9 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.EventActivity", "EventActivity")
-                        .WithMany()
+                        .WithMany("ActivityTypes")
                         .HasForeignKey("EventActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EventActivity");
@@ -5264,12 +5322,29 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityType", "ActivityType")
-                        .WithMany()
+                        .WithMany("ActivityTypeGroups")
                         .HasForeignKey("ActivityTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ActivityType");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActualDelivery", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.GroupSchedule", "GroupSchedule")
+                        .WithMany()
+                        .HasForeignKey("GroupScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId");
+
+                    b.Navigation("GroupSchedule");
+
+                    b.Navigation("Staff");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>
@@ -5355,7 +5430,7 @@ namespace RoboRent_BE.Model.Migrations
                         .WithMany()
                         .HasForeignKey("DraftClausesId");
 
-                    b.HasOne("RoboRent_BE.Model.Entities.PaymentTransaction", "PaymentTransaction")
+                    b.HasOne("RoboRent_BE.Model.Entities.PaymentRecord", "PaymentRecord")
                         .WithMany()
                         .HasForeignKey("PaymentId");
 
@@ -5375,7 +5450,7 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Navigation("Manager");
 
-                    b.Navigation("PaymentTransaction");
+                    b.Navigation("PaymentRecord");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractTemplates", b =>
@@ -5453,21 +5528,33 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.GroupSchedule", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityTypeGroup", "ActivityTypeGroup")
-                        .WithMany()
+                        .WithMany("GroupSchedules")
                         .HasForeignKey("ActivityTypeGroupId");
 
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
                     b.Navigation("ActivityTypeGroup");
+
+                    b.Navigation("Rental");
                 });
 
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentTransaction", b =>
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
                 {
-                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Account")
+                    b.HasOne("RoboRent_BE.Model.Entities.PriceQuote", "PriceQuote")
                         .WithMany()
-                        .HasForeignKey("AccountId")
+                        .HasForeignKey("PriceQuoteId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Account");
+                    b.Navigation("PriceQuote");
+
+                    b.Navigation("Rental");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PriceQuote", b =>
@@ -5632,6 +5719,26 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("RoboType");
 
                     b.Navigation("Robot");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
+                {
+                    b.Navigation("ActivityTypeGroups");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>
+                {
+                    b.Navigation("GroupSchedules");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatRoom", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.EventActivity", b =>
+                {
+                    b.Navigation("ActivityTypes");
                 });
 #pragma warning restore 612, 618
         }

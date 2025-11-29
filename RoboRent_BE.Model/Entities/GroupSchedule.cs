@@ -13,6 +13,8 @@ public partial class GroupSchedule
 
     public string? EventLocation { get; set; } = string.Empty;
 
+    public string? EventCity { get; set; } =  string.Empty;
+
     public TimeOnly? DeliveryTime { get; set; }
 
     public TimeOnly? StartTime { get; set; }
@@ -26,6 +28,10 @@ public partial class GroupSchedule
     public bool IsDeleted { get; set; } =  false;
 
     public int? ActivityTypeGroupId { get; set; }
+
+    public int? RentalId { get; set; }
+    
+    [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } =  null!;
     
     [ForeignKey("ActivityTypeGroupId")] public virtual ActivityTypeGroup ActivityTypeGroup { get; set; } =  null!;
 }

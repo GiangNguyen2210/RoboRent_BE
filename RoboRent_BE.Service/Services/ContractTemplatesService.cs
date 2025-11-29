@@ -62,6 +62,17 @@ public class ContractTemplatesService : IContractTemplatesService
     public async Task<ContractTemplatesResponse> CreateContractTemplatesAsync(CreateContractTemplatesRequest request)
     {
         var contractTemplate = _mapper.Map<ContractTemplates>(request);
+        
+        // Capitalize status if provided, otherwise default to "Created"
+        if (!string.IsNullOrWhiteSpace(contractTemplate.Status))
+        {
+            contractTemplate.Status = CapitalizeStatus(contractTemplate.Status);
+        }
+        else
+        {
+            contractTemplate.Status = "Created";
+        }
+        
         var createdContractTemplate = await _contractTemplatesRepository.AddAsync(contractTemplate);
         
         return _mapper.Map<ContractTemplatesResponse>(createdContractTemplate);
@@ -79,7 +90,7 @@ public class ContractTemplatesService : IContractTemplatesService
             Title = request.Title,
             Description = request.Description,
             BodyJson = body,
-            Status = "initiated",
+            Status = "Initiated",
             Version = request.Version,
             CreatedAt = now,
             CreatedBy = createdByAccountId,
@@ -188,10 +199,31 @@ public class ContractTemplatesService : IContractTemplatesService
             return null;
 
         _mapper.Map(request, existingContractTemplate);
+        
+        // Capitalize status if provided
+        if (!string.IsNullOrWhiteSpace(existingContractTemplate.Status))
+        {
+            existingContractTemplate.Status = CapitalizeStatus(existingContractTemplate.Status);
+        }
+        else
+        {
+            // If status is not provided in request but template exists, set to "Updated"
+            existingContractTemplate.Status = "Updated";
+        }
+        
         existingContractTemplate.UpdatedAt = DateTime.UtcNow;
         var updatedContractTemplate = await _contractTemplatesRepository.UpdateAsync(existingContractTemplate);
         
         return _mapper.Map<ContractTemplatesResponse>(updatedContractTemplate);
+    }
+
+    private static string CapitalizeStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return status;
+        
+        // Capitalize first letter and make rest lowercase
+        return char.ToUpperInvariant(status[0]) + (status.Length > 1 ? status.Substring(1).ToLowerInvariant() : string.Empty);
     }
 
     public async Task<bool> DeleteContractTemplatesAsync(int id)
@@ -200,8 +232,32 @@ public class ContractTemplatesService : IContractTemplatesService
         if (contractTemplate == null)
             return false;
 
-        await _contractTemplatesRepository.DeleteAsync(contractTemplate);
+        // Instead of deleting, set status to "Disabled"
+        contractTemplate.Status = "Disabled";
+        contractTemplate.UpdatedAt = DateTime.UtcNow;
+        await _contractTemplatesRepository.UpdateAsync(contractTemplate);
+        
         return true;
+    }
+
+    public async Task<ContractTemplatesResponse?> ActivateContractTemplateAsync(int id)
+    {
+        var contractTemplate = await _contractTemplatesRepository.GetAsync(ct => ct.Id == id, "Created,Updated");
+        if (contractTemplate == null)
+            return null;
+
+        // Check if contract template is disabled
+        if (contractTemplate.Status != "Disabled" && contractTemplate.Status != "disabled")
+        {
+            throw new InvalidOperationException("Only disabled contract templates can be activated.");
+        }
+
+        // Set status to "Updated" when activating
+        contractTemplate.Status = "Updated";
+        contractTemplate.UpdatedAt = DateTime.UtcNow;
+        var updatedContractTemplate = await _contractTemplatesRepository.UpdateAsync(contractTemplate);
+        
+        return _mapper.Map<ContractTemplatesResponse>(updatedContractTemplate);
     }
 }
 

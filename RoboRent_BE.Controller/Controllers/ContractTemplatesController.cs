@@ -278,7 +278,47 @@ public class ContractTemplatesController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Contract template deleted successfully"
+                message = "Contract template disabled successfully"
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPatch("{id}/activate")]
+    public async Task<IActionResult> ActivateContractTemplate(int id)
+    {
+        try
+        {
+            var result = await _contractTemplatesService.ActivateContractTemplateAsync(id);
+            if (result == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Contract template not found"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Contract template activated successfully",
+                data = result
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
             });
         }
         catch (Exception e)

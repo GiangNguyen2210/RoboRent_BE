@@ -14,4 +14,7 @@ public partial class EventActivity
     public string? Description { get; set; } = string.Empty;
     
     public bool? IsDeleted { get; set; } =  false;
+    
+    public virtual ICollection<ActivityType> ActivityTypes { get; set; } = new List<ActivityType>();
+
 }

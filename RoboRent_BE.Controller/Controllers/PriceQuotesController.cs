@@ -5,6 +5,7 @@ using RoboRent_BE.Model.DTOs.PriceQuote;
 using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Controller.Hubs;
+using RoboRent_BE.Controller.Helpers;
 
 namespace RoboRent_BE.Controller.Controllers;
 
@@ -13,27 +14,20 @@ namespace RoboRent_BE.Controller.Controllers;
 public class PriceQuotesController : ControllerBase
 {
     private readonly IPriceQuoteService _priceQuoteService;
-    private readonly IChatService _chatService;
+    private readonly ChatNotificationHelper _notificationHelper;
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IRentalService _rentalService;
 
     public PriceQuotesController(
         IPriceQuoteService priceQuoteService,
-        IChatService chatService,
-        IHubContext<ChatHub> hubContext)
+        ChatNotificationHelper notificationHelper,
+        IHubContext<ChatHub> hubContext,
+        IRentalService rentalService)
     {
         _priceQuoteService = priceQuoteService;
-        _chatService = chatService;
+        _notificationHelper = notificationHelper;
         _hubContext = hubContext;
-    }
-
-    private int GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst("AccountId")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
-        return int.Parse(userIdClaim);
+        _rentalService = rentalService;
     }
 
     /// <summary>
@@ -45,23 +39,24 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int staffId = GetCurrentUserId();
+            int staffId = AuthHelper.GetCurrentUserId(User);
             
             // 1. Service tạo quote (check < 3)
             var quote = await _priceQuoteService.CreatePriceQuoteAsync(request, staffId);
+            var rental = await _rentalService.GetRentalAsync(request.RentalId);
             
-            // 2. Controller gửi notification vào chat
-            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
-            {
-                RentalId = request.RentalId,
-                MessageType = MessageType.PriceQuoteNotification,
-                Content = $"📤 Staff đã tạo báo giá #{quote.QuoteNumber} và gửi lên Manager chờ duyệt",
-                PriceQuoteId = quote.Id
-            }, staffId);
+            // 2. Gửi notification vào chat + broadcast qua SignalR
+            await _notificationHelper.SendNotificationAsync(
+                request.RentalId,
+                staffId,
+                $"📤 Staff đã tạo báo giá #{quote.QuoteNumber} và gửi lên Manager chờ duyệt",
+                quote.Id,
+                null,
+                MessageType.PriceQuoteNotification
+            );
             
-            // 3. Broadcast notification qua SignalR
+            // 3. Broadcast event riêng cho quote created
             var roomName = $"rental_{request.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
             await _hubContext.Clients.Group(roomName).SendAsync("QuoteCreated", new
             {
                 QuoteId = quote.Id,
@@ -132,7 +127,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int managerId = GetCurrentUserId();
+            int managerId = AuthHelper.GetCurrentUserId(User);
         
             var quote = await _priceQuoteService.ManagerActionAsync(id, request, managerId);
         
@@ -140,16 +135,12 @@ public class PriceQuotesController : ControllerBase
                 ? $"✅ Manager đã duyệt báo giá #{quote.QuoteNumber}. Chờ Customer xác nhận."
                 : $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.";
         
-            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
-            {
-                RentalId = quote.RentalId,
-                MessageType = MessageType.SystemNotification,
-                Content = content,
-                PriceQuoteId = quote.Id
-            }, managerId);
-        
-            var roomName = $"rental_{quote.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _notificationHelper.SendNotificationAsync(
+                quote.RentalId,
+                managerId,
+                content,
+                quote.Id
+            );
         
             return Ok(quote);
         }
@@ -167,7 +158,7 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int customerId = GetCurrentUserId();
+            int customerId = AuthHelper.GetCurrentUserId(User);
         
             var quote = await _priceQuoteService.CustomerActionAsync(id, request, customerId);
         
@@ -177,19 +168,16 @@ public class PriceQuotesController : ControllerBase
                     ? $"⏰ Báo giá #{quote.QuoteNumber} đã hết hạn (đã tạo đủ 3 báo giá)"
                     : $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.";
         
-            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
-            {
-                RentalId = quote.RentalId,
-                MessageType = MessageType.SystemNotification,
-                Content = content,
-                PriceQuoteId = quote.Id
-            }, customerId);
-        
-            var roomName = $"rental_{quote.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _notificationHelper.SendNotificationAsync(
+                quote.RentalId,
+                customerId,
+                content,
+                quote.Id
+            );
         
             if (request.Action.ToLower() == "approve")
             {
+                var roomName = $"rental_{quote.RentalId}";
                 await _hubContext.Clients.Group(roomName).SendAsync("QuoteAccepted", quote.Id);
             }
         
@@ -215,20 +203,16 @@ public class PriceQuotesController : ControllerBase
     {
         try
         {
-            int staffId = GetCurrentUserId();
+            int staffId = AuthHelper.GetCurrentUserId(User);
         
             var quote = await _priceQuoteService.UpdatePriceQuoteAsync(id, request, staffId);
         
-            var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest
-            {
-                RentalId = quote.RentalId,
-                MessageType = MessageType.SystemNotification,
-                Content = $"🔄 Staff đã cập nhật báo giá #{quote.QuoteNumber} và gửi lại Manager",
-                PriceQuoteId = quote.Id
-            }, staffId);
-        
-            var roomName = $"rental_{quote.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", notificationMessage);
+            await _notificationHelper.SendNotificationAsync(
+                quote.RentalId,
+                staffId,
+                $"🔄 Staff đã cập nhật báo giá #{quote.QuoteNumber} và gửi lại Manager",
+                quote.Id
+            );
         
             return Ok(quote);
         }
@@ -251,5 +235,4 @@ public class PriceQuotesController : ControllerBase
             return BadRequest(new { Message = "Failed to get quotes", Error = ex.Message });
         }
     }
-    
 }

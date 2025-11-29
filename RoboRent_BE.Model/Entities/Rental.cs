@@ -46,7 +46,7 @@ public partial class Rental
     public int? ActivityTypeId  { get; set; }
     
     public int? StaffId { get; set; }
-    
+
     [ForeignKey("StaffId")] public virtual Account Staff { get; set; } = null!;
 
     [ForeignKey("EventActivityId")] public virtual EventActivity EventActivity { get; set; } = null!;

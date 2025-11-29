@@ -1,4 +1,6 @@
 using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Repository.Interfaces;
+using RoboRent_BE.Service.Configuration;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
@@ -20,14 +22,13 @@ public class PriceQuoteService : IPriceQuoteService
     {
         // Validate rental status FIRST
         var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        //✅ FIX: Cho phép cả "AcceptedDemo" VÀ "PendingPriceQuote"
         var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote" };
         if (!validStatuses.Contains(rental.Status))
         {
             throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: AcceptedDemo hoặc PendingPriceQuote");
         }
         
-        // ✅ Business Rule: Max 3 quotes per rental
+        // Business Rule: Max 3 quotes per rental
         var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
 
         if (existingQuotes.Count >= 3)
@@ -47,6 +48,17 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception($"Cannot create new quote. Active quote exists with status: {activeQuote.Status}");
         }
 
+        // Calculate DeliveryFee
+        decimal? deliveryFee = null;
+        int? deliveryDistance = null;
+
+        if (!string.IsNullOrWhiteSpace(rental.City))
+        {
+            var (fee, distance) = CalculateDeliveryFee(rental.City);
+            deliveryFee = fee;
+            deliveryDistance = distance;
+        }
+
         // Create new quote
         var quote = new PriceQuote
         {
@@ -55,6 +67,8 @@ public class PriceQuoteService : IPriceQuoteService
             Deposit = request.Deposit,
             Complete = request.Complete,
             Service = request.Service,
+            DeliveryFee = deliveryFee,
+            DeliveryDistance = deliveryDistance,
             StaffDescription = request.StaffDescription,
             ManagerFeedback = request.ManagerFeedback,
             CreatedAt = DateTime.UtcNow,
@@ -118,10 +132,13 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote.Status != "PendingManager") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
 
+        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+
         quote.ManagerId = managerId;
 
         if (request.Action.ToLower() == "approve")
         {
+            rental.Status = "AcceptedPriceQuote";
             quote.Status = "PendingCustomer";
             quote.ManagerApprovedAt = DateTime.UtcNow;
         }
@@ -132,6 +149,7 @@ public class PriceQuoteService : IPriceQuoteService
                 throw new Exception("Feedback is required when rejecting");
             }
             
+            rental.Status = "RejectedPriceQuote";
             quote.Status = "RejectedManager";
             quote.ManagerFeedback = request.Feedback;
         }
@@ -140,6 +158,7 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception("Invalid action. Use 'approve' or 'reject'");
         }
 
+        await _rentalRepo.UpdateAsync(rental);
         await _priceQuoteRepo.UpdateAsync(quote);
         
         var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
@@ -282,7 +301,7 @@ public class PriceQuoteService : IPriceQuoteService
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)
     {
-        var total = (quote.Delivery ?? 0) + (quote.Deposit ?? 0) + (quote.Complete ?? 0) + (quote.Service ?? 0);
+        var total = (quote.Delivery ?? 0) + (quote.Deposit ?? 0) + (quote.Complete ?? 0) + (quote.Service ?? 0) + (double)(quote.DeliveryFee ?? 0);
 
         return new PriceQuoteResponse
         {
@@ -292,6 +311,8 @@ public class PriceQuoteService : IPriceQuoteService
             Deposit = quote.Deposit,
             Complete = quote.Complete,
             Service = quote.Service,
+            DeliveryFee = (double?)quote.DeliveryFee,
+            DeliveryDistance = quote.DeliveryDistance,   
             Total = total,
             StaffDescription = quote.StaffDescription,
             ManagerFeedback = quote.ManagerFeedback,
@@ -301,5 +322,10 @@ public class PriceQuoteService : IPriceQuoteService
             QuoteNumber = quoteNumber,
             ManagerId = quote.ManagerId
         };
+    }
+    
+    private (decimal Fee, int? Distance) CalculateDeliveryFee(string city)
+    {
+        return DeliveryFeeConfig.CalculateFee(city);
     }
 }

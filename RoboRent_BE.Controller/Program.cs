@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RoboRent_BE.Controller.Hubs;
+using RoboRent_BE.Controller.Helpers;  
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Model.Mapping;
 using RoboRent_BE.Repository;
@@ -65,6 +66,8 @@ builder.Services.AddRepositories().AddServices();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<ChatNotificationHelper>();
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>

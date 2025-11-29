@@ -27,6 +27,9 @@ public partial class PriceQuote
     public bool? IsDeleted { get; set; } = false;
     
     public string? Status { get; set; } = string.Empty;
+    
+    public decimal? DeliveryFee { get; set; }
+    public int? DeliveryDistance { get; set; }
     public int? ManagerId { get; set; }
     [ForeignKey(nameof(ManagerId))]
     public virtual Account? Manager { get; set; }

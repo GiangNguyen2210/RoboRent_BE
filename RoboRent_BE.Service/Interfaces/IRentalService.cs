@@ -15,4 +15,13 @@ public interface IRentalService
     public Task<PageListResponse<OrderResponse>> GetRentalByCustomerIdAsync(int customerId, int page, int pageSize, string? search);
     public Task<OrderResponse?> CustomerSendRentalAsync(int rentalId);
     public Task<List<OrderResponse>?> GetRentalsByCustomerAsync(int accountId);
+    public Task<List<OrderResponse>> GetAllPendingRentalsAsync();
+    public Task<OrderResponse?> ReceiveRequestAsync(int  rentalId, int staffId);
+    public Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId);
+    public Task<OrderResponse?> StaffUpdateRentalInfoAsync(int rentalId, StaffUpdateRequest  staffUpdateRequest);
+    public Task<OrderResponse?> CustomerCancelRentalAsync(int rentalId);
+    public Task<OrderResponse?> CustomerDeleteRentalAsync(int rentalId);
+    public Task<OrderResponse?> StaffRequestRentalUpdateAsync(int rentalId);
+    Task<RentalCompletionResponse?> CompleteRentalAsync(int rentalId);
+
 }
