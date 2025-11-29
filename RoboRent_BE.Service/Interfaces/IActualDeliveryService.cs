@@ -1,4 +1,5 @@
-﻿using RoboRent_BE.Model.DTOs.ActualDelivery;
+﻿using RoboRent_BE.Model.DTOs;
+using RoboRent_BE.Model.DTOs.ActualDelivery;
 
 namespace RoboRent_BE.Service.Interfaces;
 
@@ -48,4 +49,13 @@ public interface IActualDeliveryService
     /// [MANAGER] Check conflict khi assign staff
     /// </summary>
     Task<ConflictCheckResponse> CheckStaffConflictAsync(int staffId, int groupScheduleId);
+    
+    /// <summary>
+    /// Get pending deliveries for manager assignment
+    /// </summary>
+    Task<PageListResponse<ActualDeliveryResponse>> GetPendingDeliveriesAsync(
+        int page, 
+        int pageSize, 
+        string? searchTerm = null, 
+        string? sortBy = "date");
 }

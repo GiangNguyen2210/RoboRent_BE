@@ -28,4 +28,13 @@ public interface IActualDeliveryRepository : IGenericRepository<ActualDelivery>
     /// Get delivery with full navigation properties
     /// </summary>
     Task<ActualDelivery?> GetWithDetailsAsync(int id);
+    
+    /// <summary>
+    /// Get pending deliveries with pagination, search, and sort
+    /// </summary>
+    Task<(List<ActualDelivery> items, int totalCount)> GetPendingDeliveriesAsync(
+        int page, 
+        int pageSize, 
+        string? searchTerm = null, 
+        string? sortBy = "date");
 }

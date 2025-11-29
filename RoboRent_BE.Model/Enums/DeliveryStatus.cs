@@ -6,7 +6,4 @@ public enum DeliveryStatus
     Assigned,
     Delivering,
     Delivered,
-    Collecting,
-    Collected,
-    Completed
 }

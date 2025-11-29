@@ -195,4 +195,36 @@ public class ActualDeliveryController : ControllerBase
             return BadRequest(new { Message = "Failed to get calendar", Error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// [MANAGER] Get all pending deliveries for staff assignment
+    /// Query params: page, pageSize, searchTerm, sortBy (date|name|customer|location)
+    /// </summary>
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPendingDeliveries(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? sortBy = "date")
+    {
+        try
+        {
+            var result = await _deliveryService.GetPendingDeliveriesAsync(
+                page, 
+                pageSize, 
+                searchTerm, 
+                sortBy
+            );
+        
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { 
+                Message = "Failed to get pending deliveries", 
+                Error = ex.Message 
+            });
+        }
+    }
+    
 }

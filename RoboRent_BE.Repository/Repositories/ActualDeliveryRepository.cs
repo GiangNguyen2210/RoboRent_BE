@@ -66,4 +66,59 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.Staff)
             .FirstOrDefaultAsync(d => d.Id == id);
     }
+    
+    public async Task<(List<ActualDelivery> items, int totalCount)> GetPendingDeliveriesAsync(
+    int page, 
+    int pageSize, 
+    string? searchTerm = null, 
+    string? sortBy = "date")
+{
+    // Base query: Status = Pending AND StaffId is null (chưa assign)
+    var query = DbSet
+        .Include(d => d.GroupSchedule)
+            .ThenInclude(gs => gs.Rental)
+            .ThenInclude(r => r.Account)
+        .Include(d => d.Staff)
+        .Where(d => d.Status == "Pending" && d.StaffId == null);
+
+    // Search filter
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        var lowerSearch = searchTerm.ToLower();
+        query = query.Where(d =>
+            (d.GroupSchedule.Rental != null && 
+             d.GroupSchedule.Rental.EventName != null && 
+             d.GroupSchedule.Rental.EventName.ToLower().Contains(lowerSearch)) ||
+            (d.GroupSchedule.EventLocation != null && 
+             d.GroupSchedule.EventLocation.ToLower().Contains(lowerSearch)) ||
+            (d.GroupSchedule.EventCity != null && 
+             d.GroupSchedule.EventCity.ToLower().Contains(lowerSearch)) ||
+            (d.GroupSchedule.Rental != null && 
+             d.GroupSchedule.Rental.Account != null && 
+             d.GroupSchedule.Rental.Account.FullName != null && 
+             d.GroupSchedule.Rental.Account.FullName.ToLower().Contains(lowerSearch))
+        );
+    }
+
+    // Get total count before pagination
+    var totalCount = await query.CountAsync();
+
+    // Sort
+    query = sortBy?.ToLower() switch
+    {
+        "name" => query.OrderBy(d => d.GroupSchedule.Rental!.EventName),
+        "customer" => query.OrderBy(d => d.GroupSchedule.Rental!.Account!.FullName),
+        "location" => query.OrderBy(d => d.GroupSchedule.EventLocation),
+        _ => query.OrderBy(d => d.GroupSchedule.EventDate)
+                    .ThenBy(d => d.GroupSchedule.DeliveryTime) // Sort by time nếu cùng ngày
+    };
+
+    // Pagination
+    var items = await query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    return (items, totalCount);
+}
 }

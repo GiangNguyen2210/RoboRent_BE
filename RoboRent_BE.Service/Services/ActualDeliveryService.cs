@@ -1,4 +1,5 @@
-﻿using RoboRent_BE.Model.DTOs.ActualDelivery;
+﻿using RoboRent_BE.Model.DTOs;
+using RoboRent_BE.Model.DTOs.ActualDelivery;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interfaces;
@@ -124,9 +125,7 @@ public class ActualDeliveryService : IActualDeliveryService
             { "Pending", new[] { "Assigned" } },
             { "Assigned", new[] { "Delivering" } },
             { "Delivering", new[] { "Delivered" } },
-            { "Delivered", new[] { "Collecting" } },
-            { "Collecting", new[] { "Collected" } },
-            { "Collected", new[] { "Completed" } }
+            { "Delivered", new string[] { } } 
         };
 
         if (!validTransitions.ContainsKey(delivery.Status))
@@ -305,6 +304,38 @@ public class ActualDeliveryService : IActualDeliveryService
             Conflicts = conflicts
         };
     }
+    
+    public async Task<PageListResponse<ActualDeliveryResponse>> GetPendingDeliveriesAsync(
+        int page, 
+        int pageSize, 
+        string? searchTerm = null, 
+        string? sortBy = "date")
+    {
+        // Validate parameters
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
+        // Get from repository
+        var (items, totalCount) = await _deliveryRepo.GetPendingDeliveriesAsync(
+            page, 
+            pageSize, 
+            searchTerm, 
+            sortBy
+        );
+
+        // Map to response DTOs
+        var responseDtos = items.Select(MapToResponse).ToList();
+
+        return new PageListResponse<ActualDeliveryResponse>
+        {
+            Items = responseDtos,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            HasNextPage = page * pageSize < totalCount,
+            HasPreviousPage = page > 1
+        };
+    }
 
     // Helper methods
     private async Task<ActualDeliveryResponse> MapToResponseAsync(int deliveryId)
@@ -372,4 +403,5 @@ public class ActualDeliveryService : IActualDeliveryService
             }
         };
     }
+    
 }
