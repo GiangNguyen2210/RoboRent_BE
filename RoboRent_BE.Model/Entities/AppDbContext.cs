@@ -29,7 +29,6 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<RentalDetail> RentalDetails { get; set; } = null!;
 
     public virtual DbSet<PriceQuote> PriceQuotes { get; set; } = null!;
-
     public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
     public virtual DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
