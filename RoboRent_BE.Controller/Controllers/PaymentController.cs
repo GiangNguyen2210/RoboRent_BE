@@ -1,4 +1,4 @@
-﻿﻿using RoboRent_BE.Service.Interface;
+﻿using RoboRent_BE.Service.Interface;
 using Net.payOS.Types;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,114 +12,58 @@ using Microsoft.AspNetCore.Authorization;
 namespace RoboRent_BE.Controllers;
 
 [Route("api/payment")]
-[ApiController]
 public class PaymentController : ControllerBase
 {
     private readonly IPayOSService _payOSService;
     private readonly ILogger<PaymentController> _logger;
+    private readonly IPaymentService _paymentService; 
 
-    public PaymentController(IPayOSService payOSService, ILogger<PaymentController> logger)
+
+    public PaymentController(IPayOSService payOSService, ILogger<PaymentController> logger, IPaymentService paymentService)
     {
         _payOSService = payOSService;
+        _paymentService = paymentService;
         _logger = logger;
     }
 
-    [HttpPost("create")]
-    [Authorize]
-    public async Task<IActionResult> CreatePayment([FromBody] PaymentRequest request, [FromQuery] int accountId)
-    {
-        try
-        {
-            _logger.LogInformation($"Received payment request for order: {request?.OrderCode}, amount: {request?.Amount}, accountId: {accountId}");
-
-            if (accountId <= 0)
-            {
-                return BadRequest(new { message = "Yêu cầu AccountId hợp lệ." });
-            }
-
-            if (request == null || request.Amount <= 0 || string.IsNullOrEmpty(request.Description))
-            {
-                return BadRequest(new { message = "Dữ liệu yêu cầu thanh toán không hợp lệ." });
-            }
-
-            var accountDto = await _payOSService.GetAccountByIdAsync(accountId);
-            if (accountDto == null)
-            {
-                _logger.LogWarning($"Không tìm thấy Account với ID {accountId}.");
-                return BadRequest(new { message = "Account không hợp lệ." });
-            }
-
-            var response = await _payOSService.CreatePaymentLink(request, accountId);
-            if (response.Code != "PENDING")
-            {
-                _logger.LogError($"Tạo link thanh toán thất bại: {response.Desc}");
-                return BadRequest(new { message = response.Desc });
-            }
-
-            _logger.LogInformation($"Đã tạo link thanh toán: {response.Data.CheckoutUrl}");
-            return Ok(new { checkoutUrl = response.Data.CheckoutUrl });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Tạo link thanh toán thất bại: {ex.Message}");
-            return StatusCode(500, new { Message = "Tạo link thanh toán thất bại. Vui lòng thử lại sau.", Error = ex.Message });
-        }
-    }
-
     [HttpPost("webhook")]
-    [AllowAnonymous] // Webhook should be accessible without authentication
     public async Task<IActionResult> Webhook([FromBody] WebhookType webhookBody)
     {
         try
         {
             _logger.LogDebug($"Webhook payload: {JsonSerializer.Serialize(webhookBody)}");
 
+            // ✅ Verify webhook với PayOS SDK (GIỮ NGUYÊN)
             var webhookData = _payOSService.VerifyWebhookData(webhookBody);
-            _logger.LogInformation($"Nhận webhook từ PayOS: orderCode={webhookData.orderCode}, code={webhookData.code}, desc={webhookData.desc}");
+            _logger.LogInformation($"Webhook từ PayOS: orderCode={webhookData.orderCode}, code={webhookData.code}");
 
+            // Skip test webhook
             if (webhookData.orderCode == 123)
             {
-                _logger.LogInformation("Bỏ qua webhook test với orderCode 123.");
-                return Ok(new { message = "Webhook test được bỏ qua." });
+                _logger.LogInformation("Skipping test webhook");
+                return Ok(new { message = "Test webhook ignored" });
             }
 
-            var transactionDto = await _payOSService.GetTransactionByOrderCodeAsync(webhookData.orderCode);
-            if (transactionDto == null)
+            // Map PayOS code to status
+            string paymentStatus = webhookData.code switch
             {
-                _logger.LogWarning($"Không tìm thấy giao dịch với orderCode {webhookData.orderCode}.");
-                return BadRequest(new { message = "Không tìm thấy giao dịch." });
-            }
-
-            string transactionStatus = webhookData.code switch
-            {
-                "00" => "PAID",
-                _ => "FAILED"
+                "00" => "Paid",
+                _ => "Failed"
             };
 
-            if (transactionDto.Status == transactionStatus)
-            {
-                _logger.LogInformation($"Giao dịch {webhookData.orderCode} đã được xử lý với trạng thái {transactionStatus}.");
-                return Ok(new { message = "Webhook đã được xử lý." });
-            }
+            // ✅ NEW: Delegate to PaymentService
+            await _paymentService.ProcessWebhookAsync(webhookData.orderCode, paymentStatus);
 
-            await _payOSService.UpdateTransactionStatusAsync(webhookData.orderCode, transactionStatus);
-
-            if (transactionStatus == "PAID")
-            {
-                await _payOSService.UpdateAccountSubscriptionAsync(transactionDto.AccountId, transactionDto.Amount);
-            }
-
-            return Ok(new { message = "Webhook được xử lý thành công." });
+            return Ok(new { message = "Webhook processed successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Lỗi xử lý webhook: {ex.Message}");
-            return StatusCode(500, new { Message = "Lỗi khi xử lý webhook.", Error = ex.Message });
+            _logger.LogError(ex, $"Webhook processing error: {ex.Message}");
+            return StatusCode(500, new { message = "Webhook processing failed", error = ex.Message });
         }
     }
 
     [HttpGet("info/{orderCode}")]
-    [Authorize]
     public async Task<IActionResult> GetPaymentInfo(long orderCode)
     {
         try
@@ -134,23 +78,7 @@ public class PaymentController : ControllerBase
         }
     }
 
-    [HttpGet("info/user/{accountId}")]
-    [Authorize]
-    public async Task<IActionResult> GetPaymentInfoByAccountId(int accountId)
-    {
-        try
-        {
-            return Ok(await _payOSService.GetPaymentTransactionByAccountId(accountId));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Lỗi khi lấy thông tin thanh toán cho AccountId: {accountId}");
-            return StatusCode(500, new { Message = "Lỗi khi lấy thông tin thanh toán.", Error = ex.Message });
-        }
-    }
-
     [HttpPost("cancel/{orderCode}")]
-    [Authorize]
     public async Task<IActionResult> CancelPayment(long orderCode, [FromBody] string? cancellationReason = null)
     {
         try
@@ -162,6 +90,87 @@ public class PaymentController : ControllerBase
         {
             _logger.LogError(ex, $"Lỗi khi hủy link thanh toán cho order: {orderCode}");
             return StatusCode(500, new { Message = "Lỗi khi hủy link thanh toán.", Error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// [CUSTOMER] Get all payments for a rental
+    /// </summary>
+    [HttpGet("rental/{rentalId}")]
+    public async Task<IActionResult> GetPaymentsByRental(int rentalId)
+    {
+        try
+        {
+            var payments = await _paymentService.GetPaymentsByRentalIdAsync(rentalId);
+            return Ok(new
+            {
+                success = true,
+                data = payments
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error getting payments for Rental {rentalId}");
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Failed to get payments",
+                error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [SYSTEM/MANUAL] Manually create deposit payment (fallback if auto-create failed)
+    /// </summary>
+    [HttpPost("create-deposit/{rentalId}")]
+    public async Task<IActionResult> CreateDepositPayment(int rentalId)
+    {
+        try
+        {
+            var payment = await _paymentService.CreateDepositPaymentAsync(rentalId);
+            return Ok(new
+            {
+                success = true,
+                message = "Deposit payment created",
+                data = payment
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating deposit for Rental {rentalId}");
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [SYSTEM/MANUAL] Manually create full payment (fallback if auto-create failed)
+    /// </summary>
+    [HttpPost("create-full/{rentalId}")]
+    public async Task<IActionResult> CreateFullPayment(int rentalId)
+    {
+        try
+        {
+            var payment = await _paymentService.CreateFullPaymentAsync(rentalId);
+            return Ok(new
+            {
+                success = true,
+                message = "Full payment created",
+                data = payment
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating full payment for Rental {rentalId}");
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
         }
     }
 }
