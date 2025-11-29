@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RoboRent_BE.Model.Entities;
@@ -12,11 +11,9 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251124153732_Initial")]
-    partial class Initial
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1076,6 +1073,57 @@ namespace RoboRent_BE.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActualDelivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualDeliveryTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualPickupTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerRequestNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ScheduledDeliveryTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ScheduledPickupTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalId");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("ActualDeliveries");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -1235,9 +1283,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("PaymentId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReportCategory")
-                        .HasColumnType("text");
-
                     b.Property<string>("ReportRole")
                         .HasColumnType("text");
 
@@ -1245,9 +1290,6 @@ namespace RoboRent_BE.Model.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Resolution")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResolutionType")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ReviewedAt")
@@ -1679,6 +1721,12 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<double?>("Delivery")
                         .HasColumnType("double precision");
 
+                    b.Property<int?>("DeliveryDistance")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("DeliveryFee")
+                        .HasColumnType("numeric");
+
                     b.Property<double?>("Deposit")
                         .HasColumnType("double precision");
 
@@ -1764,6 +1812,12 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("PlannedDeliveryTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PlannedPickupTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ReceivedDate")
                         .HasColumnType("timestamp with time zone");
@@ -5281,6 +5335,23 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("ActivityType");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ActualDelivery", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId");
+
+                    b.Navigation("Rental");
+
+                    b.Navigation("Staff");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ChatMessage", b =>

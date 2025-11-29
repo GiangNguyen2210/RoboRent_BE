@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -385,7 +385,9 @@ namespace RoboRent_BE.Model.Migrations
                     AccountId = table.Column<int>(type: "integer", nullable: false),
                     EventActivityId = table.Column<int>(type: "integer", nullable: true),
                     ActivityTypeId = table.Column<int>(type: "integer", nullable: true),
-                    StaffId = table.Column<int>(type: "integer", nullable: true)
+                    StaffId = table.Column<int>(type: "integer", nullable: true),
+                    PlannedDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PlannedPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -508,6 +510,40 @@ namespace RoboRent_BE.Model.Migrations
                         name: "FK_RobotInGroups_Robots_RobotId",
                         column: x => x.RobotId,
                         principalTable: "Robots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActualDeliveries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RentalId = table.Column<int>(type: "integer", nullable: false),
+                    StaffId = table.Column<int>(type: "integer", nullable: true),
+                    ScheduledDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ActualDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ScheduledPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ActualPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    CustomerRequestNotes = table.Column<string>(type: "text", nullable: true),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActualDeliveries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActualDeliveries_Accounts_StaffId",
+                        column: x => x.StaffId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ActualDeliveries_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -639,6 +675,8 @@ namespace RoboRent_BE.Model.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
+                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
+                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
                     ManagerId = table.Column<int>(type: "integer", nullable: true),
                     SubmittedToManagerAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ManagerApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -861,7 +899,6 @@ namespace RoboRent_BE.Model.Migrations
                     ReporterId = table.Column<int>(type: "integer", nullable: true),
                     ReportRole = table.Column<string>(type: "text", nullable: true),
                     AccusedId = table.Column<int>(type: "integer", nullable: true),
-                    ReportCategory = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     EvidencePath = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
@@ -869,7 +906,6 @@ namespace RoboRent_BE.Model.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ReviewedBy = table.Column<int>(type: "integer", nullable: true),
                     ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ResolutionType = table.Column<string>(type: "text", nullable: true),
                     PaymentId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -1481,6 +1517,16 @@ namespace RoboRent_BE.Model.Migrations
                 column: "EventActivityId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ActualDeliveries_RentalId",
+                table: "ActualDeliveries",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActualDeliveries_StaffId",
+                table: "ActualDeliveries",
+                column: "StaffId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -1736,6 +1782,9 @@ namespace RoboRent_BE.Model.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ActualDeliveries");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

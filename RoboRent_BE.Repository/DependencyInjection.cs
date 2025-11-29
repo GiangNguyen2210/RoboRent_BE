@@ -33,6 +33,7 @@ public static class DependencyInjection
         
         services.AddTransient<IActivityTypeGroupRepository, ActivityTypeGroupRepository>();
         services.AddTransient<IGroupScheduleRepository, GroupScheduleRepository>();
+        services.AddTransient<IContractReportsRepository, ContractReportsRepository>();
         return services;
     }
 }
