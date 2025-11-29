@@ -338,6 +338,19 @@ public class RentalController : ControllerBase
             var res = await _rentalService.StaffRequestRentalUpdateAsync(rentalId);
 
             if (res == null)
+    
+    /// <summary>
+    /// [STAFF/MANAGER] Mark rental as completed after event finished
+    /// This will trigger Full payment creation
+    /// </summary>
+    [HttpPut("{rentalId}/complete")]
+    public async Task<IActionResult> CompleteRental(int rentalId)
+    {
+        try
+        {
+            var result = await _rentalService.CompleteRentalAsync(rentalId);
+        
+            if (result == null)
             {
                 return NotFound(new
                 {
@@ -350,6 +363,15 @@ public class RentalController : ControllerBase
             {
                 success = true,
                 data = res
+                    message = "Rental not found"
+                });
+            }
+        
+            return Ok(new
+            {
+                success = true,
+                message = "Rental completed successfully",
+                data = result
             });
         }
         catch (Exception e)

@@ -30,7 +30,6 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
 
     public virtual DbSet<PriceQuote> PriceQuotes { get; set; } = null!;
 
-    public virtual DbSet<PaymentTransaction> PaymentTransactions { get; set; } = null!;
     public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
     public virtual DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
@@ -58,6 +57,7 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
 
     public virtual DbSet<RobotAbility> RobotAbilities { get; set; } = null!;
     public virtual DbSet<ActualDelivery> ActualDeliveries { get; set; } = null!;
+    public virtual DbSet<PaymentRecord> PaymentRecords { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
