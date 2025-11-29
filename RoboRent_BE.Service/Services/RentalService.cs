@@ -16,11 +16,18 @@ public class RentalService : IRentalService
     private readonly IMapper _mapper;
     private readonly IRentalRepository _rentalRepository;
     private readonly IChatService _chatService; 
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService)
+    private readonly IRentalDetailRepository _rentalDetailRepository;
+    private readonly IGroupScheduleRepository _groupScheduleRepository;
+    private readonly IPaymentService _paymentService;
+
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository, IPaymentService paymentService, IGroupScheduleRepository groupScheduleRepository)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
         _chatService = chatService;
+        _rentalDetailRepository = rentalDetailRepository;
+        _groupScheduleRepository = groupScheduleRepository;
+        _paymentService = paymentService;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
@@ -138,7 +145,10 @@ public class RentalService : IRentalService
 
         if (result == null) return null;
 
-        result.Status = "Pending";
+        if (result.StaffId != null)
+        {
+            result.Status = "Received";
+        } else result.Status = "Pending";
         
         await _rentalRepository.UpdateAsync(result);
         
@@ -184,7 +194,7 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
     {
-        Expression<Func<Rental, bool>> filter = r => r.Status == "Received" && r.StaffId == staffId;
+        Expression<Func<Rental, bool>> filter = r => r.StaffId == staffId;
         
         var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
         
@@ -205,4 +215,81 @@ public class RentalService : IRentalService
         await _rentalRepository.UpdateAsync(rental);
         return _mapper.Map<OrderResponse>(rental);
     }
+
+    public async Task<OrderResponse?> CustomerCancelRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Cancelled";
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<OrderResponse?> CustomerDeleteRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.IsDeleted = true;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        
+        return _mapper.Map<OrderResponse>(rental);
+    }
+
+    public async Task<OrderResponse?> StaffRequestRentalUpdateAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        var gs = await _groupScheduleRepository.GetAsync(g => g.RentalId == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Draft";
+        
+        gs.IsDeleted = true;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        await _groupScheduleRepository.UpdateAsync(gs);
+
+        return _mapper.Map<OrderResponse>(rental);
+    }
+    
+    public async Task<RentalCompletionResponse> CompleteRentalAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+    
+        if (rental == null)
+            throw new Exception("Rental not found");
+
+        if (rental.Status != "DeliveryScheduled")
+            throw new Exception($"Cannot complete rental. Status must be 'DeliveryScheduled'. Current: {rental.Status}");
+
+        // Update status
+        rental.Status = "Completed";
+        rental.UpdatedDate = DateTime.UtcNow;
+    
+        await _rentalRepository.UpdateAsync(rental);
+
+        // ✅ TẠO FULL PAYMENT VÀ LẤY RESULT
+        var paymentResult = await _paymentService.CreateFullPaymentAsync(rentalId);
+
+        // ✅ TRẢ VỀ CẢ RENTAL VÀ PAYMENT INFO
+        return new RentalCompletionResponse
+        {
+            Rental = _mapper.Map<OrderResponse>(rental),
+            FullPayment = new FullPaymentInfo
+            {
+                OrderCode = paymentResult.OrderCode,
+                Amount = paymentResult.Amount,
+                CheckoutUrl = paymentResult.CheckoutUrl,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15)
+            }
+        };
+    }
+    
 }

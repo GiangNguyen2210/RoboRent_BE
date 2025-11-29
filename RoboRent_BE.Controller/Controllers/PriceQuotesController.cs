@@ -15,15 +15,18 @@ public class PriceQuotesController : ControllerBase
     private readonly IPriceQuoteService _priceQuoteService;
     private readonly IChatService _chatService;
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IRentalService _rentalService;
 
     public PriceQuotesController(
         IPriceQuoteService priceQuoteService,
-        IChatService chatService,
-        IHubContext<ChatHub> hubContext)
+        ChatNotificationHelper notificationHelper,
+        IHubContext<ChatHub> hubContext,
+        IRentalService rentalService)
     {
         _priceQuoteService = priceQuoteService;
         _chatService = chatService;
         _hubContext = hubContext;
+        _rentalService = rentalService;
     }
 
     private int GetCurrentUserId()
@@ -49,6 +52,7 @@ public class PriceQuotesController : ControllerBase
             
             // 1. Service tạo quote (check < 3)
             var quote = await _priceQuoteService.CreatePriceQuoteAsync(request, staffId);
+            var rental = await _rentalService.GetRentalAsync(request.RentalId);
             
             // 2. Controller gửi notification vào chat
             var notificationMessage = await _chatService.SendMessageAsync(new SendMessageRequest

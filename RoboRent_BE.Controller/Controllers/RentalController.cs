@@ -234,4 +234,116 @@ public class RentalController : ControllerBase
             });
         }
     }
+
+    [HttpPut("customer/cancel/rental/{rentalId}")]
+    public async Task<IActionResult> CustomerCancelRental(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.CustomerCancelRentalAsync(rentalId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Could not find rental"
+            });
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+    
+    [HttpPut("customer/delete/rental/{rentalId}")]
+    public async Task<IActionResult> CustomerDeleteRental(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.CustomerDeleteRentalAsync(rentalId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Could not find rental"
+            });
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    [HttpPut("staff/request/update/rental/{rentalId}")]
+    public async Task<IActionResult> StaffUpdateRequest(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.StaffRequestRentalUpdateAsync(rentalId);
+
+            if (res == null)
+    
+    /// <summary>
+    /// [STAFF/MANAGER] Mark rental as completed after event finished
+    /// This will trigger Full payment creation
+    /// </summary>
+    [HttpPut("{rentalId}/complete")]
+    public async Task<IActionResult> CompleteRental(int rentalId)
+    {
+        try
+        {
+            var result = await _rentalService.CompleteRentalAsync(rentalId);
+        
+            if (result == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Could not find rental."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = res
+                    message = "Rental not found"
+                });
+            }
+        
+            return Ok(new
+            {
+                success = true,
+                message = "Rental completed successfully",
+                data = result
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

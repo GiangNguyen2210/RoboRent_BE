@@ -8,4 +8,5 @@ public interface IGroupScheduleService
     public Task<GroupScheduleResponse?> CreateGroupSchedule(GroupScheduleCreateRequest request, int staffId);
     public Task<GroupScheduleResponse?> UpdateGroupSchedule(int scheduleId,GroupScheduleUpdateRequest request);
     public Task<GroupScheduleResponse?> CancelGroupScheduleById(int scheduleId);
+    public Task<GroupScheduleResponse?> CustomerGetGroupScheduleByRentalId(int rentalId);
 }
