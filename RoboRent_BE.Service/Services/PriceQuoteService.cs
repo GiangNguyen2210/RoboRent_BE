@@ -133,10 +133,13 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote.Status != "PendingManager") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
 
+        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+
         quote.ManagerId = managerId;
 
         if (request.Action.ToLower() == "approve")
         {
+            rental.Status = "AcceptedPriceQuote";
             quote.Status = "PendingCustomer";
             quote.ManagerApprovedAt = DateTime.UtcNow;
         }
@@ -147,6 +150,7 @@ public class PriceQuoteService : IPriceQuoteService
                 throw new Exception("Feedback is required when rejecting");
             }
             
+            rental.Status = "RejectedPriceQuote";
             quote.Status = "RejectedManager";
             quote.ManagerFeedback = request.Feedback;
         }
@@ -155,6 +159,7 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception("Invalid action. Use 'approve' or 'reject'");
         }
 
+        await _rentalRepo.UpdateAsync(rental);
         await _priceQuoteRepo.UpdateAsync(quote);
         
         var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);

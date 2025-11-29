@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
-using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
@@ -14,8 +13,6 @@ public class ContractDraftsService : IContractDraftsService
     private readonly ITemplateClausesRepository _templateClausesRepository;
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly IContractTemplatesRepository _contractTemplatesRepository;
-    private readonly IRentalRepository _rentalRepository;
-    private readonly IPaymentService _paymentService;
     private readonly IMapper _mapper;
 
     public ContractDraftsService(
@@ -23,16 +20,12 @@ public class ContractDraftsService : IContractDraftsService
         ITemplateClausesRepository templateClausesRepository,
         IDraftClausesRepository draftClausesRepository,
         IContractTemplatesRepository contractTemplatesRepository,
-        IRentalRepository rentalRepository,
-        IPaymentService paymentService,
         IMapper mapper)
     {
         _contractDraftsRepository = contractDraftsRepository;
         _templateClausesRepository = templateClausesRepository;
         _draftClausesRepository = draftClausesRepository;
         _contractTemplatesRepository = contractTemplatesRepository;
-        _rentalRepository = rentalRepository;
-        _paymentService = paymentService;
         _mapper = mapper;
     }
 
@@ -403,19 +396,7 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
-        rental.Status = "ChuaThanhToan";
-        await _rentalRepository.UpdateAsync(rental);
-        var paymentResult = await _paymentService.CreateDepositPaymentAsync(rental.Id);
-        var response = _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
-        response.DepositPayment = new DepositPaymentInfo
-        {
-            OrderCode = paymentResult.OrderCode,
-            Amount = paymentResult.Amount,
-            CheckoutUrl = paymentResult.CheckoutUrl,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(15) // PayOS link expires in 15 mins
-        };
-    
-        return response;
+        return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
     }
 
     public async Task<ContractDraftsResponse?> ManagerRejectContractAsync(int id, ManagerRejectRequest request, int managerId)

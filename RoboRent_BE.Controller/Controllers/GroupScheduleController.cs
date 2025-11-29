@@ -130,5 +130,34 @@ public class GroupScheduleController : ControllerBase
             });
         }
     }
-    
+
+
+    [HttpGet("customer/get/schedule/{rentalId}")]
+    public async Task<IActionResult> GetGroupSchedulesByRentalId(int rentalId)
+    {
+        try
+        {
+            var res = await _groupScheduleService.CustomerGetGroupScheduleByRentalId(rentalId);
+            
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "No Schedule Found"
+            });
+
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

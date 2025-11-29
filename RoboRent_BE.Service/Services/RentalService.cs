@@ -19,13 +19,14 @@ public class RentalService : IRentalService
     private readonly IChatService _chatService; 
     private readonly IRentalDetailRepository _rentalDetailRepository;
     private readonly IPaymentService _paymentService;
-
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository, IPaymentService paymentService)
+    private readonly IGroupScheduleRepository _groupScheduleRepository;
+    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository,  IGroupScheduleRepository groupScheduleRepository, IPaymentService paymentService)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
         _chatService = chatService;
         _rentalDetailRepository = rentalDetailRepository;
+        _groupScheduleRepository = groupScheduleRepository;
         _paymentService = paymentService;
     }
 
@@ -186,7 +187,10 @@ public class RentalService : IRentalService
 
         if (result == null) return null;
 
-        result.Status = "Pending";
+        if (result.StaffId != null)
+        {
+            result.Status = "Received";
+        } else result.Status = "Pending";
         
         await _rentalRepository.UpdateAsync(result);
         
@@ -233,7 +237,7 @@ public class RentalService : IRentalService
 
     public async Task<List<OrderResponse>> GetAllReceivedRentalsByStaffId(int staffId)
     {
-        Expression<Func<Rental, bool>> filter = r => r.Status == "Received" && r.StaffId == staffId;
+        Expression<Func<Rental, bool>> filter = r => r.StaffId == staffId;
         
         var rentals = await _rentalRepository.GetAllAsync(filter, "EventActivity,ActivityType");
         
@@ -280,6 +284,23 @@ public class RentalService : IRentalService
         
         return _mapper.Map<OrderResponse>(rental);
     }
+
+    public async Task<OrderResponse?> StaffRequestRentalUpdateAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        var gs = await _groupScheduleRepository.GetAsync(g => g.RentalId == rentalId);
+        
+        if (rental == null) return null;
+        
+        rental.Status = "Draft";
+        
+        gs.IsDeleted = true;
+        
+        await _rentalRepository.UpdateAsync(rental);
+        await _groupScheduleRepository.UpdateAsync(gs);
+
+        return _mapper.Map<OrderResponse>(rental);
+    }
     
     public async Task<RentalCompletionResponse> CompleteRentalAsync(int rentalId)
     {
@@ -313,5 +334,4 @@ public class RentalService : IRentalService
             }
         };
     }
-    
 }
