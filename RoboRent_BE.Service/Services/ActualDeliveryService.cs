@@ -228,6 +228,69 @@ public class ActualDeliveryService : IActualDeliveryService
         return grouped;
     }
 
+    public async Task<ConflictCheckResponse> CheckStaffConflictAsync(int staffId, int groupScheduleId)
+    {
+        // Get target schedule
+        var targetSchedule = await _groupScheduleRepo.GetAsync(gs => gs.Id == groupScheduleId);
+        if (targetSchedule == null)
+        {
+            throw new Exception($"GroupSchedule {groupScheduleId} not found");
+        }
+
+        if (!targetSchedule.EventDate.HasValue || 
+            !targetSchedule.DeliveryTime.HasValue || 
+            !targetSchedule.FinishTime.HasValue)
+        {
+            throw new Exception("GroupSchedule must have EventDate, DeliveryTime, and FinishTime");
+        }
+
+        // Calculate target time range
+        var targetStart = targetSchedule.EventDate.Value.Date + targetSchedule.DeliveryTime.Value.ToTimeSpan();
+        var targetEnd = targetSchedule.EventDate.Value.Date + targetSchedule.FinishTime.Value.ToTimeSpan();
+
+        // Get all deliveries of this staff around same date
+        var staffDeliveries = await _deliveryRepo.GetByStaffAndDateRangeAsync(
+            staffId,
+            targetSchedule.EventDate.Value.AddDays(-1),
+            targetSchedule.EventDate.Value.AddDays(1)
+        );
+
+        var conflicts = new List<ConflictDetail>();
+
+        foreach (var delivery in staffDeliveries)
+        {
+            var schedule = delivery.GroupSchedule;
+
+            if (!schedule.EventDate.HasValue || 
+                !schedule.DeliveryTime.HasValue || 
+                !schedule.FinishTime.HasValue)
+            {
+                continue;
+            }
+
+            var existStart = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
+            var existEnd = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
+
+            // Check overlap
+            if (targetStart < existEnd && targetEnd > existStart)
+            {
+                conflicts.Add(new ConflictDetail
+                {
+                    DeliveryId = delivery.Id,
+                    EventName = schedule.Rental?.EventName ?? "Unknown Event",
+                    ScheduledStart = existStart,
+                    ScheduledEnd = existEnd
+                });
+            }
+        }
+
+        return new ConflictCheckResponse
+        {
+            HasConflict = conflicts.Any(),
+            Conflicts = conflicts
+        };
+    }
+
     // Helper methods
     private async Task<ActualDeliveryResponse> MapToResponseAsync(ActualDelivery delivery)
     {

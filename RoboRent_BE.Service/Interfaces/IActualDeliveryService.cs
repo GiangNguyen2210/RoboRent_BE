@@ -11,4 +11,9 @@ public interface IActualDeliveryService
     Task<ActualDeliveryResponse> GetByRentalIdAsync(int rentalId);
     Task<List<ActualDeliveryResponse>> GetByStaffIdAsync(int staffId);
     Task<List<DeliveryCalendarResponse>> GetCalendarAsync(DateTime from, DateTime to, int? staffId = null);
+    
+    /// <summary>
+    /// [MANAGER] Check conflict khi assign staff
+    /// </summary>
+    Task<ConflictCheckResponse> CheckStaffConflictAsync(int staffId, int groupScheduleId);
 }
