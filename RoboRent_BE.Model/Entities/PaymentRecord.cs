@@ -33,6 +33,10 @@ public class PaymentRecord
 
     [Required]
     public string Status { get; set; } = "Pending"; // "Pending", "Paid", "Failed", "Cancelled"
+    
+    public string? CheckoutUrl { get; set; }
+    
+    public DateTime? ExpiredAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

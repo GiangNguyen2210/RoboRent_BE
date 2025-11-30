@@ -412,7 +412,7 @@ public class ContractDraftsService : IContractDraftsService
             OrderCode = paymentResult.OrderCode,
             Amount = paymentResult.Amount,
             CheckoutUrl = paymentResult.CheckoutUrl,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(15) // PayOS link expires in 15 mins
+            ExpiresAt = paymentResult.ExpiredAt ?? DateTime.UtcNow.AddDays(7)
         };
     
         return response;
