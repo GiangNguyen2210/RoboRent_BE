@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddTransient<IGroupScheduleRepository, GroupScheduleRepository>();
         services.AddTransient<IContractReportsRepository, ContractReportsRepository>();
         services.AddTransient<IPaymentRecordRepository, PaymentRecordRepository>();
+        services.AddTransient<IFaceProfilesRepository, FaceProfilesRepository>();
+        services.AddTransient<IFaceVerificationRepository, FaceVerificationRepository>();
         return services;
     }
 }

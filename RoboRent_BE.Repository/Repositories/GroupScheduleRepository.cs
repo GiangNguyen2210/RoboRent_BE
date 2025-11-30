@@ -27,6 +27,8 @@ public class GroupScheduleRepository : GenericRepository<GroupSchedule>, IGroupS
     public async Task<IEnumerable<GroupSchedule>> GetSameDaySchedulesAsync(int groupId, DateTime date)
     {
         return await _dbContext.GroupSchedules
+            .Include(g => g.Rental)
+            .Include(g => g.ActivityTypeGroup)
             .Where(g => g.ActivityTypeGroupId == groupId &&
                         g.EventDate == date &&
                         !g.IsDeleted)
