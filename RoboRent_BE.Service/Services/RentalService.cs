@@ -126,7 +126,7 @@ public class RentalService : IRentalService
         Expression<Func<Rental, bool>> filter = r =>
             r.Id == id;
 
-        var rentals = await _rentalRepository.GetAllAsync(filter,"EventActivity,ActivityType");
+        var rentals = await _rentalRepository.GetAllAsync(filter,"EventActivity,ActivityType,Account");
         var rental = _mapper.Map<OrderResponse>(rentals.FirstOrDefault());
         return rental;
     }

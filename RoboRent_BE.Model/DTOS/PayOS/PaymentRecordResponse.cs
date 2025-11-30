@@ -3,7 +3,7 @@
 public class PaymentRecordResponse
 {
     public int Id { get; set; }
-    public int RentalId { get; set; }
+    public int? RentalId { get; set; }
     public int? PriceQuoteId { get; set; }
     public string PaymentType { get; set; } = string.Empty;
     public decimal Amount { get; set; }

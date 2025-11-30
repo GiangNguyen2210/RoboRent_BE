@@ -3,17 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RoboRent_BE.Model.Entities;
 
+[Table("PaymentRecords")]
 public class PaymentRecord
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    [Required]
-    public int RentalId { get; set; }
+    public int? RentalId { get; set; }
     
     [ForeignKey(nameof(RentalId))]
-    public virtual Rental Rental { get; set; } = null!;
+    public virtual Rental? Rental { get; set; }
 
     public int? PriceQuoteId { get; set; }
     

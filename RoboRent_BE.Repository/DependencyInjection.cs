@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddTransient<IRentalDetailRepository, RentalDetailRepository>();
         services.AddTransient<IRobotRepository, RobotRepository>();
         services.AddTransient<ITypesOfRoboRepository, TypesOfRoboRepository>();
+        
         services.AddTransient<IChatMessageRepository, ChatMessageRepository>();
         services.AddTransient<IChatRoomRepository, ChatRoomRepository>();
         services.AddTransient<IRentalContractRepository, RentalContractRepository>();
@@ -31,7 +32,10 @@ public static class DependencyInjection
         
         services.AddTransient<IActivityTypeGroupRepository, ActivityTypeGroupRepository>();
         services.AddTransient<IGroupScheduleRepository, GroupScheduleRepository>();
+        services.AddTransient<IContractReportsRepository, ContractReportsRepository>();
         services.AddTransient<IPaymentRecordRepository, PaymentRecordRepository>();
+        services.AddTransient<IFaceProfilesRepository, FaceProfilesRepository>();
+        services.AddTransient<IFaceVerificationRepository, FaceVerificationRepository>();
         return services;
     }
 }

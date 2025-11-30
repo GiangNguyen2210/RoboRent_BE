@@ -23,8 +23,6 @@ public partial class ContractReports
     
     [ForeignKey("AccusedId")] public virtual Account Accused { get; set; } = null!;
 
-    public string? ReportCategory { get; set; } =  string.Empty;
-
     public string? Description { get; set; } =   string.Empty;
 
     public string? EvidencePath { get; set; } =   string.Empty;
@@ -40,9 +38,6 @@ public partial class ContractReports
     [ForeignKey("ReviewedBy")] public virtual Account Manager { get; set; } =  null!;
 
     public DateTime? ReviewedAt { get; set; } =  DateTime.UtcNow;
-
-    public string? ResolutionType { get; set; } =  string.Empty;
-
     public int? PaymentId { get; set; }
     
     [ForeignKey("PaymentId")] 
