@@ -8,6 +8,8 @@ using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Model.DTOS.DraftClauses;
 using RoboRent_BE.Model.DTOs.EventActivity;
 using RoboRent_BE.Model.DTOs.EventSchedule;
+using RoboRent_BE.Model.DTOs.FaceProfiles;
+using RoboRent_BE.Model.DTOs.FaceVerifications;
 using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
@@ -24,6 +26,9 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<FaceVerification, FaceVerificationsResponse>();
+        CreateMap<FaceProfiles, FaceProfilesResponse>();
+        
         CreateMap<GroupScheduleUpdateRequest, GroupSchedule>();
         
         CreateMap<StaffUpdateRequest, Rental>();
