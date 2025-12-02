@@ -70,6 +70,27 @@ public class ContractDraftsService : IContractDraftsService
 
     public async Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request, int staffId)
     {
+        // Validate: Check if there's already a contract draft for this rentalId with status other than "Rejected" or "Draft"
+        if (request.RentalId.HasValue)
+        {
+            var existingContractDrafts = await _contractDraftsRepository.GetContractDraftsByRentalIdAsync(request.RentalId.Value);
+            var hasActiveContractDraft = existingContractDrafts.Any(cd => 
+            {
+                if (string.IsNullOrEmpty(cd.Status))
+                    return false; // Treat null/empty as draft-like, allow creation
+                
+                var status = cd.Status.Trim();
+                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) && 
+                       !status.Equals("Draft", StringComparison.OrdinalIgnoreCase);
+            });
+            
+            if (hasActiveContractDraft)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create a new contract draft. There is already an active contract draft for this rental that is not in 'Rejected' or 'Draft' status.");
+            }
+        }
+        
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
         
