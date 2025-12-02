@@ -58,4 +58,7 @@ public interface IActualDeliveryService
         int pageSize, 
         string? searchTerm = null, 
         string? sortBy = "date");
+    
+    Task<ActualDeliveryResponse?> GetByRentalIdAsync(int rentalId);
+
 }
