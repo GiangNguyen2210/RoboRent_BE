@@ -80,6 +80,15 @@ public class ContractReportsService : IContractReportsService
         return reports.Select(MapToResponse).ToList();
     }
 
+    public async Task<IEnumerable<ContractReportResponse>> GetContractReportsByUserIdAsync(int userId)
+    {
+        var reports = await _contractReportsRepository.GetAllAsync(
+            filter: cr => cr.ReporterId == userId,
+            includeProperties: "DraftClauses,Account,Accused,Manager,PaymentRecord");
+        
+        return reports.Select(MapToResponse).ToList();
+    }
+
     public async Task<ContractReportResponse> CreateContractReportAsync(
         CreateContractReportRequest request, 
         int reporterId, 
@@ -153,7 +162,7 @@ public class ContractReportsService : IContractReportsService
         long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
 
         // Create PayOS payment link
-        var paymentAmount = 100000; // Default amount - adjust as needed
+        var paymentAmount = 1000; 
         var paymentData = new PaymentData(
             orderCode: newOrderCode,
             amount: paymentAmount,

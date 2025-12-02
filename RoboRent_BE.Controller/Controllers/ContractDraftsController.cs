@@ -18,6 +18,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Manager, Staff, Admin, Customer")]
     public async Task<IActionResult> GetAllContractDrafts()
     {
         try
@@ -40,6 +41,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Manager, Staff, Admin, Customer")]
     public async Task<IActionResult> GetContractDraftsById(int id)
     {
         try
@@ -71,6 +73,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("rental/{rentalId}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractDraftsByRentalId(int rentalId)
     {
         try
@@ -93,6 +96,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("staff/{staffId}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractDraftsByStaffId(int staffId)
     {
         try
@@ -115,6 +119,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("manager/{managerId}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractDraftsByManagerId(int managerId)
     {
         try
@@ -137,6 +142,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("status/{status}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractDraftsByStatus(string status)
     {
         try
@@ -159,7 +165,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> CreateContractDrafts([FromBody] CreateContractDraftsRequest request)
     {
         if (!ModelState.IsValid)
@@ -205,6 +211,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> UpdateContractDrafts(int id, [FromBody] UpdateContractDraftsRequest request)
     {
         if (id != request.Id)
@@ -257,6 +264,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> DeleteContractDrafts(int id)
     {
         try
@@ -302,7 +310,7 @@ public class ContractDraftsController : ControllerBase
     /// Manager signs the contract and sends it to customer
     /// </summary>
     [HttpPatch("{id}/manager-sign")]
-    [Authorize]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> ManagerSignContract(int id, [FromBody] ManagerSignatureRequest request)
     {
         if (!ModelState.IsValid)
