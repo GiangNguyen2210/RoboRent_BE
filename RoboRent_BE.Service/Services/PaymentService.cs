@@ -64,8 +64,8 @@ public class PaymentService : IPaymentService
         if (rental == null)
             throw new Exception($"Rental {rentalId} not found");
 
-        if (rental.Status != "ChuaThanhToan")
-            throw new Exception($"Cannot create deposit payment. Rental status must be 'ChuaThanhToan'. Current: {rental.Status}");
+        if (rental.Status != "PendingDeposit")
+            throw new Exception($"Cannot create deposit payment. Rental status must be 'PendingDeposit'. Current: {rental.Status}");
 
         // 2. Check if deposit already exists (LOGIC MỚI: Trả về cái cũ nếu đang Pending)
         var existingDeposit = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");

@@ -10,20 +10,22 @@ public class PriceQuoteService : IPriceQuoteService
 {
     private readonly IPriceQuoteRepository _priceQuoteRepo;
     private readonly IRentalRepository _rentalRepo; 
-
+    private readonly IGroupScheduleRepository _groupScheduleRepo;
     public PriceQuoteService(
         IPriceQuoteRepository priceQuoteRepo,
-        IRentalRepository rentalRepo)
+        IRentalRepository rentalRepo,
+        IGroupScheduleRepository groupScheduleRepo)
     {
         _priceQuoteRepo = priceQuoteRepo;
         _rentalRepo = rentalRepo;
+        _groupScheduleRepo = groupScheduleRepo;
     }
 
     public async Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId)
     {
         // Validate rental status FIRST
         var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote" };
+        var validStatuses = new[] { "AcceptedDemo", "PendingPriceQuote", "RejectedPriceQuote" };
         if (!validStatuses.Contains(rental.Status))
         {
             throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: AcceptedDemo hoặc PendingPriceQuote");
@@ -41,8 +43,7 @@ public class PriceQuoteService : IPriceQuoteService
         var activeQuote = existingQuotes.FirstOrDefault(q => 
             q.Status == "PendingManager" || 
             q.Status == "PendingCustomer" || 
-            q.Status == "Approved" ||
-            q.Status == "RejectedCustomer");
+            q.Status == "Approved" );
 
         if (activeQuote != null)
         {
@@ -132,14 +133,11 @@ public class PriceQuoteService : IPriceQuoteService
         if (quote == null) throw new Exception("Quote not found");
         if (quote.Status != "PendingManager") 
             throw new Exception($"Cannot perform action on quote with status: {quote.Status}");
-
-        var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
-
+        
         quote.ManagerId = managerId;
 
         if (request.Action.ToLower() == "approve")
         {
-            rental.Status = "AcceptedPriceQuote";
             quote.Status = "PendingCustomer";
             quote.ManagerApprovedAt = DateTime.UtcNow;
         }
@@ -150,7 +148,6 @@ public class PriceQuoteService : IPriceQuoteService
                 throw new Exception("Feedback is required when rejecting");
             }
             
-            rental.Status = "RejectedPriceQuote";
             quote.Status = "RejectedManager";
             quote.ManagerFeedback = request.Feedback;
         }
@@ -159,7 +156,6 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception("Invalid action. Use 'approve' or 'reject'");
         }
 
-        await _rentalRepo.UpdateAsync(rental);
         await _priceQuoteRepo.UpdateAsync(quote);
         
         var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
@@ -205,6 +201,10 @@ public class PriceQuoteService : IPriceQuoteService
             // Check xem đã có bao nhiêu quotes
             var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(quote.RentalId);
             
+            var rental2 = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
+            rental2.Status = "RejectedPriceQuote";
+            await _rentalRepo.UpdateAsync(rental2);
+            
             if (allQuotes.Count >= 3)
             {
                 // Đã 3 quotes rồi → Expired
@@ -213,6 +213,10 @@ public class PriceQuoteService : IPriceQuoteService
                 var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
                 rental.Status = "Canceled";
                 await _rentalRepo.UpdateAsync(rental);
+
+                var schedule = await _groupScheduleRepo.GetAsync(gs => gs.RentalId == rental.Id);
+                schedule.IsDeleted = true;
+                await _groupScheduleRepo.UpdateAsync(schedule);
             }
             else
             {

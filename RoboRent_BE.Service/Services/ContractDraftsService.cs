@@ -101,6 +101,11 @@ public class ContractDraftsService : IContractDraftsService
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
         
+        // Find Rental
+        var rental = await _rentalRepository.GetAsync(r => r.Id == request.RentalId);
+        rental.Status = "PendingContract";
+        await _rentalRepository.UpdateAsync(rental);
+        
         // Set StaffId from token (the person who creates this contract draft)
         contractDraft.StaffId = staffId;
        
@@ -456,7 +461,7 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
-        rental.Status = "ChuaThanhToan";
+        rental.Status = "PendingDeposit";
         await _rentalRepository.UpdateAsync(rental);
         var paymentResult = await _paymentService.CreateDepositPaymentAsync(rental.Id);
         var response = _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
@@ -568,6 +573,8 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        rental.Status = "PendingContract";
+        await _rentalRepository.UpdateAsync(rental);
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
     }
 
