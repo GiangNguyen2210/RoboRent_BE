@@ -73,7 +73,7 @@ public class ContractDraftsController : ControllerBase
     }
 
     [HttpGet("rental/{rentalId}")]
-    [Authorize(Roles = "Manager, Staff, Admin")]
+    [Authorize(Roles = "Manager, Staff, Admin, Customer")]
     public async Task<IActionResult> GetContractDraftsByRentalId(int rentalId)
     {
         try
