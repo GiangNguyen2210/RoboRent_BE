@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
+using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
@@ -13,23 +14,26 @@ public class ContractDraftsService : IContractDraftsService
     private readonly ITemplateClausesRepository _templateClausesRepository;
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly IContractTemplatesRepository _contractTemplatesRepository;
-    private readonly IMapper _mapper;
     private readonly IRentalRepository _rentalRepository;
+    private readonly IPaymentService _paymentService;
+    private readonly IMapper _mapper;
 
     public ContractDraftsService(
         IContractDraftsRepository contractDraftsRepository, 
         ITemplateClausesRepository templateClausesRepository,
         IDraftClausesRepository draftClausesRepository,
         IContractTemplatesRepository contractTemplatesRepository,
-        IMapper mapper,
-        IRentalRepository rentalRepository)
+        IRentalRepository rentalRepository,
+        IPaymentService paymentService,
+        IMapper mapper)
     {
         _contractDraftsRepository = contractDraftsRepository;
         _templateClausesRepository = templateClausesRepository;
         _draftClausesRepository = draftClausesRepository;
         _contractTemplatesRepository = contractTemplatesRepository;
-        _mapper = mapper;
         _rentalRepository = rentalRepository;
+        _paymentService = paymentService;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<ContractDraftsResponse>> GetAllContractDraftsAsync()
@@ -457,10 +461,19 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
-
-        rental.Status = "AcceptedContract";
+        rental.Status = "PendingDeposit";
         await _rentalRepository.UpdateAsync(rental);
-        return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
+        var paymentResult = await _paymentService.CreateDepositPaymentAsync(rental.Id);
+        var response = _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
+        response.DepositPayment = new DepositPaymentInfo
+        {
+            OrderCode = paymentResult.OrderCode,
+            Amount = paymentResult.Amount,
+            CheckoutUrl = paymentResult.CheckoutUrl,
+            ExpiresAt = paymentResult.ExpiredAt ?? DateTime.UtcNow.AddDays(7)
+        };
+    
+        return response;
     }
 
     public async Task<ContractDraftsResponse?> ManagerRejectContractAsync(int id, ManagerRejectRequest request, int managerId)
