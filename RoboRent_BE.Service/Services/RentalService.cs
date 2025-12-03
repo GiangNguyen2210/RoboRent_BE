@@ -265,7 +265,7 @@ public class RentalService : IRentalService
         
         if (rental == null) return null;
         
-        rental.Status = "Cancelled";
+        rental.Status = "Canceled";
         
         await _rentalRepository.UpdateAsync(rental);
         

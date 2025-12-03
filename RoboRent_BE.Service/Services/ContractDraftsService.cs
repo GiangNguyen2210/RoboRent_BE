@@ -14,19 +14,22 @@ public class ContractDraftsService : IContractDraftsService
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly IContractTemplatesRepository _contractTemplatesRepository;
     private readonly IMapper _mapper;
+    private readonly IRentalRepository _rentalRepository;
 
     public ContractDraftsService(
         IContractDraftsRepository contractDraftsRepository, 
         ITemplateClausesRepository templateClausesRepository,
         IDraftClausesRepository draftClausesRepository,
         IContractTemplatesRepository contractTemplatesRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IRentalRepository rentalRepository)
     {
         _contractDraftsRepository = contractDraftsRepository;
         _templateClausesRepository = templateClausesRepository;
         _draftClausesRepository = draftClausesRepository;
         _contractTemplatesRepository = contractTemplatesRepository;
         _mapper = mapper;
+        _rentalRepository = rentalRepository;
     }
 
     public async Task<IEnumerable<ContractDraftsResponse>> GetAllContractDraftsAsync()
@@ -72,6 +75,11 @@ public class ContractDraftsService : IContractDraftsService
     {
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
+        
+        // Find Rental
+        var rental = await _rentalRepository.GetAsync(r => r.Id == request.RentalId);
+        rental.Status = "PendingContract";
+        await _rentalRepository.UpdateAsync(rental);
         
         // Set StaffId from token (the person who creates this contract draft)
         contractDraft.StaffId = staffId;
