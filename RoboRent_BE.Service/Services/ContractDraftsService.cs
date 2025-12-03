@@ -77,6 +77,27 @@ public class ContractDraftsService : IContractDraftsService
 
     public async Task<ContractDraftsResponse> CreateContractDraftsAsync(CreateContractDraftsRequest request, int staffId)
     {
+        // Validate: Check if there's already a contract draft for this rentalId with status other than "Rejected" or "Draft"
+        if (request.RentalId.HasValue)
+        {
+            var existingContractDrafts = await _contractDraftsRepository.GetContractDraftsByRentalIdAsync(request.RentalId.Value);
+            var hasActiveContractDraft = existingContractDrafts.Any(cd => 
+            {
+                if (string.IsNullOrEmpty(cd.Status))
+                    return false; // Treat null/empty as draft-like, allow creation
+                
+                var status = cd.Status.Trim();
+                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) && 
+                       !status.Equals("Draft", StringComparison.OrdinalIgnoreCase);
+            });
+            
+            if (hasActiveContractDraft)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create a new contract draft. There is already an active contract draft for this rental that is not in 'Rejected' or 'Draft' status.");
+            }
+        }
+        
         // Create the contract draft
         var contractDraft = _mapper.Map<ContractDrafts>(request);
         
@@ -152,6 +173,9 @@ public class ContractDraftsService : IContractDraftsService
         if (existingContractDraft == null)
             return null;
 
+        // Validate that no non-editable clauses have been modified
+        await ValidateDraftClausesEditableAsync(request.Id);
+
         // Only allow update of Title, BodyJson, and Comments
         // Update Title if provided (allows empty string to clear the field)
         if (request.Title != null)
@@ -180,6 +204,35 @@ public class ContractDraftsService : IContractDraftsService
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(existingContractDraft);
         
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
+    }
+
+    private async Task ValidateDraftClausesEditableAsync(int contractDraftId)
+    {
+        // Get all draft clauses for this contract draft with their template clauses
+        var draftClauses = await _draftClausesRepository.GetDraftClausesByContractDraftIdAsync(contractDraftId);
+        
+        foreach (var draftClause in draftClauses)
+        {
+            // Only validate clauses that are linked to template clauses
+            if (draftClause.TemplateClause != null)
+            {
+                var templateClause = draftClause.TemplateClause;
+                
+                // Check if the template clause is not editable
+                if (templateClause.IsEditable == false)
+                {
+                    // Check if the draft clause content differs from the template clause
+                    bool contentChanged = draftClause.Title != templateClause.Title || 
+                                         draftClause.Body != templateClause.Body;
+                    
+                    if (contentChanged)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update contract draft. Clause '{templateClause.Title}' has been modified but is not editable according to the template clause.");
+                    }
+                }
+            }
+        }
     }
 
     public async Task<bool> DeleteContractDraftsAsync(int id)
@@ -581,6 +634,9 @@ public class ContractDraftsService : IContractDraftsService
 
         if (contractDraft.StaffId != staffId)
             throw new UnauthorizedAccessException("You are not authorized to revise this contract");
+
+        // Validate that no non-editable clauses have been modified
+        await ValidateDraftClausesEditableAsync(id);
 
         // Update contract fields
         if (request.Title != null)
