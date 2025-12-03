@@ -67,10 +67,18 @@ public class PaymentService : IPaymentService
         if (rental.Status != "ChuaThanhToan")
             throw new Exception($"Cannot create deposit payment. Rental status must be 'ChuaThanhToan'. Current: {rental.Status}");
 
-        // 2. Check if deposit already exists
+        // 2. Check if deposit already exists (LOGIC MỚI: Trả về cái cũ nếu đang Pending)
         var existingDeposit = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
         if (existingDeposit != null)
-            throw new Exception($"Deposit payment already exists for Rental {rentalId}");
+        {
+            if (existingDeposit.Status == "Pending")
+            {
+                // Trả về record đang treo (lấy URL từ DB)
+                return MapToResponse(existingDeposit, rental.EventName);
+            }
+            if (existingDeposit.Status == "Paid")
+                throw new Exception($"Deposit payment already exists and paid for Rental {rentalId}");
+        }
 
         // 3. Get PriceQuote
         var priceQuote = await _priceQuoteRepo.GetAsync(pq => pq.RentalId == rentalId && pq.Status == "Approved");
@@ -92,11 +100,15 @@ public class PaymentService : IPaymentService
         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
 
+        // LOGIC MỚI: Set hạn 7 ngày
+        var expiredAt = DateTime.UtcNow.AddDays(7);
+        int expiredAtUnix = (int)(expiredAt - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+
         // 7. Create PayOS Payment Link
         var paymentData = new PaymentData(
             orderCode: newOrderCode,
             amount: (int)depositAmount,
-            description: $"Deposit R#{rentalId}",  // ✅ NGẮN GỌN (< 25 chars)
+            description: $"Deposit R#{rentalId}",
             items: new List<ItemData> 
             { 
                 new ItemData("Deposit", 1, (int)depositAmount) 
@@ -105,7 +117,7 @@ public class PaymentService : IPaymentService
             cancelUrl: _cancelUrl,
             buyerName: customer.FullName,
             buyerPhone: customer.PhoneNumber ?? "",
-            expiredAt: (int)(DateTime.UtcNow.AddDays(7) - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds
+            expiredAt: expiredAtUnix 
         );
 
         _logger.LogInformation($"Creating PayOS payment link for Deposit - OrderCode: {newOrderCode}");
@@ -117,7 +129,7 @@ public class PaymentService : IPaymentService
             throw new Exception($"PayOS error: {createPaymentResult.description}");
         }
 
-        // 8. Save PaymentRecord
+        // 8. Save PaymentRecord (LƯU THÊM URL VÀ EXPIRED)
         var paymentRecord = new PaymentRecord
         {
             RentalId = rentalId,
@@ -127,26 +139,16 @@ public class PaymentService : IPaymentService
             OrderCode = newOrderCode,
             PaymentLinkId = createPaymentResult.paymentLinkId,
             Status = "Pending",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CheckoutUrl = createPaymentResult.checkoutUrl, // ✅ Lưu link
+            ExpiredAt = expiredAt // ✅ Lưu hạn
         };
 
         await _paymentRecordRepo.AddAsync(paymentRecord);
 
         _logger.LogInformation($"Deposit payment created: OrderCode {newOrderCode}, Amount {depositAmount}");
 
-        return new PaymentRecordResponse
-        {
-            Id = paymentRecord.Id,
-            RentalId = rentalId,
-            PriceQuoteId = priceQuote.Id,
-            PaymentType = "Deposit",
-            Amount = depositAmount,
-            OrderCode = newOrderCode,
-            PaymentLinkId = createPaymentResult.paymentLinkId,
-            Status = "Pending",
-            CreatedAt = paymentRecord.CreatedAt,
-            CheckoutUrl = createPaymentResult.checkoutUrl
-        };
+        return MapToResponse(paymentRecord, rental.EventName);
     }
 
     public async Task<PaymentRecordResponse> CreateFullPaymentAsync(int rentalId)
@@ -162,10 +164,18 @@ public class PaymentService : IPaymentService
         if (rental.Status != "Completed")
             throw new Exception($"Cannot create full payment. Rental status must be 'Completed'. Current: {rental.Status}");
 
-        // 2. Check if full payment already exists
+        // 2. Check if full payment already exists (LOGIC MỚI: Trả về cái cũ nếu đang Pending)
         var existingFull = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Full");
         if (existingFull != null)
-            throw new Exception($"Full payment already exists for Rental {rentalId}");
+        {
+            if (existingFull.Status == "Pending")
+            {
+                 // Trả về record đang treo (lấy URL từ DB)
+                return MapToResponse(existingFull, rental.EventName);
+            }
+            if (existingFull.Status == "Paid")
+                 throw new Exception($"Full payment already exists for Rental {rentalId}");
+        }
 
         // 3. Verify Deposit is Paid
         var depositPayment = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
@@ -192,11 +202,15 @@ public class PaymentService : IPaymentService
         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
 
+        // LOGIC MỚI: Set hạn 7 ngày
+        var expiredAt = DateTime.UtcNow.AddDays(7);
+        int expiredAtUnix = (int)(expiredAt - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+
         // 8. Create PayOS Payment Link
         var paymentData = new PaymentData(
             orderCode: newOrderCode,
             amount: (int)fullAmount,
-            description: $"Full pay R#{rentalId}",  // ✅ NGẮN GỌN (< 25 chars)
+            description: $"Full pay R#{rentalId}", 
             items: new List<ItemData> 
             { 
                 new ItemData("Full Payment", 1, (int)fullAmount) 
@@ -205,7 +219,7 @@ public class PaymentService : IPaymentService
             cancelUrl: _cancelUrl,
             buyerName: customer.FullName,
             buyerPhone: customer.PhoneNumber ?? "",
-            expiredAt: (int)(DateTime.UtcNow.AddDays(7) - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds
+            expiredAt: expiredAtUnix
         );
 
         _logger.LogInformation($"Creating PayOS payment link for Full - OrderCode: {newOrderCode}");
@@ -217,7 +231,7 @@ public class PaymentService : IPaymentService
             throw new Exception($"PayOS error: {createPaymentResult.description}");
         }
 
-        // 9. Save PaymentRecord
+        // 9. Save PaymentRecord (LƯU THÊM URL VÀ EXPIRED)
         var paymentRecord = new PaymentRecord
         {
             RentalId = rentalId,
@@ -227,45 +241,26 @@ public class PaymentService : IPaymentService
             OrderCode = newOrderCode,
             PaymentLinkId = createPaymentResult.paymentLinkId,
             Status = "Pending",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CheckoutUrl = createPaymentResult.checkoutUrl, // ✅ Lưu link
+            ExpiredAt = expiredAt // ✅ Lưu hạn
         };
 
         await _paymentRecordRepo.AddAsync(paymentRecord);
 
         _logger.LogInformation($"Full payment created: OrderCode {newOrderCode}, Amount {fullAmount}");
 
-        return new PaymentRecordResponse
-        {
-            Id = paymentRecord.Id,
-            RentalId = rentalId,
-            PriceQuoteId = priceQuote.Id,
-            PaymentType = "Full",
-            Amount = fullAmount,
-            OrderCode = newOrderCode,
-            PaymentLinkId = createPaymentResult.paymentLinkId,
-            Status = "Pending",
-            CreatedAt = paymentRecord.CreatedAt,
-            CheckoutUrl = createPaymentResult.checkoutUrl
-        };
+        return MapToResponse(paymentRecord, rental.EventName);
     }
 
     public async Task<List<PaymentRecordResponse>> GetPaymentsByRentalIdAsync(int rentalId)
     {
         var payments = await _paymentRecordRepo.GetByRentalIdAsync(rentalId);
-        
-        return payments.Select(p => new PaymentRecordResponse
-        {
-            Id = p.Id,
-            RentalId = p.RentalId,
-            PriceQuoteId = p.PriceQuoteId,
-            PaymentType = p.PaymentType,
-            Amount = p.Amount,
-            OrderCode = p.OrderCode,
-            PaymentLinkId = p.PaymentLinkId,
-            Status = p.Status,
-            CreatedAt = p.CreatedAt,
-            PaidAt = p.PaidAt
-        }).ToList();
+    
+        var rental = await _rentalRepo.GetAsync(r => r.Id == rentalId);
+        var rentalName = rental?.EventName;
+
+        return payments.Select(p => MapToResponse(p, rentalName)).ToList();
     }
 
     public async Task ProcessWebhookAsync(long orderCode, string paymentStatus)
@@ -350,5 +345,39 @@ public class PaymentService : IPaymentService
         await _groupScheduleRepo.UpdateAsync(groupSchedule);
 
         _logger.LogInformation($"ActualDelivery created for GroupSchedule {groupSchedule.Id} after deposit payment");
+    }
+    
+    public async Task<List<PaymentRecordResponse>> GetCustomerTransactionsAsync(int customerId)
+    {
+        // Lấy tất cả payment của customer (filter theo Rental.AccountId)
+        var allPayments = await _paymentRecordRepo.GetAllAsync(
+            filter: p => p.Rental != null && p.Rental.AccountId == customerId,
+            includeProperties: "Rental"
+        );
+
+        return allPayments
+            .OrderByDescending(p => p.CreatedAt) // Mới nhất lên đầu
+            .Select(p => MapToResponse(p, p.Rental?.EventName))
+            .ToList();
+    }
+    
+    private PaymentRecordResponse MapToResponse(PaymentRecord p, string? rentalName = null)
+    {
+        return new PaymentRecordResponse
+        {
+            Id = p.Id,
+            RentalId = p.RentalId,
+            RentalName = rentalName, // DTO nhớ thêm field này hoặc bỏ qua nếu ko cần
+            PriceQuoteId = p.PriceQuoteId,
+            PaymentType = p.PaymentType,
+            Amount = p.Amount,
+            OrderCode = p.OrderCode,
+            PaymentLinkId = p.PaymentLinkId,
+            Status = p.Status,
+            CreatedAt = p.CreatedAt,
+            PaidAt = p.PaidAt,
+            CheckoutUrl = p.CheckoutUrl, // ✅ Trả link ra
+            ExpiredAt = p.ExpiredAt      // ✅ Trả hạn dùng ra
+        };
     }
 }

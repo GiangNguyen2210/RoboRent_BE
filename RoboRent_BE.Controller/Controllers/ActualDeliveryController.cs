@@ -227,4 +227,28 @@ public class ActualDeliveryController : ControllerBase
         }
     }
     
+    /// <summary>
+    /// [CUSTOMER] Get delivery info by rentalId
+    /// Returns first delivery found for this rental
+    /// </summary>
+    [HttpGet("by-rental/{rentalId}")]
+    public async Task<IActionResult> GetByRentalId(int rentalId)
+    {
+        try
+        {
+            var delivery = await _deliveryService.GetByRentalIdAsync(rentalId);
+        
+            if (delivery == null)
+            {
+                return NotFound(new { Message = $"No delivery found for Rental {rentalId}" });
+            }
+
+            return Ok(delivery);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to get delivery", Error = ex.Message });
+        }
+    }
+    
 }

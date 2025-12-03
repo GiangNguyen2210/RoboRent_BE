@@ -8,6 +8,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS;
 using Microsoft.AspNetCore.Authorization;
+using RoboRent_BE.Controller.Helpers;
 
 namespace RoboRent_BE.Controllers;
 
@@ -170,6 +171,41 @@ public class PaymentController : ControllerBase
             {
                 success = false,
                 message = ex.Message
+            });
+        }
+    }
+    
+    /// <summary>
+    /// [CUSTOMER] Get ALL my transactions (For Transaction History Page)
+    /// </summary>
+    [HttpGet("my-transactions")]
+    [Authorize] // Bắt buộc phải login
+    public async Task<IActionResult> GetMyTransactions()
+    {
+        try
+        {
+            // Lấy ID user hiện tại từ Token
+            int userId = AuthHelper.GetCurrentUserId(User); 
+
+            // ✅ Sửa: Gọi service bằng interface (Giả sử GetCustomerTransactionsAsync đã được thêm vào IPaymentService)
+            var transactions = await _paymentService.GetCustomerTransactionsAsync(userId);
+        
+            return Ok(new
+            {
+                success = true,
+                data = transactions
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error getting customer transactions for User {AuthHelper.GetCurrentUserId(User)}: {ex.Message}");
+        
+            // Tuân thủ kiểu trả về lỗi (StatusCode 500, anonymous object)
+            return StatusCode(500, new 
+            { 
+                success = false, 
+                message = "Failed to get customer transactions",
+                error = ex.Message
             });
         }
     }

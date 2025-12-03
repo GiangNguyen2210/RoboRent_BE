@@ -342,32 +342,6 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentTransactions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    OrderCode = table.Column<long>(type: "bigint", nullable: false),
-                    Amount = table.Column<int>(type: "integer", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    PaymentLinkId = table.Column<string>(type: "text", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    AccountId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PaymentTransactions_Accounts_AccountId",
-                        column: x => x.AccountId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ActivityTypeGroups",
                 columns: table => new
                 {
@@ -411,9 +385,7 @@ namespace RoboRent_BE.Model.Migrations
                     AccountId = table.Column<int>(type: "integer", nullable: false),
                     EventActivityId = table.Column<int>(type: "integer", nullable: true),
                     ActivityTypeId = table.Column<int>(type: "integer", nullable: true),
-                    StaffId = table.Column<int>(type: "integer", nullable: true),
-                    PlannedDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    PlannedPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    StaffId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -536,40 +508,6 @@ namespace RoboRent_BE.Model.Migrations
                         name: "FK_RobotInGroups_Robots_RobotId",
                         column: x => x.RobotId,
                         principalTable: "Robots",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ActualDeliveries",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalId = table.Column<int>(type: "integer", nullable: false),
-                    StaffId = table.Column<int>(type: "integer", nullable: true),
-                    ScheduledDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ActualDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ScheduledPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ActualPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    CustomerRequestNotes = table.Column<string>(type: "text", nullable: true),
-                    Notes = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActualDeliveries", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActualDeliveries_Accounts_StaffId",
-                        column: x => x.StaffId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ActualDeliveries_Rentals_RentalId",
-                        column: x => x.RentalId,
-                        principalTable: "Rentals",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -951,6 +889,71 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ActualDeliveries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    GroupScheduleId = table.Column<int>(type: "integer", nullable: false),
+                    StaffId = table.Column<int>(type: "integer", nullable: true),
+                    ActualDeliveryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ActualPickupTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActualDeliveries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActualDeliveries_Accounts_StaffId",
+                        column: x => x.StaffId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ActualDeliveries_GroupSchedules_GroupScheduleId",
+                        column: x => x.GroupScheduleId,
+                        principalTable: "GroupSchedules",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentRecords",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
+                    PriceQuoteId = table.Column<int>(type: "integer", nullable: true),
+                    PaymentType = table.Column<string>(type: "text", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    OrderCode = table.Column<long>(type: "bigint", nullable: false),
+                    PaymentLinkId = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    CheckoutUrl = table.Column<string>(type: "text", nullable: true),
+                    ExpiredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentRecords_PriceQuotes_PriceQuoteId",
+                        column: x => x.PriceQuoteId,
+                        principalTable: "PriceQuotes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PaymentRecords_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ContractReports",
                 columns: table => new
                 {
@@ -960,7 +963,6 @@ namespace RoboRent_BE.Model.Migrations
                     ReporterId = table.Column<int>(type: "integer", nullable: true),
                     ReportRole = table.Column<string>(type: "text", nullable: true),
                     AccusedId = table.Column<int>(type: "integer", nullable: true),
-                    ReportCategory = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     EvidencePath = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
@@ -968,7 +970,6 @@ namespace RoboRent_BE.Model.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ReviewedBy = table.Column<int>(type: "integer", nullable: true),
                     ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ResolutionType = table.Column<string>(type: "text", nullable: true),
                     PaymentId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -995,9 +996,9 @@ namespace RoboRent_BE.Model.Migrations
                         principalTable: "DraftClauses",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_ContractReports_PaymentTransactions_PaymentId",
+                        name: "FK_ContractReports_PaymentRecords_PaymentId",
                         column: x => x.PaymentId,
-                        principalTable: "PaymentTransactions",
+                        principalTable: "PaymentRecords",
                         principalColumn: "Id");
                 });
 
@@ -1580,9 +1581,9 @@ namespace RoboRent_BE.Model.Migrations
                 column: "EventActivityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActualDeliveries_RentalId",
+                name: "IX_ActualDeliveries_GroupScheduleId",
                 table: "ActualDeliveries",
-                column: "RentalId");
+                column: "GroupScheduleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActualDeliveries_StaffId",
@@ -1777,9 +1778,14 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RentalId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentTransactions_AccountId",
-                table: "PaymentTransactions",
-                column: "AccountId");
+                name: "IX_PaymentRecords_PriceQuoteId",
+                table: "PaymentRecords",
+                column: "PriceQuoteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRecords_RentalId",
+                table: "PaymentRecords",
+                column: "RentalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PriceQuotes_ManagerId",
@@ -1899,12 +1905,6 @@ namespace RoboRent_BE.Model.Migrations
                 name: "FaceVerifications");
 
             migrationBuilder.DropTable(
-                name: "GroupSchedules");
-
-            migrationBuilder.DropTable(
-                name: "PriceQuotes");
-
-            migrationBuilder.DropTable(
                 name: "RentalContracts");
 
             migrationBuilder.DropTable(
@@ -1920,6 +1920,9 @@ namespace RoboRent_BE.Model.Migrations
                 name: "TypesOfRobos");
 
             migrationBuilder.DropTable(
+                name: "GroupSchedules");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -1929,7 +1932,7 @@ namespace RoboRent_BE.Model.Migrations
                 name: "DraftClauses");
 
             migrationBuilder.DropTable(
-                name: "PaymentTransactions");
+                name: "PaymentRecords");
 
             migrationBuilder.DropTable(
                 name: "FaceProfiles");
@@ -1938,10 +1941,10 @@ namespace RoboRent_BE.Model.Migrations
                 name: "RobotAbilities");
 
             migrationBuilder.DropTable(
-                name: "ActivityTypeGroups");
+                name: "Robots");
 
             migrationBuilder.DropTable(
-                name: "Robots");
+                name: "ActivityTypeGroups");
 
             migrationBuilder.DropTable(
                 name: "ContractDrafts");
@@ -1950,25 +1953,28 @@ namespace RoboRent_BE.Model.Migrations
                 name: "TemplateClauses");
 
             migrationBuilder.DropTable(
-                name: "RoboTypes");
+                name: "PriceQuotes");
 
             migrationBuilder.DropTable(
-                name: "Rentals");
+                name: "RoboTypes");
 
             migrationBuilder.DropTable(
                 name: "ContractTemplates");
 
             migrationBuilder.DropTable(
-                name: "ActivityTypes");
+                name: "Rentals");
 
             migrationBuilder.DropTable(
                 name: "Accounts");
 
             migrationBuilder.DropTable(
-                name: "EventActivities");
+                name: "ActivityTypes");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "EventActivities");
         }
     }
 }
