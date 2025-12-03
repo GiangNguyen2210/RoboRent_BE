@@ -160,5 +160,67 @@ public class ModifyIdentityUserService : IModifyIdentityUserService
         };
     }
     
+    public async Task<PageListResponse<StaffListItemResponse>> GetManagerListAsync(
+        int page, 
+        int pageSize, 
+        string? status = null, 
+        string? searchTerm = null)
+    {
+        // Get all users in Manager role
+        var managerUsers = await _userManager.GetUsersInRoleAsync("Manager");
+        var userIds = managerUsers.Select(u => u.Id).ToList();
+
+        // Get accounts
+        var query = await _accountRepository.GetAllAsync(
+            a => userIds.Contains(a.UserId) && a.isDeleted == false
+        );
+
+        // Filter by status
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(a => a.Status == status);
+        }
+
+        // Search by FullName, PhoneNumber, Email
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearch = searchTerm.ToLower();
+            query = query.Where(a => 
+                (a.FullName != null && a.FullName.ToLower().Contains(lowerSearch)) ||
+                (a.PhoneNumber != null && a.PhoneNumber.Contains(searchTerm)) ||
+                (a.ModifyIdentityUser.Email != null && a.ModifyIdentityUser.Email.ToLower().Contains(lowerSearch))
+            );
+        }
+
+        var totalCount = query.Count();
+
+        // Pagination
+        var items = query
+            .OrderBy(a => a.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new StaffListItemResponse
+            {
+                AccountId = a.Id,
+                UserId = a.UserId ?? string.Empty,
+                Email = a.ModifyIdentityUser.Email ?? string.Empty,
+                FullName = a.FullName,
+                PhoneNumber = a.PhoneNumber,
+                Status = a.Status,
+                EmailConfirmed = a.ModifyIdentityUser.EmailConfirmed
+            })
+            .ToList();
+
+        return new PageListResponse<StaffListItemResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            HasNextPage = page * pageSize < totalCount,
+            HasPreviousPage = page > 1
+        };
+    }
+    
     
 }

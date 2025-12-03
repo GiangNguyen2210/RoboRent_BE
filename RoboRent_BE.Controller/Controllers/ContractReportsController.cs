@@ -8,7 +8,7 @@ namespace RoboRent_BE.Controller.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+
 public class ContractReportsController : ControllerBase
 {
     private readonly IContractReportsService _contractReportsService;
@@ -38,6 +38,7 @@ public class ContractReportsController : ControllerBase
     /// Get all contract reports
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Manager,Staff,Admin")]
     public async Task<IActionResult> GetAllContractReports()
     {
         try
@@ -60,9 +61,45 @@ public class ContractReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Get contract reports for the authenticated user (Customer, Staff, Manager)
+    /// </summary>
+    [HttpGet("my-reports")]
+    [Authorize(Roles = "Customer,Staff,Manager")]
+    public async Task<IActionResult> GetMyContractReports()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _contractReportsService.GetContractReportsByUserIdAsync(userId);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    /// <summary>
     /// Get contract report by ID
     /// </summary>
     [HttpGet("{id}")]
+    [Authorize(Roles = "Manager,Staff,Admin")]
     public async Task<IActionResult> GetContractReportById(int id)
     {
         try
@@ -97,6 +134,7 @@ public class ContractReportsController : ControllerBase
     /// Get contract reports with status Pending (for manager review)
     /// </summary>
     [HttpGet("pending")]
+    [Authorize(Roles = "Manager,Staff,Admin")]
     public async Task<IActionResult> GetPendingContractReports()
     {
         try
@@ -122,6 +160,7 @@ public class ContractReportsController : ControllerBase
     /// Create a new contract report
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Manager,Staff,Admin")]
     public async Task<IActionResult> CreateContractReport([FromBody] CreateContractReportRequest request)
     {
         if (!ModelState.IsValid)
@@ -163,7 +202,7 @@ public class ContractReportsController : ControllerBase
     /// Manager resolves a contract report (creates payment and updates status)
     /// </summary>
     [HttpPatch("{id}/resolve")]
-    [Authorize(Roles = "Manager,Admin")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> ResolveContractReport(int id, [FromBody] ResolveContractReportRequest request)
     {
         if (!ModelState.IsValid)
@@ -205,7 +244,7 @@ public class ContractReportsController : ControllerBase
     /// Manager rejects a contract report
     /// </summary>
     [HttpPatch("{id}/reject")]
-    [Authorize(Roles = "Manager,Admin")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> RejectContractReport(int id, [FromBody] RejectContractReportRequest request)
     {
         if (!ModelState.IsValid)
@@ -246,6 +285,7 @@ public class ContractReportsController : ControllerBase
     /// Delete a contract report by ID
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Manager,Staff,Admin")]
     public async Task<IActionResult> DeleteContractReport(int id)
     {
         try

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.DraftClauses;
 using RoboRent_BE.Service.Interfaces;
@@ -16,6 +17,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Staff, Customer")]
     public async Task<IActionResult> GetAllDraftClauses()
     {
         try
@@ -38,6 +40,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesById(int id)
     {
         try
@@ -69,6 +72,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("contract-draft/{contractDraftId}")]
+    [Authorize(Roles = "Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByContractDraftId(int contractDraftId)
     {
         try
@@ -91,6 +95,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("template-clause/{templateClauseId}")]
+    [Authorize(Roles = "Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByTemplateClauseId(int templateClauseId)
     {
         try
@@ -113,6 +118,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("contract-draft/{contractDraftId}/modified/{isModified}")]
+    [Authorize(Roles = "Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByIsModified(int contractDraftId, bool isModified)
     {
         try
@@ -135,6 +141,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> CreateDraftClauses([FromBody] CreateDraftClausesRequest request)
     {
         if (!ModelState.IsValid)
@@ -169,6 +176,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpPost("custom")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> CreateCustomDraftClause([FromBody] CreateCustomDraftClauseRequest request)
     {
         if (!ModelState.IsValid)
@@ -204,6 +212,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpPost("add-template-clause")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> AddTemplateClauseToDraft([FromQuery] int templateClauseId, [FromQuery] int contractDraftId)
     {
         try
@@ -227,6 +236,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> UpdateDraftClauses(int id, [FromBody] UpdateDraftClausesRequest request)
     {
         if (id != request.Id)
@@ -279,6 +289,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> DeleteDraftClauses(int id)
     {
         try
