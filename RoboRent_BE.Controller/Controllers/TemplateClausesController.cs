@@ -72,7 +72,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("contract-template/{contractTemplateId}")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Manager,Staff")]
     public async Task<IActionResult> GetTemplateClausesByContractTemplateId(int contractTemplateId)
     {
         try

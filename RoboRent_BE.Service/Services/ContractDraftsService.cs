@@ -457,6 +457,9 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+
+        rental.Status = "AcceptedContract";
+        await _rentalRepository.UpdateAsync(rental);
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
     }
 
@@ -557,6 +560,8 @@ public class ContractDraftsService : IContractDraftsService
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        rental.Status = "PendingContract";
+        await _rentalRepository.UpdateAsync(rental);
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
     }
 
