@@ -66,6 +66,11 @@ public class GroupScheduleService : IGroupScheduleService
         if (existing != null && existing.IsDeleted == false)
             throw new Exception("Group Schedule already exist for this rental.");
 
+        if (rental.ActivityTypeId != group.ActivityTypeId)
+        {
+            throw new Exception("The group is not assigned to this rental's activity type.");
+        }
+        
         // B — Soft-deleted schedule exists → RESTORE
         if (existing != null && existing.IsDeleted == true)
         {
@@ -116,7 +121,7 @@ public class GroupScheduleService : IGroupScheduleService
                 if (IsOverlapping(schedule.DeliveryTime.Value, schedule.FinishTime.Value,
                                   item.DeliveryTime.Value, item.FinishTime.Value))
                 {
-                    throw new Exception($"Overlap with schedule ID {item.Id}");
+                    throw new Exception($"Overlap with schedule of event {item.Rental.EventName} " + $"({item.DeliveryTime} - {item.FinishTime})");
                 }
             }
         }
@@ -165,7 +170,7 @@ public class GroupScheduleService : IGroupScheduleService
                     item.DeliveryTime!.Value, item.FinishTime!.Value))
             {
                 throw new Exception(
-                    $"Không thể cập nhật vì trùng với lịch ID {item.Id} " +
+                    $"Overlap with schedule of event {item.Rental.EventName} " +
                     $"({item.DeliveryTime} - {item.FinishTime})"
                 );
             }

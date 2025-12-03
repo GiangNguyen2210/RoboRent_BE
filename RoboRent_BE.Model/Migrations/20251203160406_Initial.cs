@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class newentity : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -316,6 +316,32 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FaceProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    AccountId = table.Column<int>(type: "integer", nullable: true),
+                    CitizenId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Embedding = table.Column<string>(type: "text", nullable: false),
+                    Model = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    HashSha256 = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    FrontIdImagePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FaceProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FaceProfiles_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ActivityTypeGroups",
                 columns: table => new
                 {
@@ -558,6 +584,41 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ContractDrafts_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FaceVerifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    AccountId = table.Column<int>(type: "integer", nullable: true),
+                    FaceProfileId = table.Column<int>(type: "integer", nullable: true),
+                    MatchScore = table.Column<decimal>(type: "numeric", nullable: true),
+                    Threshold = table.Column<decimal>(type: "numeric", nullable: false),
+                    Result = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
+                    ImageEvidenceRef = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    VerifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FaceVerifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FaceVerifications_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FaceVerifications_FaceProfiles_FaceProfileId",
+                        column: x => x.FaceProfileId,
+                        principalTable: "FaceProfiles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FaceVerifications_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id");
@@ -864,13 +925,15 @@ namespace RoboRent_BE.Model.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalId = table.Column<int>(type: "integer", nullable: false),
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
                     PriceQuoteId = table.Column<int>(type: "integer", nullable: true),
                     PaymentType = table.Column<string>(type: "text", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     OrderCode = table.Column<long>(type: "bigint", nullable: false),
                     PaymentLinkId = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: false),
+                    CheckoutUrl = table.Column<string>(type: "text", nullable: true),
+                    ExpiredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -887,8 +950,7 @@ namespace RoboRent_BE.Model.Migrations
                         name: "FK_PaymentRecords_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1686,6 +1748,26 @@ namespace RoboRent_BE.Model.Migrations
                 column: "TemplateClausesId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FaceProfiles_AccountId",
+                table: "FaceProfiles",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FaceVerifications_AccountId",
+                table: "FaceVerifications",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FaceVerifications_FaceProfileId",
+                table: "FaceVerifications",
+                column: "FaceProfileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FaceVerifications_RentalId",
+                table: "FaceVerifications",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GroupSchedules_ActivityTypeGroupId",
                 table: "GroupSchedules",
                 column: "ActivityTypeGroupId");
@@ -1820,6 +1902,9 @@ namespace RoboRent_BE.Model.Migrations
                 name: "DraftApprovals");
 
             migrationBuilder.DropTable(
+                name: "FaceVerifications");
+
+            migrationBuilder.DropTable(
                 name: "RentalContracts");
 
             migrationBuilder.DropTable(
@@ -1848,6 +1933,9 @@ namespace RoboRent_BE.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "PaymentRecords");
+
+            migrationBuilder.DropTable(
+                name: "FaceProfiles");
 
             migrationBuilder.DropTable(
                 name: "RobotAbilities");

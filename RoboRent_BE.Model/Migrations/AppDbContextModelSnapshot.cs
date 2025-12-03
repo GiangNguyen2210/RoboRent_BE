@@ -1534,6 +1534,102 @@ namespace RoboRent_BE.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.FaceProfiles", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CitizenId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Embedding")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FrontIdImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("HashSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("FaceProfiles");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.FaceVerification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FaceProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageEvidenceRef")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("MatchScore")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Threshold")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("FaceProfileId");
+
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("FaceVerifications");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.GroupSchedule", b =>
                 {
                     b.Property<int>("Id")
@@ -1662,7 +1758,13 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("CheckoutUrl")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiredAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("OrderCode")
@@ -1681,7 +1783,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("PriceQuoteId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("RentalId")
+                    b.Property<int?>("RentalId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Status")
@@ -5525,6 +5627,36 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("TemplateClause");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.FaceProfiles", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.FaceVerification", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.FaceProfiles", "FaceProfiles")
+                        .WithMany()
+                        .HasForeignKey("FaceProfileId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("FaceProfiles");
+
+                    b.Navigation("Rental");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.GroupSchedule", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityTypeGroup", "ActivityTypeGroup")
@@ -5548,9 +5680,7 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
                         .WithMany()
-                        .HasForeignKey("RentalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RentalId");
 
                     b.Navigation("PriceQuote");
 

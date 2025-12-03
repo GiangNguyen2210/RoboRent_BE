@@ -13,6 +13,10 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
     public virtual DbSet<RentalContract> RentalContracts { get; set; } = null!;
 
     public virtual DbSet<EventActivity> EventActivities { get; set; } = null!;
+    
+    public virtual DbSet<FaceProfiles>  FaceProfiles { get; set; } = null!;
+    
+    public virtual DbSet<FaceVerification>  FaceVerifications { get; set; } = null!;
 
     public virtual DbSet<Account> Accounts { get; set; } = null!;
 

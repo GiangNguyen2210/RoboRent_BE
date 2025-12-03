@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Service.Interfaces;
@@ -16,6 +17,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetAllTemplateClauses()
     {
         try
@@ -38,6 +40,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetTemplateClausesById(int id)
     {
         try
@@ -69,6 +72,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("contract-template/{contractTemplateId}")]
+    [Authorize(Roles = "Manager,Staff")]
     public async Task<IActionResult> GetTemplateClausesByContractTemplateId(int contractTemplateId)
     {
         try
@@ -91,6 +95,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("mandatory/{isMandatory}")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetTemplateClausesByIsMandatory(bool isMandatory)
     {
         try
@@ -113,6 +118,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("editable/{isEditable}")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetTemplateClausesByIsEditable(bool isEditable)
     {
         try
@@ -135,6 +141,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpGet("available/{contractTemplateId}/{contractDraftId}")]
+    [Authorize(Roles = "Manager,Staff")]
     public async Task<IActionResult> GetAvailableTemplateClausesForDraft(int contractTemplateId, int contractDraftId)
     {
         try
@@ -159,6 +166,7 @@ public class TemplateClausesController : ControllerBase
     
 
     [HttpPost]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> CreateTemplateClause([FromBody] CreateTemplateClauseRequest request)
     {
         if (!ModelState.IsValid)
@@ -207,6 +215,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> UpdateTemplateClauses(int id, [FromBody] UpdateTemplateClausesRequest request)
     {
         if (!ModelState.IsValid)
@@ -258,6 +267,7 @@ public class TemplateClausesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> DeleteTemplateClauses(int id)
     {
         try

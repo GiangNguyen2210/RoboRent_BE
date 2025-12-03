@@ -35,4 +35,5 @@ public class GroupScheduleResponse
     public int? CustomerId { get; set; }
 
     public string? CustomerFullName { get; set; }
+    
 }

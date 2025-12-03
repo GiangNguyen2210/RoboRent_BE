@@ -8,4 +8,5 @@ public interface IPaymentService
     Task<PaymentRecordResponse> CreateFullPaymentAsync(int rentalId);
     Task<List<PaymentRecordResponse>> GetPaymentsByRentalIdAsync(int rentalId);
     Task ProcessWebhookAsync(long orderCode, string paymentStatus);
+    Task<List<PaymentRecordResponse>> GetCustomerTransactionsAsync(int customerId);
 }

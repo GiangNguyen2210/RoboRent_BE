@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Service.Interfaces;
@@ -171,6 +172,24 @@ public class AdminController : ControllerBase
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
         var result = await _modifyIdentityUserService.GetStaffListAsync(page, pageSize, status, searchTerm);
+        return Ok(result);
+    }
+    
+    /// <summary>
+    /// [STAFF] Get list of managers
+    /// </summary>
+    [HttpGet("manager")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetManagerList(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? searchTerm = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+        var result = await _modifyIdentityUserService.GetManagerListAsync(page, pageSize, status, searchTerm);
         return Ok(result);
     }
 }

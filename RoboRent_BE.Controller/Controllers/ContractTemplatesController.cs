@@ -40,7 +40,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpPost("create-with-body")]
-    [Authorize]
+    [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> CreateWithBody([FromBody] CreateTemplateFromDefaultRequest request)
     {
         try
@@ -78,6 +78,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractTemplatesById(int id)
     {
         try
@@ -109,6 +110,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpGet("status/{status}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractTemplatesByStatus(string status)
     {
         try
@@ -131,6 +133,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpGet("created-by/{createdBy}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractTemplatesByCreatedBy(int createdBy)
     {
         try
@@ -153,6 +156,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpGet("version/{version}")]
+    [Authorize(Roles = "Manager, Staff, Admin")]
     public async Task<IActionResult> GetContractTemplatesByVersion(string version)
     {
         try
@@ -175,6 +179,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> CreateContractTemplates([FromBody] CreateContractTemplatesRequest request)
     {
         if (!ModelState.IsValid)
@@ -209,6 +214,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> UpdateContractTemplates(int id, [FromBody] UpdateContractTemplatesRequest request)
     {
         if (id != request.Id)
@@ -261,6 +267,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> DeleteContractTemplates(int id)
     {
         try
@@ -292,6 +299,7 @@ public class ContractTemplatesController : ControllerBase
     }
 
     [HttpPatch("{id}/activate")]
+    [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> ActivateContractTemplate(int id)
     {
         try

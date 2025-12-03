@@ -19,4 +19,10 @@ public interface IModifyIdentityUserService
         int pageSize, 
         string? status = null, 
         string? searchTerm = null);
+    
+    Task<PageListResponse<StaffListItemResponse>> GetManagerListAsync(
+        int page, 
+        int pageSize, 
+        string? status = null, 
+        string? searchTerm = null);
 }

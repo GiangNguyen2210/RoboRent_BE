@@ -403,5 +403,31 @@ public class ActualDeliveryService : IActualDeliveryService
             }
         };
     }
+    public async Task<ActualDeliveryResponse?> GetByRentalIdAsync(int rentalId)
+    {
+        // Query: Rental → GroupSchedules → ActualDelivery (first one)
+        var groupSchedules = await _groupScheduleRepo.GetAllAsync(
+            gs => gs.RentalId == rentalId,
+            includeProperties: "Rental,Rental.Account"
+        );
+
+        if (!groupSchedules.Any())
+        {
+            return null;
+        }
+
+        // Get first group schedule with delivery
+        foreach (var schedule in groupSchedules.OrderBy(s => s.EventDate))
+        {
+            var delivery = await _deliveryRepo.GetByGroupScheduleIdAsync(schedule.Id);
+            if (delivery != null)
+            {
+                return MapToResponse(delivery);
+            }
+        }
+
+        return null;
+    }
+    
     
 }
