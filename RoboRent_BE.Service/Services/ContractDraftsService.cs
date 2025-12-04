@@ -405,6 +405,187 @@ public class ContractDraftsService : IContractDraftsService
         }
     }
 
+    /// <summary>
+    /// Extract a clause header/body section from a contract BodyJson by template clause id.
+    /// The BodyJson is expected to contain headers like:
+    /// &lt;p&gt;&lt;strong data-clause-id="{templateClauseId}"&gt;Điều X. ...&lt;/strong&gt;&lt;/p&gt; followed by the clause body.
+    /// </summary>
+    /// <param name="bodyJson">Full HTML body of the contract draft.</param>
+    /// <param name="templateClauseId">ID of the template clause referenced by data-clause-id.</param>
+    /// <returns>Tuple of (headerHtml, bodyHtml) or null if not found.</returns>
+    private (string headerHtml, string bodyHtml)? GetClauseSectionByTemplateClauseId(string? bodyJson, int templateClauseId)
+    {
+        if (string.IsNullOrWhiteSpace(bodyJson))
+            return null;
+
+        var clauseIdPattern = $@"data-clause-id=[""']?{templateClauseId}[""']?";
+        var clauseIdMatch = System.Text.RegularExpressions.Regex.Match(
+            bodyJson,
+            clauseIdPattern,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (!clauseIdMatch.Success)
+            return null;
+
+        // Find the start of the surrounding <p> for the header
+        var beforeClauseId = bodyJson[..clauseIdMatch.Index];
+        var paragraphStart = beforeClauseId.LastIndexOf("<p>", StringComparison.OrdinalIgnoreCase);
+        if (paragraphStart == -1)
+        {
+            paragraphStart = beforeClauseId.LastIndexOf("<p ", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (paragraphStart == -1)
+            return null;
+
+        int clauseStartIndex = paragraphStart;
+
+        // Find the end of the header: </strong></p>
+        var headerEndPattern = @"</strong>\s*</p>";
+        var headerEndMatch = System.Text.RegularExpressions.Regex.Match(
+            bodyJson[clauseStartIndex..],
+            headerEndPattern,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        if (!headerEndMatch.Success)
+            return null;
+
+        var headerEndIndex = clauseStartIndex + headerEndMatch.Index + headerEndMatch.Length;
+
+        // Find end of the clause body (next clause header or end of document)
+        var nextClausePattern = @"<p>\s*<strong[^>]*>\s*Điều";
+        var nextClauseMatch = System.Text.RegularExpressions.Regex.Match(
+            bodyJson[headerEndIndex..],
+            nextClausePattern,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        int clauseEndIndex;
+        if (nextClauseMatch.Success)
+        {
+            clauseEndIndex = headerEndIndex + nextClauseMatch.Index;
+        }
+        else
+        {
+            var remainingText = bodyJson[headerEndIndex..];
+            var closingDivIndex = remainingText.LastIndexOf("</div>", StringComparison.OrdinalIgnoreCase);
+            clauseEndIndex = closingDivIndex > 0
+                ? headerEndIndex + closingDivIndex
+                : bodyJson.Length;
+        }
+
+        var headerHtml = bodyJson.Substring(clauseStartIndex, headerEndIndex - clauseStartIndex);
+        var bodyHtml = bodyJson.Substring(headerEndIndex, clauseEndIndex - headerEndIndex);
+
+        return (headerHtml, bodyHtml);
+    }
+
+    /// <summary>
+    /// Normalize HTML for comparison (ignore trivial whitespace differences).
+    /// </summary>
+    private string NormalizeHtmlForComparison(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        var withoutNewLines = input.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        return System.Text.RegularExpressions.Regex.Replace(withoutNewLines, @"\s+", " ").Trim();
+    }
+
+    /// <summary>
+    /// Extract plain text title from a clause header HTML (&lt;p&gt;&lt;strong&gt;...&lt;/strong&gt;&lt;/p&gt;).
+    /// </summary>
+    private string? ExtractTitleFromHeaderHtml(string headerHtml)
+    {
+        if (string.IsNullOrWhiteSpace(headerHtml))
+            return null;
+
+        var match = System.Text.RegularExpressions.Regex.Match(
+            headerHtml,
+            @"<strong[^>]*>(.*?)</strong>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        if (!match.Success)
+            return null;
+
+        var inner = match.Groups[1].Value;
+        // Remove any remaining HTML tags inside the strong
+        inner = System.Text.RegularExpressions.Regex.Replace(inner, "<.*?>", string.Empty);
+        return inner.Trim();
+    }
+
+    /// <summary>
+    /// Validate edits inside BodyJson for clauses linked to template clauses and
+    /// update the corresponding draft clauses when the template clause is editable.
+    /// Staff can freely edit content outside of these clause sections.
+    /// </summary>
+    private async Task ValidateAndApplyBodyJsonClauseEditsAsync(ContractDrafts contractDraft, string newBodyJson)
+    {
+        if (contractDraft == null)
+            throw new ArgumentNullException(nameof(contractDraft));
+
+        if (string.IsNullOrWhiteSpace(contractDraft.BodyJson))
+        {
+            // No existing body to compare against – nothing to validate at clause level
+            return;
+        }
+
+        var draftClauses = await _draftClausesRepository.GetDraftClausesByContractDraftIdAsync(contractDraft.Id);
+
+        foreach (var draftClause in draftClauses)
+        {
+            // Only clauses that are linked to a template clause participate in this validation
+            if (draftClause.TemplateClausesId == null && draftClause.TemplateClause == null)
+                continue;
+
+            var templateClauseId = draftClause.TemplateClausesId ?? draftClause.TemplateClause!.Id;
+
+            var oldSection = GetClauseSectionByTemplateClauseId(contractDraft.BodyJson, templateClauseId);
+            var newSection = GetClauseSectionByTemplateClauseId(newBodyJson, templateClauseId);
+
+            // If we cannot find the clause in the original body, skip – nothing to compare
+            if (oldSection == null)
+                continue;
+
+            // Treat removal of a clause in BodyJson as a change to that clause
+            var oldCombined = NormalizeHtmlForComparison(oldSection.Value.headerHtml + oldSection.Value.bodyHtml);
+            var newCombined = NormalizeHtmlForComparison(
+                (newSection?.headerHtml ?? string.Empty) + (newSection?.bodyHtml ?? string.Empty));
+
+            if (oldCombined == newCombined)
+            {
+                // No change for this clause section
+                continue;
+            }
+
+            // If clause is linked to a template clause, enforce IsEditable
+            var templateClause = draftClause.TemplateClause;
+            var isEditable = templateClause?.IsEditable ?? true;
+
+            if (!isEditable)
+            {
+                var clauseTitle = templateClause?.Title ?? draftClause.Title ?? $"Clause {templateClauseId}";
+                throw new InvalidOperationException(
+                    $"Cannot update contract draft. Clause '{clauseTitle}' has been modified in the contract body but is not editable according to the template clause.");
+            }
+
+            // At this point the clause is editable – update the draft clause content to reflect the new BodyJson
+            if (newSection != null)
+            {
+                var newTitle = ExtractTitleFromHeaderHtml(newSection.Value.headerHtml) ?? draftClause.Title;
+                draftClause.Title = newTitle;
+                draftClause.Body = newSection.Value.bodyHtml?.Trim();
+            }
+            else
+            {
+                // Clause section removed from BodyJson – mark as modified and clear body
+                draftClause.Body = string.Empty;
+            }
+
+            draftClause.IsModified = true;
+            await _draftClausesRepository.UpdateAsync(draftClause);
+        }
+    }
+
     public async Task<ContractDraftsResponse?> ManagerSignContractAsync(int id, ManagerSignatureRequest request, int managerId)
     {
         var contractDraft = await _contractDraftsRepository.GetAsync(
@@ -642,7 +823,15 @@ public class ContractDraftsService : IContractDraftsService
         if (contractDraft.StaffId != staffId)
             throw new UnauthorizedAccessException("You are not authorized to revise this contract");
 
-        // Validate that no non-editable clauses have been modified
+        // If BodyJson is being updated, validate edits against template clause permissions
+        // and propagate allowed changes into draft clauses.
+        if (request.BodyJson != null)
+        {
+            await ValidateAndApplyBodyJsonClauseEditsAsync(contractDraft, request.BodyJson);
+        }
+
+        // Also keep the existing safety net that ensures non-editable clauses in DraftClauses
+        // haven't been changed directly against their templates.
         await ValidateDraftClausesEditableAsync(id);
 
         // Update contract fields
