@@ -45,7 +45,13 @@ namespace RoboRent_BE.Controller.Controllers
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             
-            var redirectUrl = Url.ActionLink("GoogleCallback", "Auth", new { returnUrl });
+            var scheme = Request.Scheme; // "https"
+            var host = Request.Host.Value;
+            var redirectUrl = $"{scheme}://{host}/api/Auth/google-callback";
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                redirectUrl += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+            }
             var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
             return Challenge(properties, "Google");
         }
