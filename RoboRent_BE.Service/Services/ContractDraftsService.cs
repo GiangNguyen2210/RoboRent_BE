@@ -96,7 +96,7 @@ public class ContractDraftsService : IContractDraftsService
             if (hasActiveContractDraft)
             {
                 throw new InvalidOperationException(
-                    "Cannot create a new contract draft. There is already an active contract draft for this rental that is not in 'Rejected' or 'Draft' status.");
+                    "Cannot create a new contract draft. There is already an active or draft contract draft for this rental.");
             }
         }
         
@@ -855,7 +855,7 @@ public class ContractDraftsService : IContractDraftsService
             return null;
 
         // Validate status and staff
-        if (contractDraft.Status != "ChangeRequested" || contractDraft.Status !="Draft")
+        if (contractDraft.Status != "ChangeRequested" && contractDraft.Status !="Draft")
             throw new InvalidOperationException("Contract must be in 'ChangeRequested' or 'Draft' status to revise");
 
         if (contractDraft.StaffId != staffId)
