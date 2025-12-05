@@ -1014,6 +1014,16 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "Status", "TwoFactorEnabled", "UserName" },
+                values: new object[,]
+                {
+                    { "47ebcce9-fd0c-4173-91f4-a25385622d21", 0, "06625a65-14d1-4822-aaf1-2643d61d246b", "giangntse183662@fpt.edu.vn", true, true, null, "GIANGNTSE183662@FPT.EDU.VN", "GIANGNTSE183662@FPT.EDU.VN", null, null, false, "FRUURT5J22RQ24DHPTJOV27KBO6YSUUG", "Active", false, "giangntse183662@fpt.edu.vn" },
+                    { "5373bf8f-51b2-4c2d-b832-be15aedd63bc", 0, "0b266393-f928-4c62-8d31-b7f4e8b884f4", "xuant0343@gmail.com", true, true, null, "XUANT0343@GMAIL.COM", "XUANT0343@GMAIL.COM", null, null, false, "TO6KVHYLEHG2KLGZPJVPI6NSP5FJBT5V", "Active", false, "xuant0343@gmail.com" },
+                    { "fa56f53b-f406-42c4-afdc-f12a1a210b4b", 0, "e57cf66c-36b0-47b3-a7bc-26bb276298a4", "giangnguyen102004@gmail.com", true, true, null, "GIANGNGUYEN102004@GMAIL.COM", "GIANGNGUYEN102004@GMAIL.COM", null, null, false, "VPYTFD22TZD5DQECWLL62UFQVBZM6T4C", "Active", false, "giangnguyen102004@gmail.com" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "EventActivities",
                 columns: new[] { "Id", "Description", "IsDeleted", "Name" },
                 values: new object[,]
@@ -1045,6 +1055,16 @@ namespace RoboRent_BE.Model.Migrations
                     { 14, "Robot thu hút khách tại booth, kích hoạt thương hiệu và tạo điểm nhấn sự kiện", false, "Brand Activation Robot" },
                     { 15, "Robot giới thiệu tính năng sản phẩm, hướng dẫn dùng thử, demo công nghệ", false, "Product Demo Robot" },
                     { 16, "Robot quảng bá, mời chào, dẫn traffic và hỗ trợ hoạt động marketing", false, "Promotional Robot" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Accounts",
+                columns: new[] { "Id", "DateOfBirth", "FullName", "IdentificationIsValidated", "PhoneNumber", "Status", "UserId", "gender", "isDeleted" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(6578), "xuan truong", false, "", "Active", "5373bf8f-51b2-4c2d-b832-be15aedd63bc", "", false },
+                    { 2, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7604), "Nguyen Truong Giang (K18 HCM)", false, "", "Active", "47ebcce9-fd0c-4173-91f4-a25385622d21", "", false },
+                    { 3, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7608), "Trường Giang Nguyễn", false, "", "Active", "fa56f53b-f406-42c4-afdc-f12a1a210b4b", "", false }
                 });
 
             migrationBuilder.InsertData(
@@ -1094,6 +1114,26 @@ namespace RoboRent_BE.Model.Migrations
                     { 40, 5, false, "Customer Product Consultation" },
                     { 41, 5, false, "Collect Customer Information" },
                     { 42, 5, false, "Feature Demonstration" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserLogins",
+                columns: new[] { "LoginProvider", "ProviderKey", "ProviderDisplayName", "UserId" },
+                values: new object[,]
+                {
+                    { "Google", "101135697127238020611", "Google", "5373bf8f-51b2-4c2d-b832-be15aedd63bc" },
+                    { "Google", "111410206604030881459", "Google", "47ebcce9-fd0c-4173-91f4-a25385622d21" },
+                    { "Google", "116621369845429820359", "Google", "fa56f53b-f406-42c4-afdc-f12a1a210b4b" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[,]
+                {
+                    { "2", "47ebcce9-fd0c-4173-91f4-a25385622d21" },
+                    { "3", "5373bf8f-51b2-4c2d-b832-be15aedd63bc" },
+                    { "4", "fa56f53b-f406-42c4-afdc-f12a1a210b4b" }
                 });
 
             migrationBuilder.InsertData(
