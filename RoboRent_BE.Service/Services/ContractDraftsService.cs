@@ -87,8 +87,10 @@ public class ContractDraftsService : IContractDraftsService
                     return false; // Treat null/empty as draft-like, allow creation
                 
                 var status = cd.Status.Trim();
-                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase);
-                      
+                return !status.Equals("RejectedByCustomer", StringComparison.OrdinalIgnoreCase) &&
+                !status.Equals("RejectedByManager", StringComparison.OrdinalIgnoreCase);
+
+
             });
             
             if (hasActiveContractDraft)
@@ -702,8 +704,8 @@ public class ContractDraftsService : IContractDraftsService
         if (contractDraft.ManagerId != managerId)
             throw new UnauthorizedAccessException("You are not authorized to reject this contract");
 
-        // Update status to Rejected
-        contractDraft.Status = "Rejected";
+        // Update status to RejectedByManager
+        contractDraft.Status = "RejectedByManager";
         if (!string.IsNullOrEmpty(request.Reason))
         {
             contractDraft.Comments = string.IsNullOrEmpty(contractDraft.Comments) 
@@ -737,8 +739,8 @@ public class ContractDraftsService : IContractDraftsService
         if (rental == null || rental.AccountId != customerId)
             throw new UnauthorizedAccessException("You are not authorized to reject this contract");
 
-        // Update status to Rejected
-        contractDraft.Status = "Rejected";
+        // Update status to RejectedByCustomer
+        contractDraft.Status = "RejectedByCustomer";
         if (!string.IsNullOrEmpty(request.Reason))
         {
             contractDraft.Comments = string.IsNullOrEmpty(contractDraft.Comments) 
