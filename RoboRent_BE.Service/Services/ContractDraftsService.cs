@@ -772,6 +772,13 @@ public class ContractDraftsService : IContractDraftsService
         if (rental == null || rental.AccountId != customerId)
             throw new UnauthorizedAccessException("You are not authorized to request changes to this contract");
 
+        // Remove manager signature when customer requests change
+        // This ensures that if manager had signed before, the signature is removed for the revision
+        if (!string.IsNullOrEmpty(contractDraft.BodyJson))
+        {
+            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
+        }
+
         // Update status to ChangeRequested
         contractDraft.Status = "ChangeRequested";
         if (!string.IsNullOrEmpty(request.Comment))
@@ -871,14 +878,7 @@ public class ContractDraftsService : IContractDraftsService
         
         if (request.BodyJson != null)
         {
-            // Remove manager signature from the new BodyJson (in case it still contains it)
-            contractDraft.BodyJson = RemoveManagerSignatureFromContract(request.BodyJson);
-        }
-        else if (!string.IsNullOrEmpty(contractDraft.BodyJson))
-        {
-            // If BodyJson is not being updated, remove manager signature from existing BodyJson
-            // This ensures that if manager had signed before, the signature is removed for the revision
-            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
+            contractDraft.BodyJson = request.BodyJson;
         }
         
         if (request.Comments != null)
