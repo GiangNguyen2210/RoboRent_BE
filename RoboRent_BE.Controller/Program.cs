@@ -161,7 +161,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:3000", "https://localhost:3000",  // CRA
             "http://localhost:5173", "https://localhost:5173",  // Vite
-            "http://localhost:4200", "https://localhost:4200"   // Angular
+            "http://localhost:4200", "https://localhost:4200",   // Angular
+            "https://robo-rent-fe.vercel.app/"
         )
         .AllowAnyMethod()      // GET, POST, OPTIONS, etc.
         .AllowAnyHeader()      // Authorization, Content-Type
