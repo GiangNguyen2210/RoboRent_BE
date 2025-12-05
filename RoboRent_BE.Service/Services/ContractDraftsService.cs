@@ -87,8 +87,8 @@ public class ContractDraftsService : IContractDraftsService
                     return false; // Treat null/empty as draft-like, allow creation
                 
                 var status = cd.Status.Trim();
-                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) && 
-                       !status.Equals("Draft", StringComparison.OrdinalIgnoreCase);
+                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase);
+                      
             });
             
             if (hasActiveContractDraft)
@@ -268,7 +268,7 @@ public class ContractDraftsService : IContractDraftsService
         <div style=""margin-bottom: 10px;"">
             <strong>Manager Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+        <div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
             {signature}
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
@@ -403,6 +403,35 @@ public class ContractDraftsService : IContractDraftsService
                 return bodyJson + signatureHtml;
             }
         }
+    }
+
+    private string RemoveManagerSignatureFromContract(string bodyJson)
+    {
+        if (string.IsNullOrEmpty(bodyJson))
+            return bodyJson;
+
+        // Check if manager signature exists
+        if (!bodyJson.Contains("Manager Signature:"))
+            return bodyJson;
+
+        // Replace manager signature with empty placeholder
+        var emptyManagerSignatureDiv = @"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
+        <div style=""margin-bottom: 10px;"">
+            <strong>Manager Signature:</strong>
+        </div>
+        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+            &nbsp;
+        </div>
+        <div style=""margin-top: 10px; font-size: 12px;"">
+            &nbsp;
+        </div>
+    </div>";
+
+        // Remove existing manager signature using regex
+        var pattern = @"<div style=""flex: 1; text-align: left[^>]*>.*?Manager Signature:.*?</div>\s*</div>\s*</div>";
+        bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, emptyManagerSignatureDiv, System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        return bodyJson;
     }
 
     /// <summary>
@@ -817,8 +846,8 @@ public class ContractDraftsService : IContractDraftsService
             return null;
 
         // Validate status and staff
-        if (contractDraft.Status != "ChangeRequested")
-            throw new InvalidOperationException("Contract must be in 'ChangeRequested' status to revise");
+        if (contractDraft.Status != "ChangeRequested" || contractDraft.Status !="Draft")
+            throw new InvalidOperationException("Contract must be in 'ChangeRequested' or 'Draft' status to revise");
 
         if (contractDraft.StaffId != staffId)
             throw new UnauthorizedAccessException("You are not authorized to revise this contract");
@@ -842,7 +871,14 @@ public class ContractDraftsService : IContractDraftsService
         
         if (request.BodyJson != null)
         {
-            contractDraft.BodyJson = request.BodyJson;
+            // Remove manager signature from the new BodyJson (in case it still contains it)
+            contractDraft.BodyJson = RemoveManagerSignatureFromContract(request.BodyJson);
+        }
+        else if (!string.IsNullOrEmpty(contractDraft.BodyJson))
+        {
+            // If BodyJson is not being updated, remove manager signature from existing BodyJson
+            // This ensures that if manager had signed before, the signature is removed for the revision
+            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
         }
         
         if (request.Comments != null)
