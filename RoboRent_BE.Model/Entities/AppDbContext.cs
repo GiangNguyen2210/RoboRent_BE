@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace RoboRent_BE.Model.Entities;
 
-public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
+public partial class AppDbContext : IdentityDbContext<
+    ModifyIdentityUser
+    >
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -71,6 +73,138 @@ public partial class AppDbContext : IdentityDbContext<ModifyIdentityUser>
             new IdentityRole { Id = "4", Name = "Manager", NormalizedName = "MANAGER" }
         );
 
+        modelBuilder.Entity<ModifyIdentityUser>().HasData(
+            new ModifyIdentityUser
+            {
+                Id = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                Status = "Active",
+                UserName = "xuant0343@gmail.com",
+                NormalizedUserName = "XUANT0343@GMAIL.COM",
+                Email = "xuant0343@gmail.com",
+                NormalizedEmail = "XUANT0343@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = "TO6KVHYLEHG2KLGZPJVPI6NSP5FJBT5V",
+                ConcurrencyStamp = "0b266393-f928-4c62-8d31-b7f4e8b884f4",
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
+            },
+            new ModifyIdentityUser
+            {
+                Id = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                Status = "Active",
+                UserName = "giangntse183662@fpt.edu.vn",
+                NormalizedUserName = "GIANGNTSE183662@FPT.EDU.VN",
+                Email = "giangntse183662@fpt.edu.vn",
+                NormalizedEmail = "GIANGNTSE183662@FPT.EDU.VN",
+                EmailConfirmed = true,
+                SecurityStamp = "FRUURT5J22RQ24DHPTJOV27KBO6YSUUG",
+                ConcurrencyStamp = "06625a65-14d1-4822-aaf1-2643d61d246b",
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
+            },
+            new ModifyIdentityUser
+            {
+                Id = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                Status = "Active",
+                UserName = "giangnguyen102004@gmail.com",
+                NormalizedUserName = "GIANGNGUYEN102004@GMAIL.COM",
+                Email = "giangnguyen102004@gmail.com",
+                NormalizedEmail = "GIANGNGUYEN102004@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = "VPYTFD22TZD5DQECWLL62UFQVBZM6T4C",
+                ConcurrencyStamp = "e57cf66c-36b0-47b3-a7bc-26bb276298a4",
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
+            }
+            );
+
+        modelBuilder.Entity<Account>().HasData(
+            new Account
+            {
+                Id = 1,
+                FullName = "xuan truong",
+                PhoneNumber = string.Empty,
+                DateOfBirth = DateTime.UtcNow,
+                gender = string.Empty,
+                IdentificationIsValidated = false,
+                isDeleted = false,
+                Status = "Active",
+                UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc"
+            },
+            new Account
+            {
+                Id = 2,
+                FullName = "Nguyen Truong Giang (K18 HCM)",
+                PhoneNumber = string.Empty,
+                DateOfBirth = DateTime.UtcNow,
+                gender = string.Empty,
+                IdentificationIsValidated = false,
+                isDeleted = false,
+                Status = "Active",
+                UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21"
+            },
+            new Account
+            {
+                Id = 3,
+                FullName = "Trường Giang Nguyễn",
+                PhoneNumber = string.Empty,
+                DateOfBirth = DateTime.UtcNow,
+                gender = string.Empty,
+                IdentificationIsValidated = false,
+                isDeleted = false,
+                Status = "Active",
+                UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b"
+            }
+            );
+
+        modelBuilder.Entity<IdentityUserRole<string>>().HasData(
+            new IdentityUserRole<string>
+            {
+                UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                RoleId = "3"
+            },
+            new IdentityUserRole<string>
+            {
+                UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                RoleId = "4"
+            },
+            new IdentityUserRole<string>
+            {
+                UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                RoleId = "2"
+            }
+            );
+
+        modelBuilder.Entity<IdentityUserLogin<string>>().HasData(
+            new IdentityUserLogin<string>
+            {
+                UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                LoginProvider = "Google",
+                ProviderKey = "101135697127238020611",
+                ProviderDisplayName = "Google"
+            },
+            new IdentityUserLogin<string>
+            {
+                UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                LoginProvider = "Google",
+                ProviderKey = "111410206604030881459",
+                ProviderDisplayName = "Google"
+            },
+            new IdentityUserLogin<string>
+            {
+                UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                LoginProvider = "Google",
+                ProviderKey = "116621369845429820359",
+                ProviderDisplayName = "Google"
+            }
+            );
+        
         modelBuilder.Entity<ActivityType>().HasData(
             // CATEGORY 1: PERFORMANCE
             new ActivityType { Id = 1, EventActivityId = 1, Name = "Solo Singing", IsDeleted = false },

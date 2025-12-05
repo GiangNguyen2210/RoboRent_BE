@@ -99,7 +99,7 @@ public class ContractReportsController : ControllerBase
     /// Get contract report by ID
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Manager,Staff,Admin")]
+    [Authorize(Roles = "Manager,Staff,Admin,Customer")]
     public async Task<IActionResult> GetContractReportById(int id)
     {
         try
