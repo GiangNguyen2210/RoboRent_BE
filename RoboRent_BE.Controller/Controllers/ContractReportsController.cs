@@ -160,7 +160,7 @@ public class ContractReportsController : ControllerBase
     /// Create a new contract report
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Manager,Staff,Admin")]
+    [Authorize(Roles = "Manager, Staff, Admin, Customer")]
     public async Task<IActionResult> CreateContractReport([FromBody] CreateContractReportRequest request)
     {
         if (!ModelState.IsValid)
