@@ -10,15 +10,18 @@ public class DraftClausesService : IDraftClausesService
 {
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly ITemplateClausesRepository _templateClausesRepository;
+    private readonly IContractDraftsRepository _contractDraftsRepository;
     private readonly IMapper _mapper;
 
     public DraftClausesService(
         IDraftClausesRepository draftClausesRepository,
         ITemplateClausesRepository templateClausesRepository,
+        IContractDraftsRepository contractDraftsRepository,
         IMapper mapper)
     {
         _draftClausesRepository = draftClausesRepository;
         _templateClausesRepository = templateClausesRepository;
+        _contractDraftsRepository = contractDraftsRepository;
         _mapper = mapper;
     }
 
@@ -178,6 +181,29 @@ public class DraftClausesService : IDraftClausesService
         var existingDraftClause = await _draftClausesRepository.GetAsync(dc => dc.Id == request.Id, "ContractDraft,TemplateClause");
         if (existingDraftClause == null)
             return null;
+
+        // Validate that the contract draft status allows updates
+        var contractDraftId = existingDraftClause.ContractDraftsId ?? request.ContractDraftsId;
+        if (contractDraftId.HasValue)
+        {
+            var contractDraft = await _contractDraftsRepository.GetAsync(cd => cd.Id == contractDraftId.Value);
+            if (contractDraft == null)
+            {
+                throw new InvalidOperationException("Contract draft not found.");
+            }
+
+            // Only allow updates when contract draft status is "ChangeRequested", "Modified", or "Draft"
+            var status = contractDraft.Status;
+            if (status != "ChangeRequested" && status != "Modified" && status != "Draft")
+            {
+                throw new InvalidOperationException(
+                    $"Cannot update draft clause. Contract draft status must be one of: 'ChangeRequested', 'Modified', or 'Draft'. Current status: '{status ?? "null"}'");
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException("Contract draft ID is required to update draft clause.");
+        }
 
         // Check if the clause content is being changed (before mapping)
         bool contentChanged = existingDraftClause.Title != request.Title || 
