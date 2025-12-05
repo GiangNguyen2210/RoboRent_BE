@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RoboRent_BE.Model.DTOS;
+using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interface;
@@ -40,6 +42,7 @@ public class PaymentService : IPaymentService
         _actualDeliveryRepo = actualDeliveryRepo;
         _logger = logger;
 
+        // ✅ Inject PayOS trực tiếp
         var clientId = config["PayOSCredentials:ClientId"];
         var apiKey = config["PayOSCredentials:ApiKey"];
         var checksumKey = config["PayOSCredentials:ChecksumKey"];
@@ -52,203 +55,111 @@ public class PaymentService : IPaymentService
         _payOS = new PayOS(clientId, apiKey, checksumKey);
         _returnUrl = config["PayOSSettings:ReturnUrl"];
         _cancelUrl = config["PayOSSettings:CancelUrl"];
+        
+        _logger.LogInformation("✅ PaymentService initialized with PayOS SDK");
     }
+
+    #region Public Methods
 
     public async Task<PaymentRecordResponse> CreateDepositPaymentAsync(int rentalId)
     {
-        // 1. Validate Rental
-        var rental = await _rentalRepo.GetAsync(
-            r => r.Id == rentalId,
-            includeProperties: "Account");
+        var rental = await ValidateRentalForDepositAsync(rentalId);
 
-        if (rental == null)
-            throw new Exception($"Rental {rentalId} not found");
-
-        if (rental.Status != "PendingDeposit")
-            throw new Exception($"Cannot create deposit payment. Rental status must be 'PendingDeposit'. Current: {rental.Status}");
-
-        // 2. Check if deposit already exists (LOGIC MỚI: Trả về cái cũ nếu đang Pending)
         var existingDeposit = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
         if (existingDeposit != null)
         {
             if (existingDeposit.Status == "Pending")
             {
-                // Trả về record đang treo (lấy URL từ DB)
+                _logger.LogInformation($"Returning existing pending deposit for Rental {rentalId}");
                 return MapToResponse(existingDeposit, rental.EventName);
             }
             if (existingDeposit.Status == "Paid")
-                throw new Exception($"Deposit payment already exists and paid for Rental {rentalId}");
+            {
+                throw new Exception($"Deposit payment already paid for Rental {rentalId}");
+            }
         }
 
-        // 3. Get PriceQuote
-        var priceQuote = await _priceQuoteRepo.GetAsync(pq => pq.RentalId == rentalId && pq.Status == "Approved");
-        if (priceQuote == null)
-            throw new Exception($"No approved PriceQuote found for Rental {rentalId}");
+        var priceQuote = await GetApprovedPriceQuoteAsync(rentalId);
+        int depositAmount = CalculateDepositAmount(priceQuote);
+        var customer = rental.Account ?? throw new Exception($"Customer not found for Rental {rentalId}");
 
-        // 4. Calculate Deposit Amount (30% of Total)
-        var total = (priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
-                    (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0);
-        var depositAmount = (decimal)(total * 0.3);
-
-        // 5. Get Customer info
-        var customer = rental.Account;
-        if (customer == null)
-            throw new Exception($"Customer not found for Rental {rentalId}");
-
-        // 6. Generate unique OrderCode
-        var lastOrderCode = await _paymentRecordRepo.GetLastOrderCodeAsync();
-        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
-
-        // LOGIC MỚI: Set hạn 7 ngày
-        var expiredAt = DateTime.UtcNow.AddDays(7);
-        int expiredAtUnix = (int)(expiredAt - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-
-        // 7. Create PayOS Payment Link
-        var paymentData = new PaymentData(
-            orderCode: newOrderCode,
-            amount: (int)depositAmount,
+        var (orderCode, checkoutUrl, paymentLinkId, expiredAt) = await CreatePayOSPaymentLinkAsync(
+            amount: depositAmount,
             description: $"Deposit R#{rentalId}",
-            items: new List<ItemData> 
-            { 
-                new ItemData("Deposit", 1, (int)depositAmount) 
-            },
-            returnUrl: _returnUrl,
-            cancelUrl: _cancelUrl,
-            buyerName: customer.FullName,
-            buyerPhone: customer.PhoneNumber ?? "",
-            expiredAt: expiredAtUnix 
+            itemName: "Deposit Payment",
+            customerName: customer.FullName,
+            customerPhone: customer.PhoneNumber ?? "",
+            daysValid: 7
         );
 
-        _logger.LogInformation($"Creating PayOS payment link for Deposit - OrderCode: {newOrderCode}");
-        var createPaymentResult = await _payOS.createPaymentLink(paymentData);
-
-        if (createPaymentResult.status != "PENDING")
-        {
-            _logger.LogError($"PayOS returned error - Status: {createPaymentResult.status}");
-            throw new Exception($"PayOS error: {createPaymentResult.description}");
-        }
-
-        // 8. Save PaymentRecord (LƯU THÊM URL VÀ EXPIRED)
         var paymentRecord = new PaymentRecord
         {
             RentalId = rentalId,
             PriceQuoteId = priceQuote.Id,
             PaymentType = "Deposit",
             Amount = depositAmount,
-            OrderCode = newOrderCode,
-            PaymentLinkId = createPaymentResult.paymentLinkId,
+            OrderCode = orderCode,
+            PaymentLinkId = paymentLinkId,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow,
-            CheckoutUrl = createPaymentResult.checkoutUrl, // ✅ Lưu link
-            ExpiredAt = expiredAt // ✅ Lưu hạn
+            CheckoutUrl = checkoutUrl,
+            ExpiredAt = expiredAt
         };
 
         await _paymentRecordRepo.AddAsync(paymentRecord);
-
-        _logger.LogInformation($"Deposit payment created: OrderCode {newOrderCode}, Amount {depositAmount}");
+        _logger.LogInformation($"✅ Deposit payment created: OrderCode {orderCode}, Amount {depositAmount:N0} VND");
 
         return MapToResponse(paymentRecord, rental.EventName);
     }
 
     public async Task<PaymentRecordResponse> CreateFullPaymentAsync(int rentalId)
     {
-        // 1. Validate Rental
-        var rental = await _rentalRepo.GetAsync(
-            r => r.Id == rentalId,
-            includeProperties: "Account");
+        var rental = await ValidateRentalForFullPaymentAsync(rentalId);
 
-        if (rental == null)
-            throw new Exception($"Rental {rentalId} not found");
-
-        if (rental.Status != "Completed")
-            throw new Exception($"Cannot create full payment. Rental status must be 'Completed'. Current: {rental.Status}");
-
-        // 2. Check if full payment already exists (LOGIC MỚI: Trả về cái cũ nếu đang Pending)
         var existingFull = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Full");
         if (existingFull != null)
         {
             if (existingFull.Status == "Pending")
             {
-                 // Trả về record đang treo (lấy URL từ DB)
+                _logger.LogInformation($"Returning existing pending full payment for Rental {rentalId}");
                 return MapToResponse(existingFull, rental.EventName);
             }
             if (existingFull.Status == "Paid")
-                 throw new Exception($"Full payment already exists for Rental {rentalId}");
+            {
+                throw new Exception($"Full payment already paid for Rental {rentalId}");
+            }
         }
 
-        // 3. Verify Deposit is Paid
-        var depositPayment = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
-        if (depositPayment == null || depositPayment.Status != "Paid")
-            throw new Exception($"Deposit payment must be paid before creating full payment");
+        await VerifyDepositPaidAsync(rentalId);
+        var priceQuote = await GetApprovedPriceQuoteAsync(rentalId);
+        int fullAmount = CalculateFullAmount(priceQuote);
+        var customer = rental.Account ?? throw new Exception($"Customer not found for Rental {rentalId}");
 
-        // 4. Get PriceQuote
-        var priceQuote = await _priceQuoteRepo.GetAsync(pq => pq.RentalId == rentalId && pq.Status == "Approved");
-        if (priceQuote == null)
-            throw new Exception($"No approved PriceQuote found for Rental {rentalId}");
-
-        // 5. Calculate Full Amount (70% of Total)
-        var total = (priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
-                    (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0);
-        var fullAmount = (decimal)(total * 0.7);
-
-        // 6. Get Customer info
-        var customer = rental.Account;
-        if (customer == null)
-            throw new Exception($"Customer not found for Rental {rentalId}");
-
-        // 7. Generate unique OrderCode
-        var lastOrderCode = await _paymentRecordRepo.GetLastOrderCodeAsync();
-        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        long newOrderCode = lastOrderCode == 0 ? timestamp : Math.Max(lastOrderCode + 1, timestamp);
-
-        // LOGIC MỚI: Set hạn 7 ngày
-        var expiredAt = DateTime.UtcNow.AddDays(7);
-        int expiredAtUnix = (int)(expiredAt - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-
-        // 8. Create PayOS Payment Link
-        var paymentData = new PaymentData(
-            orderCode: newOrderCode,
-            amount: (int)fullAmount,
-            description: $"Full pay R#{rentalId}", 
-            items: new List<ItemData> 
-            { 
-                new ItemData("Full Payment", 1, (int)fullAmount) 
-            },
-            returnUrl: _returnUrl,
-            cancelUrl: _cancelUrl,
-            buyerName: customer.FullName,
-            buyerPhone: customer.PhoneNumber ?? "",
-            expiredAt: expiredAtUnix
+        var (orderCode, checkoutUrl, paymentLinkId, expiredAt) = await CreatePayOSPaymentLinkAsync(
+            amount: fullAmount,
+            description: $"Full pay R#{rentalId}",
+            itemName: "Full Payment",
+            customerName: customer.FullName,
+            customerPhone: customer.PhoneNumber ?? "",
+            daysValid: 7
         );
 
-        _logger.LogInformation($"Creating PayOS payment link for Full - OrderCode: {newOrderCode}");
-        var createPaymentResult = await _payOS.createPaymentLink(paymentData);
-
-        if (createPaymentResult.status != "PENDING")
-        {
-            _logger.LogError($"PayOS returned error - Status: {createPaymentResult.status}");
-            throw new Exception($"PayOS error: {createPaymentResult.description}");
-        }
-
-        // 9. Save PaymentRecord (LƯU THÊM URL VÀ EXPIRED)
         var paymentRecord = new PaymentRecord
         {
             RentalId = rentalId,
             PriceQuoteId = priceQuote.Id,
             PaymentType = "Full",
             Amount = fullAmount,
-            OrderCode = newOrderCode,
-            PaymentLinkId = createPaymentResult.paymentLinkId,
+            OrderCode = orderCode,
+            PaymentLinkId = paymentLinkId,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow,
-            CheckoutUrl = createPaymentResult.checkoutUrl, // ✅ Lưu link
-            ExpiredAt = expiredAt // ✅ Lưu hạn
+            CheckoutUrl = checkoutUrl,
+            ExpiredAt = expiredAt
         };
 
         await _paymentRecordRepo.AddAsync(paymentRecord);
-
-        _logger.LogInformation($"Full payment created: OrderCode {newOrderCode}, Amount {fullAmount}");
+        _logger.LogInformation($"✅ Full payment created: OrderCode {orderCode}, Amount {fullAmount:N0} VND");
 
         return MapToResponse(paymentRecord, rental.EventName);
     }
@@ -256,7 +167,6 @@ public class PaymentService : IPaymentService
     public async Task<List<PaymentRecordResponse>> GetPaymentsByRentalIdAsync(int rentalId)
     {
         var payments = await _paymentRecordRepo.GetByRentalIdAsync(rentalId);
-    
         var rental = await _rentalRepo.GetAsync(r => r.Id == rentalId);
         var rentalName = rental?.EventName;
 
@@ -269,18 +179,16 @@ public class PaymentService : IPaymentService
         
         if (paymentRecord == null)
         {
-            _logger.LogWarning($"PaymentRecord not found for OrderCode {orderCode}");
+            _logger.LogWarning($"⚠️ PaymentRecord not found for OrderCode {orderCode}");
             throw new Exception($"PaymentRecord not found for OrderCode {orderCode}");
         }
 
-        // Check duplicate processing
         if (paymentRecord.Status == paymentStatus)
         {
-            _logger.LogInformation($"PaymentRecord {orderCode} already processed with status {paymentStatus}");
+            _logger.LogInformation($"⏭️ PaymentRecord {orderCode} already processed with status {paymentStatus}");
             return;
         }
 
-        // Update payment status
         paymentRecord.Status = paymentStatus;
         paymentRecord.UpdatedAt = DateTime.UtcNow;
         
@@ -290,46 +198,263 @@ public class PaymentService : IPaymentService
         }
 
         await _paymentRecordRepo.UpdateAsync(paymentRecord);
-        _logger.LogInformation($"Updated PaymentRecord {orderCode} to {paymentStatus}");
+        _logger.LogInformation($"✅ Updated PaymentRecord {orderCode} to {paymentStatus}");
 
-        // Process business logic based on payment type
         if (paymentStatus == "Paid" && paymentRecord.PaymentType == "Deposit" && paymentRecord.RentalId.HasValue)
         {
             await HandleDepositPaidAsync(paymentRecord.RentalId.Value);
         }
     }
 
+    public async Task<List<PaymentRecordResponse>> GetCustomerTransactionsAsync(int customerId)
+    {
+        var allPayments = await _paymentRecordRepo.GetAllAsync(
+            filter: p => p.Rental != null && p.Rental.AccountId == customerId,
+            includeProperties: "Rental"
+        );
+
+        return allPayments
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => MapToResponse(p, p.Rental?.EventName))
+            .ToList();
+    }
+
+    // ✅ NEW: Verify webhook signature
+    public WebhookData VerifyPaymentWebhook(WebhookType webhookBody)
+    {
+        try
+        {
+            _logger.LogDebug("🔐 Verifying webhook signature");
+            var webhookData = _payOS.verifyPaymentWebhookData(webhookBody);
+            _logger.LogInformation($"✅ Webhook verified - OrderCode: {webhookData.orderCode}");
+            return webhookData;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Webhook signature verification failed");
+            throw new Exception($"Invalid webhook signature: {ex.Message}", ex);
+        }
+    }
+
+    // ✅ NEW: Get payment info from PayOS
+    public async Task<PaymentLinkInformation> GetPaymentLinkInformationAsync(long orderCode)
+    {
+        try
+        {
+            _logger.LogInformation($"🔍 Fetching payment info for OrderCode: {orderCode}");
+            var result = await _payOS.getPaymentLinkInformation(orderCode);
+            _logger.LogInformation($"✅ Payment info fetched - Status: {result.status}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ Failed to fetch payment info for OrderCode: {orderCode}");
+            throw new Exception($"Failed to fetch payment link information: {ex.Message}", ex);
+        }
+    }
+
+    // ✅ NEW: Cancel payment link
+    public async Task<PaymentLinkInformation> CancelPaymentLinkAsync(long orderCode, string cancellationReason = null)
+    {
+        try
+        {
+            _logger.LogInformation($"🚫 Cancelling payment for OrderCode: {orderCode}");
+            var result = await _payOS.cancelPaymentLink(orderCode, cancellationReason);
+            _logger.LogInformation($"✅ Payment cancelled");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ Failed to cancel payment for OrderCode: {orderCode}");
+            throw new Exception($"Failed to cancel payment link: {ex.Message}", ex);
+        }
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Validation
+
+    private async Task<Rental> ValidateRentalForDepositAsync(int rentalId)
+    {
+        var rental = await _rentalRepo.GetAsync(
+            r => r.Id == rentalId,
+            includeProperties: "Account");
+
+        if (rental == null)
+            throw new Exception($"Rental {rentalId} not found");
+
+        if (rental.Status != "PendingDeposit")
+            throw new Exception($"Cannot create deposit payment. Rental status must be 'PendingDeposit'. Current: {rental.Status}");
+
+        return rental;
+    }
+
+    private async Task<Rental> ValidateRentalForFullPaymentAsync(int rentalId)
+    {
+        var rental = await _rentalRepo.GetAsync(
+            r => r.Id == rentalId,
+            includeProperties: "Account");
+
+        if (rental == null)
+            throw new Exception($"Rental {rentalId} not found");
+
+        if (rental.Status != "Completed")
+            throw new Exception($"Cannot create full payment. Rental status must be 'Completed'. Current: {rental.Status}");
+
+        return rental;
+    }
+
+    private async Task<PriceQuote> GetApprovedPriceQuoteAsync(int rentalId)
+    {
+        var priceQuote = await _priceQuoteRepo.GetAsync(pq => pq.RentalId == rentalId && pq.Status == "Approved");
+        
+        if (priceQuote == null)
+            throw new Exception($"No approved PriceQuote found for Rental {rentalId}");
+
+        return priceQuote;
+    }
+
+    private async Task VerifyDepositPaidAsync(int rentalId)
+    {
+        var depositPayment = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
+        
+        if (depositPayment == null || depositPayment.Status != "Paid")
+            throw new Exception($"Deposit payment must be paid before creating full payment");
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Calculation
+
+    private int CalculateDepositAmount(PriceQuote priceQuote)
+    {
+        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+                                  (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
+
+        if (total <= 0)
+            throw new Exception("Total amount must be greater than 0");
+
+        int depositAmount = (int)Math.Round(total * 0.3m);
+
+        if (depositAmount < 1000)
+            throw new Exception($"Deposit amount too small: {depositAmount} VND (minimum: 1,000 VND)");
+
+        return depositAmount;
+    }
+
+    private int CalculateFullAmount(PriceQuote priceQuote)
+    {
+        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+                                  (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
+
+        if (total <= 0)
+            throw new Exception("Total amount must be greater than 0");
+
+        int fullAmount = (int)Math.Round(total * 0.7m);
+
+        if (fullAmount < 1000)
+            throw new Exception($"Full amount too small: {fullAmount} VND (minimum: 1,000 VND)");
+
+        return fullAmount;
+    }
+
+    #endregion
+
+    #region Private Helper Methods - PayOS Integration
+
+    private long GenerateOrderCode()
+    {
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        int random = new Random().Next(1000, 9999);
+        return timestamp * 10000 + random;
+    }
+
+    private static int GetUnixTimestamp(DateTime dateTime)
+    {
+        return (int)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+    }
+
+    private async Task<(long, string, string, DateTime)> CreatePayOSPaymentLinkAsync(
+        int amount,
+        string description,
+        string itemName,
+        string customerName,
+        string customerPhone,
+        int daysValid = 7)
+    {
+        long orderCode = GenerateOrderCode();
+        var expiredAt = DateTime.UtcNow.AddDays(daysValid);
+        int expiredAtUnix = GetUnixTimestamp(expiredAt);
+
+        var paymentData = new PaymentData(
+            orderCode: orderCode,
+            amount: amount,
+            description: description,
+            items: new List<ItemData> 
+            { 
+                new ItemData(itemName, 1, amount) 
+            },
+            returnUrl: _returnUrl,
+            cancelUrl: _cancelUrl,
+            buyerName: customerName,
+            buyerPhone: customerPhone,
+            expiredAt: expiredAtUnix
+        );
+
+        _logger.LogInformation($"🔄 Creating PayOS payment link - OrderCode: {orderCode}, Amount: {amount:N0} VND");
+
+        try
+        {
+            var result = await _payOS.createPaymentLink(paymentData);
+
+            if (result.status != "PENDING")
+            {
+                _logger.LogError($"❌ PayOS error - Status: {result.status}, Description: {result.description}");
+                throw new Exception($"PayOS error: {result.description}");
+            }
+
+            _logger.LogInformation($"✅ PayOS payment link created - PaymentLinkId: {result.paymentLinkId}");
+
+            return (orderCode, result.checkoutUrl, result.paymentLinkId, expiredAt);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ Failed to create PayOS payment link for OrderCode {orderCode}");
+            throw new Exception($"Failed to create payment link: {ex.Message}", ex);
+        }
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Business Logic
+
     private async Task HandleDepositPaidAsync(int rentalId)
     {
-        // 1. Update Rental status
         var rental = await _rentalRepo.GetAsync(r => r.Id == rentalId);
         if (rental == null)
         {
-            _logger.LogError($"Rental {rentalId} not found when processing deposit payment");
+            _logger.LogError($"❌ Rental {rentalId} not found when processing deposit payment");
             return;
         }
 
         rental.Status = "DeliveryScheduled";
         await _rentalRepo.UpdateAsync(rental);
-        _logger.LogInformation($"Rental {rentalId} status updated to DeliveryScheduled");
+        _logger.LogInformation($"✅ Rental {rentalId} status updated to DeliveryScheduled");
 
-        // 2. Get GroupSchedule
         var groupSchedule = await _groupScheduleRepo.GetAsync(gs => gs.RentalId == rentalId);
         if (groupSchedule == null)
         {
-            _logger.LogError($"GroupSchedule not found for Rental {rentalId}");
+            _logger.LogError($"❌ GroupSchedule not found for Rental {rentalId}");
             return;
         }
 
-        // 3. Check if ActualDelivery already exists
         var existingDelivery = await _actualDeliveryRepo.GetByGroupScheduleIdAsync(groupSchedule.Id);
         if (existingDelivery != null)
         {
-            _logger.LogInformation($"ActualDelivery already exists for GroupSchedule {groupSchedule.Id}");
+            _logger.LogInformation($"⏭️ ActualDelivery already exists for GroupSchedule {groupSchedule.Id}");
             return;
         }
 
-        // 4. Create ActualDelivery
         var actualDelivery = new ActualDelivery
         {
             GroupScheduleId = groupSchedule.Id,
@@ -340,34 +465,23 @@ public class PaymentService : IPaymentService
 
         await _actualDeliveryRepo.AddAsync(actualDelivery);
         
-        // 5. Update GroupSchedule status
         groupSchedule.Status = "scheduled";
         await _groupScheduleRepo.UpdateAsync(groupSchedule);
 
-        _logger.LogInformation($"ActualDelivery created for GroupSchedule {groupSchedule.Id} after deposit payment");
+        _logger.LogInformation($"✅ ActualDelivery created for GroupSchedule {groupSchedule.Id} after deposit payment");
     }
-    
-    public async Task<List<PaymentRecordResponse>> GetCustomerTransactionsAsync(int customerId)
-    {
-        // Lấy tất cả payment của customer (filter theo Rental.AccountId)
-        var allPayments = await _paymentRecordRepo.GetAllAsync(
-            filter: p => p.Rental != null && p.Rental.AccountId == customerId,
-            includeProperties: "Rental"
-        );
 
-        return allPayments
-            .OrderByDescending(p => p.CreatedAt) // Mới nhất lên đầu
-            .Select(p => MapToResponse(p, p.Rental?.EventName))
-            .ToList();
-    }
-    
+    #endregion
+
+    #region Private Helper Methods - Mapping
+
     private PaymentRecordResponse MapToResponse(PaymentRecord p, string? rentalName = null)
     {
         return new PaymentRecordResponse
         {
             Id = p.Id,
             RentalId = p.RentalId,
-            RentalName = rentalName, // DTO nhớ thêm field này hoặc bỏ qua nếu ko cần
+            RentalName = rentalName,
             PriceQuoteId = p.PriceQuoteId,
             PaymentType = p.PaymentType,
             Amount = p.Amount,
@@ -376,8 +490,10 @@ public class PaymentService : IPaymentService
             Status = p.Status,
             CreatedAt = p.CreatedAt,
             PaidAt = p.PaidAt,
-            CheckoutUrl = p.CheckoutUrl, // ✅ Trả link ra
-            ExpiredAt = p.ExpiredAt      // ✅ Trả hạn dùng ra
+            CheckoutUrl = p.CheckoutUrl,
+            ExpiredAt = p.ExpiredAt
         };
     }
+
+    #endregion
 }

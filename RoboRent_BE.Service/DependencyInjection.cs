@@ -23,7 +23,6 @@ public static class DependencyInjection
         services.AddTransient<IRobotService, RobotService>();
         services.AddTransient<IRoboTypeService, RoboTypeService>();
         services.AddTransient<ITypesOfRoboService, TypesOfRoboService>();
-        services.AddTransient<IPayOSService, PayOSService>();
         services.AddTransient<IChatService, ChatService>();
         services.AddTransient<IRentalContractService, RentalContractService>();
         services.AddTransient<IDraftClausesService, DraftClausesService>();
