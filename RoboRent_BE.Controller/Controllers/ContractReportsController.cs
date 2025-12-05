@@ -99,7 +99,7 @@ public class ContractReportsController : ControllerBase
     /// Get contract report by ID
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Manager,Staff,Admin")]
+    [Authorize(Roles = "Manager,Staff,Admin,Customer")]
     public async Task<IActionResult> GetContractReportById(int id)
     {
         try
@@ -160,7 +160,7 @@ public class ContractReportsController : ControllerBase
     /// Create a new contract report
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Manager,Staff,Admin")]
+    [Authorize(Roles = "Manager, Staff, Admin, Customer")]
     public async Task<IActionResult> CreateContractReport([FromBody] CreateContractReportRequest request)
     {
         if (!ModelState.IsValid)
