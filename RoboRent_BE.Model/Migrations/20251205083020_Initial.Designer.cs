@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251203160406_Initial")]
+    [Migration("20251205083020_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -147,6 +147,29 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AspNetUserLogins", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            LoginProvider = "Google",
+                            ProviderKey = "101135697127238020611",
+                            ProviderDisplayName = "Google",
+                            UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc"
+                        },
+                        new
+                        {
+                            LoginProvider = "Google",
+                            ProviderKey = "111410206604030881459",
+                            ProviderDisplayName = "Google",
+                            UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21"
+                        },
+                        new
+                        {
+                            LoginProvider = "Google",
+                            ProviderKey = "116621369845429820359",
+                            ProviderDisplayName = "Google",
+                            UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -162,6 +185,23 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                            RoleId = "3"
+                        },
+                        new
+                        {
+                            UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                            RoleId = "4"
+                        },
+                        new
+                        {
+                            UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                            RoleId = "2"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -221,6 +261,44 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Accounts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(6578),
+                            FullName = "xuan truong",
+                            IdentificationIsValidated = false,
+                            PhoneNumber = "",
+                            Status = "Active",
+                            UserId = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                            gender = "",
+                            isDeleted = false
+                        },
+                        new
+                        {
+                            Id = 2,
+                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7604),
+                            FullName = "Nguyen Truong Giang (K18 HCM)",
+                            IdentificationIsValidated = false,
+                            PhoneNumber = "",
+                            Status = "Active",
+                            UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                            gender = "",
+                            isDeleted = false
+                        },
+                        new
+                        {
+                            Id = 3,
+                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7608),
+                            FullName = "Trường Giang Nguyễn",
+                            IdentificationIsValidated = false,
+                            PhoneNumber = "",
+                            Status = "Active",
+                            UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                            gender = "",
+                            isDeleted = false
+                        });
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
@@ -1748,6 +1826,56 @@ namespace RoboRent_BE.Model.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "5373bf8f-51b2-4c2d-b832-be15aedd63bc",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "0b266393-f928-4c62-8d31-b7f4e8b884f4",
+                            Email = "xuant0343@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = true,
+                            NormalizedEmail = "XUANT0343@GMAIL.COM",
+                            NormalizedUserName = "XUANT0343@GMAIL.COM",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "TO6KVHYLEHG2KLGZPJVPI6NSP5FJBT5V",
+                            Status = "Active",
+                            TwoFactorEnabled = false,
+                            UserName = "xuant0343@gmail.com"
+                        },
+                        new
+                        {
+                            Id = "47ebcce9-fd0c-4173-91f4-a25385622d21",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "06625a65-14d1-4822-aaf1-2643d61d246b",
+                            Email = "giangntse183662@fpt.edu.vn",
+                            EmailConfirmed = true,
+                            LockoutEnabled = true,
+                            NormalizedEmail = "GIANGNTSE183662@FPT.EDU.VN",
+                            NormalizedUserName = "GIANGNTSE183662@FPT.EDU.VN",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "FRUURT5J22RQ24DHPTJOV27KBO6YSUUG",
+                            Status = "Active",
+                            TwoFactorEnabled = false,
+                            UserName = "giangntse183662@fpt.edu.vn"
+                        },
+                        new
+                        {
+                            Id = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "e57cf66c-36b0-47b3-a7bc-26bb276298a4",
+                            Email = "giangnguyen102004@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = true,
+                            NormalizedEmail = "GIANGNGUYEN102004@GMAIL.COM",
+                            NormalizedUserName = "GIANGNGUYEN102004@GMAIL.COM",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "VPYTFD22TZD5DQECWLL62UFQVBZM6T4C",
+                            Status = "Active",
+                            TwoFactorEnabled = false,
+                            UserName = "giangnguyen102004@gmail.com"
+                        });
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
