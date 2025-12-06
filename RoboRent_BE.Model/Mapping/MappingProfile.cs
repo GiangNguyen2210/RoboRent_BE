@@ -17,6 +17,7 @@ using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.DTOs.RoboTypeOfActivity;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Model.DTOs.RoboType;
 
 namespace RoboRent_BE.Model.Mapping;
 
@@ -34,7 +35,8 @@ public class MappingProfile : Profile
         CreateMap<StaffUpdateRequest, Rental>();
         
         CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
-        
+        CreateMap<RoboType, RoboTypeResponse>();
+
         CreateMap<GroupSchedule, GroupScheduleResponse>()
             .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.Rental.StaffId))
             .ForMember(dest => dest.StaffFullName, opt => opt.MapFrom(src => src.Rental.Staff.FullName))
