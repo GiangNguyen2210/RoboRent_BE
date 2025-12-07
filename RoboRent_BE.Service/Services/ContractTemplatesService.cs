@@ -151,38 +151,50 @@ public class ContractTemplatesService : IContractTemplatesService
         return match.Success;
     }
 
+    // private string LoadDefaultBodyJson()
+    // {
+    //     var configuredPath = _configuration["ContractTemplates:DefaultBodyPath"]; // optional
+    //     var fallbackRelative = Path.Combine("RoboRent_BE.Service", "Defaults", "ContractTemplateDefaultBody.html");
+    //
+    //     // Try configured path first
+    //     if (!string.IsNullOrWhiteSpace(configuredPath))
+    //     {
+    //         var resolved = ResolvePath(configuredPath);
+    //         if (File.Exists(resolved))
+    //         {
+    //             return File.ReadAllText(resolved);
+    //         }
+    //     }
+    //
+    //     // Try fallback relative paths
+    //     var candidates = new List<string>
+    //     {
+    //         ResolvePath(fallbackRelative),
+    //         Path.Combine(_environment.ContentRootPath, fallbackRelative),
+    //         Path.Combine(Directory.GetParent(_environment.ContentRootPath!)?.FullName ?? _environment.ContentRootPath, fallbackRelative)
+    //     };
+    //
+    //     foreach (var candidate in candidates)
+    //     {
+    //         if (File.Exists(candidate))
+    //         {
+    //             return File.ReadAllText(candidate);
+    //         }
+    //     }
+    //
+    //     return string.Empty;
+    // }
+    
     private string LoadDefaultBodyJson()
     {
-        var configuredPath = _configuration["ContractTemplates:DefaultBodyPath"]; // optional
-        var fallbackRelative = Path.Combine("RoboRent_BE.Service", "Defaults", "ContractTemplateDefaultBody.html");
+        var assembly = GetType().Assembly;
+        var resourceName = "RoboRent_BE.Service.Defaults.ContractTemplateDefaultBody.html";
 
-        // Try configured path first
-        if (!string.IsNullOrWhiteSpace(configuredPath))
-        {
-            var resolved = ResolvePath(configuredPath);
-            if (File.Exists(resolved))
-            {
-                return File.ReadAllText(resolved);
-            }
-        }
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null) return string.Empty;
 
-        // Try fallback relative paths
-        var candidates = new List<string>
-        {
-            ResolvePath(fallbackRelative),
-            Path.Combine(_environment.ContentRootPath, fallbackRelative),
-            Path.Combine(Directory.GetParent(_environment.ContentRootPath!)?.FullName ?? _environment.ContentRootPath, fallbackRelative)
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (File.Exists(candidate))
-            {
-                return File.ReadAllText(candidate);
-            }
-        }
-
-        return string.Empty;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     private static string ResolvePath(string path)
