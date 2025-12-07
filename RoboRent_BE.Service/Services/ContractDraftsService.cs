@@ -87,8 +87,8 @@ public class ContractDraftsService : IContractDraftsService
                     return false; // Treat null/empty as draft-like, allow creation
                 
                 var status = cd.Status.Trim();
-                return !status.Equals("RejectedByCustomer", StringComparison.OrdinalIgnoreCase) &&
-                !status.Equals("RejectedByManager", StringComparison.OrdinalIgnoreCase);
+                return !status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) &&
+                !status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
 
 
             });
@@ -688,7 +688,7 @@ public class ContractDraftsService : IContractDraftsService
         return response;
     }
 
-    public async Task<ContractDraftsResponse?> ManagerRejectContractAsync(int id, ManagerRejectRequest request, int managerId)
+    public async Task<ContractDraftsResponse?> ManagerCancelContractAsync(int id, ManagerCancelRequest request, int managerId)
     {
         var contractDraft = await _contractDraftsRepository.GetAsync(
             cd => cd.Id == id, 
@@ -702,19 +702,31 @@ public class ContractDraftsService : IContractDraftsService
             throw new InvalidOperationException("Contract is not in PendingManagerSignature status");
 
         if (contractDraft.ManagerId != managerId)
-            throw new UnauthorizedAccessException("You are not authorized to reject this contract");
+            throw new UnauthorizedAccessException("You are not authorized to cancel this contract");
 
-        // Update status to RejectedByManager
-        contractDraft.Status = "RejectedByManager";
+        // Update status to Cancelled
+        contractDraft.Status = "Cancelled";
         if (!string.IsNullOrEmpty(request.Reason))
         {
             contractDraft.Comments = string.IsNullOrEmpty(contractDraft.Comments) 
-                ? $"Rejected by Manager: {request.Reason}" 
-                : $"{contractDraft.Comments}\nRejected by Manager: {request.Reason}";
+                ? $"Cancelled by Manager: {request.Reason}" 
+                : $"{contractDraft.Comments}\nCancelled by Manager: {request.Reason}";
         }
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        
+        // Update rental status to Cancelled
+        if (contractDraft.RentalId.HasValue)
+        {
+            var rental = await _rentalRepository.GetAsync(r => r.Id == contractDraft.RentalId.Value);
+            if (rental != null)
+            {
+                rental.Status = "ForceCancelled";
+                await _rentalRepository.UpdateAsync(rental);
+            }
+        }
+        
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
     }
 
@@ -740,7 +752,7 @@ public class ContractDraftsService : IContractDraftsService
             throw new UnauthorizedAccessException("You are not authorized to reject this contract");
 
         // Update status to RejectedByCustomer
-        contractDraft.Status = "RejectedByCustomer";
+        contractDraft.Status = "Rejected";
         if (!string.IsNullOrEmpty(request.Reason))
         {
             contractDraft.Comments = string.IsNullOrEmpty(contractDraft.Comments) 
