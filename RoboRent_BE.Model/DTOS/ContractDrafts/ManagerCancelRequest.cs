@@ -1,6 +1,6 @@
 namespace RoboRent_BE.Model.DTOS.ContractDrafts;
 
-public class ManagerRejectRequest
+public class ManagerCancelRequest
 {
     public string? Reason { get; set; }
 }
