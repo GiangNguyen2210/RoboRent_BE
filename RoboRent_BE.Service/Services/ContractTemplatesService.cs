@@ -146,8 +146,8 @@ public class ContractTemplatesService : IContractTemplatesService
     private static bool ShouldClauseBeEditable(string? title)
     {
         if (string.IsNullOrWhiteSpace(title)) return false;
-        // Ensure only Điều 6 or Điều 7 are editable (avoid matching 60, 61, etc.)
-        var match = Regex.Match(title, @"Điều\s*(6|7)(\D|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        // Ensure only 2, 3, 6, 7 are editable (avoid matching 60, 61, etc.)
+        var match = Regex.Match(title, @"Điều\s*(2|3|6|7)(\D|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         return match.Success;
     }
 

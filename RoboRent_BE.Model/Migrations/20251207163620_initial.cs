@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace RoboRent_BE.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -1062,9 +1062,9 @@ namespace RoboRent_BE.Model.Migrations
                 columns: new[] { "Id", "DateOfBirth", "FullName", "IdentificationIsValidated", "PhoneNumber", "Status", "UserId", "gender", "isDeleted" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(6578), "xuan truong", false, "", "Active", "5373bf8f-51b2-4c2d-b832-be15aedd63bc", "", false },
-                    { 2, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7604), "Nguyen Truong Giang (K18 HCM)", false, "", "Active", "47ebcce9-fd0c-4173-91f4-a25385622d21", "", false },
-                    { 3, new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7608), "Trường Giang Nguyễn", false, "", "Active", "fa56f53b-f406-42c4-afdc-f12a1a210b4b", "", false }
+                    { 1, new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "xuan truong", false, "", "Active", "5373bf8f-51b2-4c2d-b832-be15aedd63bc", "", false },
+                    { 2, new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Nguyen Truong Giang (K18 HCM)", false, "", "Active", "47ebcce9-fd0c-4173-91f4-a25385622d21", "", false },
+                    { 3, new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Trường Giang Nguyễn", false, "", "Active", "fa56f53b-f406-42c4-afdc-f12a1a210b4b", "", false }
                 });
 
             migrationBuilder.InsertData(

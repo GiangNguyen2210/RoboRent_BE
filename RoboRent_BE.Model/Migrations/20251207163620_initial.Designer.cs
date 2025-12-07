@@ -12,8 +12,8 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251205083020_Initial")]
-    partial class Initial
+    [Migration("20251207163620_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -266,7 +266,7 @@ namespace RoboRent_BE.Model.Migrations
                         new
                         {
                             Id = 1,
-                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(6578),
+                            DateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "xuan truong",
                             IdentificationIsValidated = false,
                             PhoneNumber = "",
@@ -278,7 +278,7 @@ namespace RoboRent_BE.Model.Migrations
                         new
                         {
                             Id = 2,
-                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7604),
+                            DateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Nguyen Truong Giang (K18 HCM)",
                             IdentificationIsValidated = false,
                             PhoneNumber = "",
@@ -290,7 +290,7 @@ namespace RoboRent_BE.Model.Migrations
                         new
                         {
                             Id = 3,
-                            DateOfBirth = new DateTime(2025, 12, 5, 8, 30, 17, 553, DateTimeKind.Utc).AddTicks(7608),
+                            DateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             FullName = "Trường Giang Nguyễn",
                             IdentificationIsValidated = false,
                             PhoneNumber = "",

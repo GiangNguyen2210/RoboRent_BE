@@ -1,10 +1,13 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
+using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
+using System.Net;
+using System.Text.RegularExpressions;
 
 namespace RoboRent_BE.Service.Services;
 
@@ -15,6 +18,8 @@ public class ContractDraftsService : IContractDraftsService
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly IContractTemplatesRepository _contractTemplatesRepository;
     private readonly IRentalRepository _rentalRepository;
+    private readonly IRentalDetailRepository _rentalDetailRepository;
+    private readonly IGroupScheduleRepository _groupScheduleRepository;
     private readonly IPaymentService _paymentService;
     private readonly IMapper _mapper;
 
@@ -24,6 +29,8 @@ public class ContractDraftsService : IContractDraftsService
         IDraftClausesRepository draftClausesRepository,
         IContractTemplatesRepository contractTemplatesRepository,
         IRentalRepository rentalRepository,
+        IRentalDetailRepository rentalDetailRepository,
+        IGroupScheduleRepository groupScheduleRepository,
         IPaymentService paymentService,
         IMapper mapper)
     {
@@ -32,6 +39,8 @@ public class ContractDraftsService : IContractDraftsService
         _draftClausesRepository = draftClausesRepository;
         _contractTemplatesRepository = contractTemplatesRepository;
         _rentalRepository = rentalRepository;
+        _rentalDetailRepository = rentalDetailRepository;
+        _groupScheduleRepository = groupScheduleRepository;
         _paymentService = paymentService;
         _mapper = mapper;
     }
@@ -143,6 +152,12 @@ public class ContractDraftsService : IContractDraftsService
                 // Get the whole body JSON from contract template (always use template's BodyJson when template is provided)
                 contractDraft.BodyJson = contractTemplate.BodyJson;
             }
+        }
+        
+        // Populate the table in "Điều 2" with rental details if rental ID is provided and body JSON exists
+        if (request.RentalId.HasValue && !string.IsNullOrWhiteSpace(contractDraft.BodyJson))
+        {
+            contractDraft.BodyJson = await PopulateTableWithRentalDetailsAsync(contractDraft.BodyJson, request.RentalId.Value);
         }
         
         var createdContractDraft = await _contractDraftsRepository.AddAsync(contractDraft);
@@ -906,6 +921,119 @@ public class ContractDraftsService : IContractDraftsService
 
         var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
         return _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
+    }
+
+    /// <summary>
+    /// Populates the table in "Điều 2" section with rental details.
+    /// </summary>
+    private async Task<string> PopulateTableWithRentalDetailsAsync(string bodyJson, int rentalId)
+    {
+        if (string.IsNullOrWhiteSpace(bodyJson))
+            return bodyJson;
+
+        try
+        {
+            // Get rental details with included RoboType and Rental
+            var rentalDetails = await _rentalDetailRepository.GetRentalDetailsByRentalIdAsync(rentalId);
+            if (rentalDetails == null || !rentalDetails.Any())
+                return bodyJson;
+
+            // Get GroupSchedule (EventSchedule) for start time and end time
+            var groupSchedule = await _groupScheduleRepository.GetByRentalAsync(rentalId);
+
+            // Group rental details by RoboTypeId and count quantity
+            // Include all rental details even if some info is missing (as per user requirement)
+            var groupedDetails = rentalDetails
+                .GroupBy(rd => rd.RoboTypeId)
+                .Select(g => new
+                {
+                    RoboTypeId = g.Key,
+                    RobotTypeName = g.First().RoboType?.TypeName ?? string.Empty,
+                    Quantity = g.Count()
+                })
+                .Where(g => g.RoboTypeId.HasValue) // Only filter out if RoboTypeId is null
+                .ToList();
+
+            if (!groupedDetails.Any())
+                return bodyJson;
+
+            // Format time as [HH:mm-HH:mm] from GroupSchedule (EventSchedule)
+            string timeRange = string.Empty;
+            if (groupSchedule != null && groupSchedule.StartTime.HasValue && groupSchedule.EndTime.HasValue)
+            {
+                var startTime = groupSchedule.StartTime.Value;
+                var endTime = groupSchedule.EndTime.Value;
+                timeRange = $"[{startTime.Hour:D2}:{startTime.Minute:D2}-{endTime.Hour:D2}:{endTime.Minute:D2}]";
+            }
+
+            // Build table rows HTML
+            var tableRows = new System.Text.StringBuilder();
+            int rowNumber = 1;
+            
+            foreach (var detail in groupedDetails)
+            {
+                // HTML encode the robot type name to prevent XSS and handle special characters
+                var robotTypeName = WebUtility.HtmlEncode(detail.RobotTypeName ?? string.Empty);
+                
+                tableRows.AppendLine($@"			<tr>
+				<td>
+					<p>{rowNumber}</p>
+				</td>
+				<td>
+					<p>{robotTypeName}</p>
+				</td>
+				<td>
+					<p>{detail.Quantity}</p>
+				</td>
+				<td>
+					<p>{timeRange}</p>
+				</td>
+				<td>
+					<p>&nbsp;</p>
+				</td>
+			</tr>");
+                rowNumber++;
+            }
+
+            // Find the table within "Điều 2" section and replace data rows
+            // Look for "Điều 2" and find the table after it
+            var dieu2Index = bodyJson.IndexOf("Điều 2", StringComparison.OrdinalIgnoreCase);
+            if (dieu2Index < 0)
+                return bodyJson;
+
+            var afterDieu2 = bodyJson.Substring(dieu2Index);
+            
+            // Find the table tag that contains "STT" (header row)
+            var tablePattern = @"<table[^>]*>.*?<tbody>.*?(<tr[^>]*>.*?STT.*?</tr>)";
+            var tableMatch = Regex.Match(afterDieu2, tablePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (!tableMatch.Success)
+                return bodyJson;
+
+            // Find where the header row ends
+            var headerRowEnd = dieu2Index + tableMatch.Index + tableMatch.Length;
+            
+            // Find </tbody> to know where to stop replacing (skip all existing data rows)
+            var afterHeaderRow = bodyJson.Substring(headerRowEnd);
+            var tbodyEndPattern = @"</tbody>\s*";
+            var tbodyEndMatch = Regex.Match(afterHeaderRow, tbodyEndPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (!tbodyEndMatch.Success)
+                return bodyJson;
+
+            // Replace everything between header row end and </tbody> with new rows
+            var replaceStart = headerRowEnd;
+            var replaceEnd = headerRowEnd + tbodyEndMatch.Index;
+            
+            bodyJson = bodyJson.Substring(0, replaceStart) + 
+                       tableRows.ToString() + 
+                       bodyJson.Substring(replaceEnd);
+
+            return bodyJson;
+        }
+        catch (Exception)
+        {
+            // If any error occurs, return original bodyJson
+            return bodyJson;
+        }
     }
 }
 
