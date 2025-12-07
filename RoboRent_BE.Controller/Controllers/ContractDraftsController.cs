@@ -493,16 +493,16 @@ public class ContractDraftsController : ControllerBase
     }
 
     /// <summary>
-    /// Manager rejects the contract
+    /// Manager cancels the contract
     /// </summary>
-    [HttpPatch("{id}/manager-reject")]
+    [HttpPatch("{id}/manager-cancel")]
     [Authorize]
-    public async Task<IActionResult> ManagerRejectContract(int id, [FromBody] ManagerRejectRequest request)
+    public async Task<IActionResult> ManagerCancelContract(int id, [FromBody] ManagerCancelRequest request)
     {
         try
         {
             var managerId = GetCurrentUserId();
-            var result = await _contractDraftsService.ManagerRejectContractAsync(id, request, managerId);
+            var result = await _contractDraftsService.ManagerCancelContractAsync(id, request, managerId);
             
             if (result == null)
             {
@@ -517,7 +517,7 @@ public class ContractDraftsController : ControllerBase
             {
                 success = true,
                 data = result,
-                message = "Contract rejected by manager"
+                message = "Contract cancelled by manager"
             });
         }
         catch (UnauthorizedAccessException e)
