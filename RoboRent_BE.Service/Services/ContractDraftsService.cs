@@ -154,7 +154,8 @@ public class ContractDraftsService : IContractDraftsService
             }
         }
         
-        // Populate the table in "Điều 2" with rental details if rental ID is provided and body JSON exists
+        // Populate the table with rental details if rental ID is provided and body JSON exists
+        // The method will find any table containing "STT" header, regardless of which "Điều" it's in
         if (request.RentalId.HasValue && !string.IsNullOrWhiteSpace(contractDraft.BodyJson))
         {
             contractDraft.BodyJson = await PopulateTableWithRentalDetailsAsync(contractDraft.BodyJson, request.RentalId.Value);
@@ -924,7 +925,8 @@ public class ContractDraftsService : IContractDraftsService
     }
 
     /// <summary>
-    /// Populates the table in "Điều 2" section with rental details.
+    /// Populates the table containing "STT" header with rental details.
+    /// The method searches for any table with "STT" in its header row, regardless of which "Điều" section it's in.
     /// </summary>
     private async Task<string> PopulateTableWithRentalDetailsAsync(string bodyJson, int rentalId)
     {
@@ -995,22 +997,15 @@ public class ContractDraftsService : IContractDraftsService
                 rowNumber++;
             }
 
-            // Find the table within "Điều 2" section and replace data rows
-            // Look for "Điều 2" and find the table after it
-            var dieu2Index = bodyJson.IndexOf("Điều 2", StringComparison.OrdinalIgnoreCase);
-            if (dieu2Index < 0)
-                return bodyJson;
-
-            var afterDieu2 = bodyJson.Substring(dieu2Index);
-            
-            // Find the table tag that contains "STT" (header row)
+            // Find any table that contains "STT" in its header row (regardless of which "Điều" it's in)
+            // This makes the solution flexible and works for tables in Điều 2, Điều 3, or any other section
             var tablePattern = @"<table[^>]*>.*?<tbody>.*?(<tr[^>]*>.*?STT.*?</tr>)";
-            var tableMatch = Regex.Match(afterDieu2, tablePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var tableMatch = Regex.Match(bodyJson, tablePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
             if (!tableMatch.Success)
                 return bodyJson;
 
             // Find where the header row ends
-            var headerRowEnd = dieu2Index + tableMatch.Index + tableMatch.Length;
+            var headerRowEnd = tableMatch.Index + tableMatch.Length;
             
             // Find </tbody> to know where to stop replacing (skip all existing data rows)
             var afterHeaderRow = bodyJson.Substring(headerRowEnd);
