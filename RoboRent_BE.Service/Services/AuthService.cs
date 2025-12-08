@@ -138,7 +138,7 @@ public class AuthService : IAuthService
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var verifyUrl = buildVerifyUrl(user.Id, token);
-            var html = $"<p>Hi {fullNameFinal},</p><p>Please verify your account:</p><p><a href=\"{verifyUrl}\">Verify Account</a></p>";
+            var html = GenerateVerificationEmailHtml(fullNameFinal, verifyUrl);
             await _emailService.SendEmailAsync(user.Email!, "Verify your RoboRent account", html);
         }
 
@@ -220,5 +220,89 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(jwtToken);
+    }
+
+    private string GenerateVerificationEmailHtml(string? fullName, string verifyUrl)
+    {
+        var displayName = !string.IsNullOrEmpty(fullName) ? fullName : "there";
+        
+        return $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Verify Your RoboRent Account</title>
+</head>
+<body style=""margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;"">
+    <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""100%"" style=""background-color: #f5f5f5;"">
+        <tr>
+            <td align=""center"" style=""padding: 40px 20px;"">
+                <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""600"" style=""max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);"">
+                    <!-- Header -->
+                    <tr>
+                        <td style=""background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 40px 30px; text-align: center; border-radius: 8px 8px 0 0;"">
+                            <h1 style=""margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: 2px; font-family: 'Orbitron', 'Helvetica Neue', Arial, sans-serif;"">
+                                ROBORENT
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style=""padding: 40px 40px 30px;"">
+                            <h2 style=""margin: 0 0 20px 0; color: #1e293b; font-size: 24px; font-weight: 600;"">
+                                Welcome to RoboRent!
+                            </h2>
+                            
+                            <p style=""margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;"">
+                                Hi {displayName},
+                            </p>
+                            
+                            <p style=""margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;"">
+                                Thank you for joining RoboRent! We're excited to have you on board. To get started and access all our features, please verify your email address by clicking the button below.
+                            </p>
+                            
+                            <!-- Verify Button -->
+                            <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""100%"" style=""margin: 30px 0;"">
+                                <tr>
+                                    <td align=""center"" style=""padding: 0;"">
+                                        <a href=""{verifyUrl}"" style=""display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; transition: background-color 0.3s;"">
+                                            Verify Your Account
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style=""margin: 20px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;"">
+                                If the button doesn't work, you can copy and paste this link into your browser:
+                            </p>
+                            <p style=""margin: 10px 0 0 0; color: #2563eb; font-size: 14px; word-break: break-all; line-height: 1.6;"">
+                                <a href=""{verifyUrl}"" style=""color: #2563eb; text-decoration: underline;"">{verifyUrl}</a>
+                            </p>
+                            
+                            <p style=""margin: 30px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;"">
+                                This verification link will expire in 24 hours for security reasons.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style=""padding: 30px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 8px 8px;"">
+                            <p style=""margin: 0 0 10px 0; color: #64748b; font-size: 14px; line-height: 1.6; text-align: center;"">
+                                If you didn't create an account with RoboRent, you can safely ignore this email.
+                            </p>
+                            <p style=""margin: 20px 0 0 0; color: #94a3b8; font-size: 12px; line-height: 1.6; text-align: center;"">
+                                © {DateTime.Now.Year} RoboRent. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
     }
 }
