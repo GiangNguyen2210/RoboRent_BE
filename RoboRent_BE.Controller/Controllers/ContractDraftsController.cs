@@ -808,5 +808,123 @@ public class ContractDraftsController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Send verification code to customer email for contract signing
+    /// </summary>
+    [HttpPost("{id}/send-verification-code")]
+    [Authorize]
+    public async Task<IActionResult> SendVerificationCode(int id)
+    {
+        try
+        {
+            var customerId = GetCurrentUserId();
+            var result = await _contractDraftsService.SendVerificationCodeAsync(id, customerId);
+            
+            if (!result)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Failed to send verification code"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Verification code sent to your email. Please check your inbox."
+            });
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Verify the code sent to customer email
+    /// </summary>
+    [HttpPost("{id}/verify-code")]
+    [Authorize]
+    public async Task<IActionResult> VerifyCode(int id, [FromBody] VerifyCodeRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        try
+        {
+            var customerId = GetCurrentUserId();
+            var result = await _contractDraftsService.VerifyCodeAsync(id, request.Code, customerId);
+            
+            if (!result)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Code verification failed"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Code verified successfully. You can now sign the contract."
+            });
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }
 

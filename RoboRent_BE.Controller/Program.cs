@@ -61,6 +61,8 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddControllers();
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddRepositories().AddServices();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));

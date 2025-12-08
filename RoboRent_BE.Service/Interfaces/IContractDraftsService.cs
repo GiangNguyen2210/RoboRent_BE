@@ -26,5 +26,9 @@ public interface IContractDraftsService
     Task<IEnumerable<ContractDraftsResponse>> GetChangeRequestedContractsAsync();
     Task<ContractDraftsResponse?> SendToManagerAsync(int id, int staffId);
     Task<ContractDraftsResponse?> ReviseContractAsync(int id, UpdateContractDraftsRequest request, int staffId);
+    
+    // OTP Verification methods for customer signing
+    Task<bool> SendVerificationCodeAsync(int contractDraftId, int customerId);
+    Task<bool> VerifyCodeAsync(int contractDraftId, string code, int customerId);
 }
 
