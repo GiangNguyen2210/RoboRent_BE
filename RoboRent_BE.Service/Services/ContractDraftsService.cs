@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.Entities;
@@ -21,6 +22,8 @@ public class ContractDraftsService : IContractDraftsService
     private readonly IRentalDetailRepository _rentalDetailRepository;
     private readonly IGroupScheduleRepository _groupScheduleRepository;
     private readonly IPaymentService _paymentService;
+    private readonly IEmailService _emailService;
+    private readonly IMemoryCache _memoryCache;
     private readonly IMapper _mapper;
 
     public ContractDraftsService(
@@ -32,6 +35,8 @@ public class ContractDraftsService : IContractDraftsService
         IRentalDetailRepository rentalDetailRepository,
         IGroupScheduleRepository groupScheduleRepository,
         IPaymentService paymentService,
+        IEmailService emailService,
+        IMemoryCache memoryCache,
         IMapper mapper)
     {
         _contractDraftsRepository = contractDraftsRepository;
@@ -42,6 +47,8 @@ public class ContractDraftsService : IContractDraftsService
         _rentalDetailRepository = rentalDetailRepository;
         _groupScheduleRepository = groupScheduleRepository;
         _paymentService = paymentService;
+        _emailService = emailService;
+        _memoryCache = memoryCache;
         _mapper = mapper;
     }
 
@@ -681,6 +688,21 @@ public class ContractDraftsService : IContractDraftsService
         if (rental == null || rental.AccountId != customerId)
             throw new UnauthorizedAccessException("You are not authorized to sign this contract");
 
+        // Check if OTP is verified and not expired (must sign within 5 minutes after verification)
+        var verificationKey = $"verified_{id}_{customerId}";
+        if (!_memoryCache.TryGetValue(verificationKey, out VerificationData? verificationData) || verificationData == null)
+            throw new InvalidOperationException("Email verification required. Please request and verify the code before signing the contract.");
+
+        // Check if verification has expired (5 minutes after verification)
+        if (DateTime.UtcNow > verificationData.ExpiresAt)
+        {
+            _memoryCache.Remove(verificationKey);
+            throw new InvalidOperationException("Verification has expired. Please request and verify the code again before signing the contract.");
+        }
+
+        // Remove verification after successful signature
+        _memoryCache.Remove(verificationKey);
+
         // Add customer signature to contract (right side)
         contractDraft.BodyJson = AddSignatureToContract(contractDraft.BodyJson ?? "", request.Signature, "right");
 
@@ -1029,6 +1051,219 @@ public class ContractDraftsService : IContractDraftsService
             // If any error occurs, return original bodyJson
             return bodyJson;
         }
+    }
+
+    public async Task<bool> SendVerificationCodeAsync(int contractDraftId, int customerId)
+    {
+        // Validate contract draft and customer
+        var contractDraft = await _contractDraftsRepository.GetAsync(
+            cd => cd.Id == contractDraftId,
+            "ContractTemplate,Rental,Staff,Manager");
+        
+        if (contractDraft == null)
+            throw new InvalidOperationException("Contract draft not found");
+
+        // Validate status
+        if (contractDraft.Status != "PendingCustomerSignature")
+            throw new InvalidOperationException("Contract is not in PendingCustomerSignature status");
+
+        // Get rental to check customer
+        var dbContext = _contractDraftsRepository.GetDbContext();
+        var rental = await dbContext.Rentals
+            .Include(r => r.Account)
+            .ThenInclude(a => a.ModifyIdentityUser)
+            .FirstOrDefaultAsync(r => r.Id == contractDraft.RentalId);
+        
+        if (rental == null || rental.AccountId != customerId)
+            throw new UnauthorizedAccessException("You are not authorized to request verification code for this contract");
+
+        // Get customer email from user account
+        var userEmail = rental.Account?.ModifyIdentityUser?.Email;
+        if (string.IsNullOrEmpty(userEmail))
+            throw new InvalidOperationException("Customer email not found");
+
+        var customerName = rental.Account?.FullName ?? "Customer";
+
+        // Generate 6-digit OTP (1 to 999999)
+        var random = new Random();
+        var otpCode = random.Next(1, 1000000).ToString("D6");
+
+        // Store OTP in memory cache with 5 minute expiration
+        var cacheKey = $"otp_{contractDraftId}_{customerId}";
+        var otpData = new OtpData
+        {
+            Code = otpCode,
+            ContractDraftId = contractDraftId,
+            CustomerId = customerId,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+        };
+
+        _memoryCache.Set(cacheKey, otpData, TimeSpan.FromMinutes(5));
+
+        // Send email with OTP
+        var emailHtml = GenerateOtpEmailHtml(customerName, otpCode);
+        await _emailService.SendEmailAsync(userEmail, "Contract Signing Verification Code", emailHtml);
+
+        return true;
+    }
+
+    public async Task<bool> VerifyCodeAsync(int contractDraftId, string code, int customerId)
+    {
+        // Validate contract draft and customer
+        var contractDraft = await _contractDraftsRepository.GetAsync(
+            cd => cd.Id == contractDraftId,
+            "ContractTemplate,Rental,Staff,Manager");
+        
+        if (contractDraft == null)
+            throw new InvalidOperationException("Contract draft not found");
+
+        // Validate status
+        if (contractDraft.Status != "PendingCustomerSignature")
+            throw new InvalidOperationException("Contract is not in PendingCustomerSignature status");
+
+        // Get rental to check customer
+        var dbContext = _contractDraftsRepository.GetDbContext();
+        var rental = await dbContext.Rentals
+            .FirstOrDefaultAsync(r => r.Id == contractDraft.RentalId);
+        
+        if (rental == null || rental.AccountId != customerId)
+            throw new UnauthorizedAccessException("You are not authorized to verify code for this contract");
+
+        // Check OTP from cache
+        var cacheKey = $"otp_{contractDraftId}_{customerId}";
+        if (!_memoryCache.TryGetValue(cacheKey, out OtpData? otpData) || otpData == null)
+            throw new InvalidOperationException("Verification code not found or expired. Please request a new code.");
+
+        // Validate code
+        if (otpData.Code != code)
+            throw new InvalidOperationException("Invalid verification code.");
+
+        // Check if OTP is expired
+        if (DateTime.UtcNow > otpData.ExpiresAt)
+        {
+            _memoryCache.Remove(cacheKey);
+            throw new InvalidOperationException("Verification code has expired. Please request a new code.");
+        }
+
+        // Remove OTP from cache and store verification status (valid for 5 minutes after verification)
+        _memoryCache.Remove(cacheKey);
+        var verificationKey = $"verified_{contractDraftId}_{customerId}";
+        var verificationData = new VerificationData
+        {
+            ContractDraftId = contractDraftId,
+            CustomerId = customerId,
+            VerifiedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5) // Must sign within 5 minutes
+        };
+        _memoryCache.Set(verificationKey, verificationData, TimeSpan.FromMinutes(5));
+
+        return true;
+    }
+
+    private string GenerateOtpEmailHtml(string? customerName, string otpCode)
+    {
+        var displayName = !string.IsNullOrEmpty(customerName) ? customerName : "there";
+        
+        return $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Contract Signing Verification Code</title>
+</head>
+<body style=""margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;"">
+    <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""100%"" style=""background-color: #f5f5f5;"">
+        <tr>
+            <td align=""center"" style=""padding: 40px 20px;"">
+                <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""600"" style=""max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);"">
+                    <!-- Header -->
+                    <tr>
+                        <td style=""background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 40px 30px; text-align: center; border-radius: 8px 8px 0 0;"">
+                            <h1 style=""margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: 2px; font-family: 'Orbitron', 'Helvetica Neue', Arial, sans-serif;"">
+                                ROBORENT
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style=""padding: 40px 40px 30px;"">
+                            <h2 style=""margin: 0 0 20px 0; color: #1e293b; font-size: 24px; font-weight: 600;"">
+                                Contract Signing Verification
+                            </h2>
+                            
+                            <p style=""margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;"">
+                                Hi {displayName},
+                            </p>
+                            
+                            <p style=""margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;"">
+                                You are about to sign a contract. Please use the verification code below to complete the signing process.
+                            </p>
+                            
+                            <!-- OTP Code Display -->
+                            <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""100%"" style=""margin: 30px 0;"">
+                                <tr>
+                                    <td align=""center"" style=""padding: 0;"">
+                                        <div style=""display: inline-block; padding: 20px 40px; background-color: #f8fafc; border: 2px solid #2563eb; border-radius: 8px; text-align: center;"">
+                                            <div style=""color: #2563eb; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;"">
+                                                {otpCode}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style=""margin: 20px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;"">
+                                Enter this code in the verification form to proceed with signing your contract.
+                            </p>
+                            
+                            <p style=""margin: 20px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;"">
+                                This verification code will expire in 5 minutes for security reasons.
+                            </p>
+                            
+                            <p style=""margin: 30px 0 0 0; color: #ef4444; font-size: 14px; line-height: 1.6; font-weight: 600;"">
+                                ⚠️ Important: After entering the code, you must sign the contract within 5 minutes. If you don't sign within this time, you'll need to verify again.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style=""padding: 30px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 8px 8px;"">
+                            <p style=""margin: 0 0 10px 0; color: #64748b; font-size: 14px; line-height: 1.6; text-align: center;"">
+                                If you didn't request this verification code, please ignore this email or contact support if you have concerns.
+                            </p>
+                            <p style=""margin: 20px 0 0 0; color: #94a3b8; font-size: 12px; line-height: 1.6; text-align: center;"">
+                                © {DateTime.Now.Year} RoboRent. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+    }
+
+    // Helper classes for OTP storage
+    private class OtpData
+    {
+        public string Code { get; set; } = string.Empty;
+        public int ContractDraftId { get; set; }
+        public int CustomerId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
+
+    private class VerificationData
+    {
+        public int ContractDraftId { get; set; }
+        public int CustomerId { get; set; }
+        public DateTime VerifiedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
     }
 }
 
