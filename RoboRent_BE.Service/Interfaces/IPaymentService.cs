@@ -20,4 +20,7 @@ public interface IPaymentService
     // PayOS Integration (moved from PayOSService)
     Task<PaymentLinkInformation> GetPaymentLinkInformationAsync(long orderCode);
     Task<PaymentLinkInformation> CancelPaymentLinkAsync(long orderCode, string cancellationReason = null);
+    
+    // Expiration
+    Task ExpirePendingPaymentsAsync();
 }
