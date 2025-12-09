@@ -48,4 +48,14 @@ public class PaymentRecordRepository : GenericRepository<PaymentRecord>, IPaymen
             .FirstOrDefaultAsync();
         return last;
     }
+    
+    public async Task<IEnumerable<PaymentRecord>> GetExpiredPaymentRecordsAsync()
+    {
+        var now = DateTime.UtcNow;
+        return await _dbContext.PaymentRecords
+            .Where(pr => pr.Status == "Pending" 
+                         && pr.ExpiredAt.HasValue 
+                         && pr.ExpiredAt.Value <= now)
+            .ToListAsync();
+    }
 }
