@@ -304,9 +304,11 @@ public class ContractDraftsService : IContractDraftsService
                 // Check if manager signature already exists
                 if (bodyJson.Contains("Manager Signature:"))
                 {
-                    // Replace existing manager signature using regex
-                    var pattern = @"<div style=""flex: 1; text-align: left[^>]*>.*?Manager Signature:.*?</div>\s*</div>\s*</div>";
-                    bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, managerSignatureDiv, System.Text.RegularExpressions.RegexOptions.Singleline);
+                    // Replace existing manager signature using improved regex
+                    // Matches: opening div with style, then nested divs until we find "Manager Signature:", 
+                    // then matches all content until we close all 3 inner divs and the outer div
+                    var pattern = @"<div style=""flex: 1; text-align: left[^>]*>[\s\S]*?Manager Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
+                    bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, managerSignatureDiv, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                 }
                 else
                 {
@@ -440,11 +442,12 @@ public class ContractDraftsService : IContractDraftsService
             return bodyJson;
 
         // Replace manager signature with empty placeholder
+        // Use same font-size (30px) as AddSignatureToContract for consistency
         var emptyManagerSignatureDiv = @"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
         <div style=""margin-bottom: 10px;"">
             <strong>Manager Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+        <div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
             &nbsp;
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
@@ -452,9 +455,11 @@ public class ContractDraftsService : IContractDraftsService
         </div>
     </div>";
 
-        // Remove existing manager signature using regex
-        var pattern = @"<div style=""flex: 1; text-align: left[^>]*>.*?Manager Signature:.*?</div>\s*</div>\s*</div>";
-        bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, emptyManagerSignatureDiv, System.Text.RegularExpressions.RegexOptions.Singleline);
+        // Improved regex pattern to match the nested div structure more reliably
+        // Matches: opening div with style, then nested divs until we find "Manager Signature:", 
+        // then matches all content until we close all 3 inner divs and the outer div
+        var pattern = @"<div style=""flex: 1; text-align: left[^>]*>[\s\S]*?Manager Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
+        bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, emptyManagerSignatureDiv, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         return bodyJson;
     }
