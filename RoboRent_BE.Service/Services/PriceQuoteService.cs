@@ -65,7 +65,6 @@ public class PriceQuoteService : IPriceQuoteService
         var quote = new PriceQuote
         {
             RentalId = request.RentalId,
-            Delivery = request.Delivery,
             Deposit = request.Deposit,
             Complete = request.Complete,
             Service = request.Service,
@@ -250,7 +249,6 @@ public class PriceQuoteService : IPriceQuoteService
         }
 
         // Update fields
-        if (request.Delivery.HasValue) quote.Delivery = request.Delivery;
         if (request.Deposit.HasValue) quote.Deposit = request.Deposit;
         if (request.Complete.HasValue) quote.Complete = request.Complete;
         if (request.Service.HasValue) quote.Service = request.Service;
@@ -280,7 +278,7 @@ public class PriceQuoteService : IPriceQuoteService
                 .ToList();
     
             var quoteNumber = allRentalQuotes.IndexOf(pq.Id) + 1;
-            var total = (pq.Delivery ?? 0) + (pq.Deposit ?? 0) + (pq.Complete ?? 0) + (pq.Service ?? 0);
+            var total = (pq.Deposit ?? 0) + (pq.Complete ?? 0) + (pq.Service ?? 0) + (double)(pq.DeliveryFee ?? 0);
 
             return new ManagerQuoteListItemResponse
             {
@@ -290,7 +288,8 @@ public class PriceQuoteService : IPriceQuoteService
                 CustomerName = pq.Rental?.Account?.FullName ?? "Unknown",
                 PackageName = pq.Rental?.ActivityType?.Name ?? "Unknown",        // ✅ FIX
                 EventDate = pq.Rental?.EventDate?.ToString("MMM dd, yyyy") ?? "TBD", // ✅ FIX
-                Delivery = pq.Delivery,
+                DeliveryFee = (double?)pq.DeliveryFee,
+                DeliveryDistance = pq.DeliveryDistance,
                 Deposit = pq.Deposit,
                 Complete = pq.Complete,
                 Service = pq.Service,
@@ -306,13 +305,12 @@ public class PriceQuoteService : IPriceQuoteService
     // Helper method
     private PriceQuoteResponse MapToPriceQuoteResponse(PriceQuote quote, int quoteNumber)
     {
-        var total = (quote.Delivery ?? 0) + (quote.Deposit ?? 0) + (quote.Complete ?? 0) + (quote.Service ?? 0) + (double)(quote.DeliveryFee ?? 0);
+        var total = (quote.Deposit ?? 0) + (quote.Complete ?? 0) + (quote.Service ?? 0) + (double)(quote.DeliveryFee ?? 0);
 
         return new PriceQuoteResponse
         {
             Id = quote.Id,
             RentalId = quote.RentalId,
-            Delivery = quote.Delivery,
             Deposit = quote.Deposit,
             Complete = quote.Complete,
             Service = quote.Service,

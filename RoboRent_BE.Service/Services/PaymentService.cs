@@ -346,7 +346,7 @@ public class PaymentService : IPaymentService
 
     private int CalculateDepositAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
                                   (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
 
         if (total <= 0)
@@ -362,7 +362,7 @@ public class PaymentService : IPaymentService
 
     private int CalculateFullAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
                                   (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
 
         if (total <= 0)

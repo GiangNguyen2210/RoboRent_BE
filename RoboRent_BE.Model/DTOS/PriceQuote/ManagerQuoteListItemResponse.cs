@@ -12,7 +12,8 @@ public class ManagerQuoteListItemResponse
     public string EventDate { get; set; } = string.Empty;
     
     // Thông tin giá
-    public double? Delivery { get; set; }
+    public double? DeliveryFee { get; set; }
+    public int? DeliveryDistance { get; set; }
     public double? Deposit { get; set; }
     public double? Complete { get; set; }
     public double? Service { get; set; }

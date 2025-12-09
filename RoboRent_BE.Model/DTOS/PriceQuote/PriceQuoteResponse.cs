@@ -5,13 +5,12 @@ public class PriceQuoteResponse
 {
     public int Id { get; set; }
     public int RentalId { get; set; }
-    public double? Delivery { get; set; }
     public double? Deposit { get; set; }
     public double? Complete { get; set; }
     public double? Service { get; set; }
     public double? DeliveryFee { get; set; }       
     public int? DeliveryDistance { get; set; }  
-    public double Total { get; set; } // Calculated: Delivery + Deposit + Complete + Service
+    public double Total { get; set; } // Calculated: Deposit + Complete + Service + DeliveryFee
     public string? StaffDescription { get; set; }
     public string? ManagerFeedback { get; set; }
     public string? CustomerReason { get; set; }
