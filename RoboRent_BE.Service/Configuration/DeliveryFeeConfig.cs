@@ -3,8 +3,8 @@
 public static class DeliveryFeeConfig
 {
     // Base config
-    private const decimal HCM_FLAT_FEE = 200000m;
-    private const decimal RATE_PER_KM_ROUND_TRIP = 30000m; // 15k × 2
+    private const decimal HCM_FLAT_FEE = 7000m;
+    private const decimal RATE_PER_KM_ROUND_TRIP = 20m; // 15k × 2
 
     // Dictionary: Key = tên tỉnh/thành (y hệt API), Value = khoảng cách (km)
     private static readonly Dictionary<string, int> DistanceFromHCM = new()
