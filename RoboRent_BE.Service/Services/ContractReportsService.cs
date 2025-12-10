@@ -187,6 +187,9 @@ public class ContractReportsService : IContractReportsService
             throw new Exception($"PayOS error: {createPaymentResult.description}");
         }
 
+        // Calculate ExpiredAt from the expiredAt timestamp in paymentData
+        var expiredAt = DateTimeOffset.FromUnixTimeSeconds((long)paymentData.expiredAt).UtcDateTime;
+
         // Save PaymentRecord
         var paymentRecord = new PaymentRecord
         {
@@ -196,6 +199,8 @@ public class ContractReportsService : IContractReportsService
             OrderCode = newOrderCode,
             PaymentLinkId = createPaymentResult.paymentLinkId,
             Status = "Pending",
+            CheckoutUrl = createPaymentResult.checkoutUrl,
+            ExpiredAt = expiredAt,
             CreatedAt = DateTime.UtcNow
         };
 
