@@ -30,5 +30,8 @@ public interface IContractDraftsService
     // OTP Verification methods for customer signing
     Task<bool> SendVerificationCodeAsync(int contractDraftId, int customerId);
     Task<bool> VerifyCodeAsync(int contractDraftId, string code, int customerId);
+    
+    // Method to update BodyJson when draft clause is updated
+    Task UpdateBodyJsonFromDraftClauseAsync(int contractDraftId, int draftClauseId, string newTitle, string newBody);
 }
 
