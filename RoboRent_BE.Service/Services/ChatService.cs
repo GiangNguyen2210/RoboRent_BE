@@ -317,4 +317,29 @@ public class ChatService : IChatService
             return "Customer";
         return "System";
     }
+
+    public async Task MarkRentalMessagesAsReadAsync(int rentalId, int userId)
+    {
+        var room = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
+        
+        if (room == null)
+        {
+            throw new Exception($"Chat room not found for rental {rentalId}");
+        }
+
+        // Get unread messages efficiently (no GetAllAsync!)
+        var unreadMessages = await _chatMessageRepo.GetUnreadMessagesByRoomAndUserAsync(room.Id, userId);
+
+        // Mark them all as read in memory
+        foreach (var message in unreadMessages)
+        {
+            message.IsRead = true;
+        }
+
+        // Bulk update in single DB operation
+        if (unreadMessages.Any())
+        {
+            await _chatMessageRepo.UpdateRangeAsync(unreadMessages);
+        }
+    }
 }
