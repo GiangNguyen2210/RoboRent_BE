@@ -176,4 +176,22 @@ public class ChatController : ControllerBase
             return BadRequest(new { Message = "Failed to get chat rooms", Error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Mark all messages in a rental as read for current user
+    /// </summary>
+    [HttpPost("mark-rental-read/{rentalId}")]
+    public async Task<IActionResult> MarkRentalAsRead(int rentalId)
+    {
+        try
+        {
+            int userId = AuthHelper.GetCurrentUserId(User);
+            await _chatService.MarkRentalMessagesAsReadAsync(rentalId, userId);
+            return Ok(new { Message = "Messages marked as read" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to mark messages as read", Error = ex.Message });
+        }
+    }
 }

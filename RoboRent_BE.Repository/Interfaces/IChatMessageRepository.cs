@@ -9,4 +9,5 @@ public interface IChatMessageRepository : IGenericRepository<ChatMessage>
     Task<ChatMessage?> GetByIdWithDetailsAsync(int messageId);
     Task<int> CountUnreadMessagesAsync(int chatRoomId, int userId);
     Task MarkAsReadAsync(int messageId);
+    Task<List<ChatMessage>> GetUnreadMessagesByRoomAndUserAsync(int chatRoomId, int userId);
 }

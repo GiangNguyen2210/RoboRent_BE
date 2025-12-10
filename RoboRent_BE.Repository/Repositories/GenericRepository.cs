@@ -77,6 +77,13 @@ namespace RoboRent_BE.Repository.Repositories
             return entity;
         }
 
+        public async Task<T> UpdateRangeAsync(IEnumerable<T> entities)
+        {
+            _db.UpdateRange(entities);
+            await _db.SaveChangesAsync();
+            return entities.FirstOrDefault();
+        }
+
         public AppDbContext GetDbContext()
         {
             return _db;
