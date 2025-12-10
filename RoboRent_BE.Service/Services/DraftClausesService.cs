@@ -11,17 +11,20 @@ public class DraftClausesService : IDraftClausesService
     private readonly IDraftClausesRepository _draftClausesRepository;
     private readonly ITemplateClausesRepository _templateClausesRepository;
     private readonly IContractDraftsRepository _contractDraftsRepository;
+    private readonly IContractDraftsService _contractDraftsService;
     private readonly IMapper _mapper;
 
     public DraftClausesService(
         IDraftClausesRepository draftClausesRepository,
         ITemplateClausesRepository templateClausesRepository,
         IContractDraftsRepository contractDraftsRepository,
+        IContractDraftsService contractDraftsService,
         IMapper mapper)
     {
         _draftClausesRepository = draftClausesRepository;
         _templateClausesRepository = templateClausesRepository;
         _contractDraftsRepository = contractDraftsRepository;
+        _contractDraftsService = contractDraftsService;
         _mapper = mapper;
     }
 
@@ -192,12 +195,19 @@ public class DraftClausesService : IDraftClausesService
                 throw new InvalidOperationException("Contract draft not found.");
             }
 
-            // Only allow updates when contract draft status is "ChangeRequested", "Modified", or "Draft"
+            // Prevent updates if contract draft status is "Active"
             var status = contractDraft.Status;
+            if (status == "Active" || status == "Cancelled" || status == "Rejected")
+            {
+                throw new InvalidOperationException(
+                    "Cannot update draft clause.");
+            }
+
+            // Only allow updates when contract draft status is "ChangeRequested", "Modified", or "Draft"
             if (status != "ChangeRequested" && status != "Modified" && status != "Draft")
             {
                 throw new InvalidOperationException(
-                    $"Cannot update draft clause. Contract draft status must be one of: 'ChangeRequested', 'Modified', or 'Draft'. Current status: '{status ?? "null"}'");
+                    $"Cannot update draft clause. Contract draft status must be one of: 'ChangeRequested', 'Modified', or 'Draft'.");
             }
         }
         else
@@ -240,6 +250,25 @@ public class DraftClausesService : IDraftClausesService
         }
         
         var updatedDraftClause = await _draftClausesRepository.UpdateAsync(existingDraftClause);
+        
+        // Bug Fix: Update BodyJson of contract draft when draft clause is updated
+        if (contentChanged && contractDraftId.HasValue)
+        {
+            try
+            {
+                await _contractDraftsService.UpdateBodyJsonFromDraftClauseAsync(
+                    contractDraftId.Value, 
+                    updatedDraftClause.Id, 
+                    updatedDraftClause.Title ?? string.Empty, 
+                    updatedDraftClause.Body ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the update - the draft clause was already updated
+                // In a production system, you'd want to log this properly
+                System.Diagnostics.Debug.WriteLine($"Failed to update BodyJson from draft clause: {ex.Message}");
+            }
+        }
         
         return _mapper.Map<DraftClausesResponse>(updatedDraftClause);
     }

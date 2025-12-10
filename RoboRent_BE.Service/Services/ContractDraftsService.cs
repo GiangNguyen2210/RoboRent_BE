@@ -203,6 +203,12 @@ public class ContractDraftsService : IContractDraftsService
         if (existingContractDraft == null)
             return null;
 
+        // Prevent updates if contract draft status is "Active"
+        if (existingContractDraft.Status == "Active"|| existingContractDraft.Status == "Cancelled" || existingContractDraft.Status == "Rejected")
+        {
+            throw new InvalidOperationException("Cannot update contract draft.");
+        }
+
         // Validate that no non-editable clauses have been modified
         await ValidateDraftClausesEditableAsync(request.Id);
 
@@ -301,14 +307,41 @@ public class ContractDraftsService : IContractDraftsService
         </div>
     </div>";
 
-                // Check if manager signature already exists
+                // Check if manager signature already exists (including placeholder)
                 if (bodyJson.Contains("Manager Signature:"))
                 {
-                    // Replace existing manager signature using improved regex
-                    // Matches: opening div with style, then nested divs until we find "Manager Signature:", 
-                    // then matches all content until we close all 3 inner divs and the outer div
-                    var pattern = @"<div style=""flex: 1; text-align: left[^>]*>[\s\S]*?Manager Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
-                    bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, managerSignatureDiv, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    // Improved regex pattern to match manager signature div more reliably
+                    // This pattern handles both signed signatures and empty placeholders
+                    // Matches from opening div with left alignment until we find all closing divs
+                    var pattern = @"<div\s+style=""flex:\s*1;\s*text-align:\s*left[^""]*""[^>]*>[\s\S]*?Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
+                    bodyJson = Regex.Replace(bodyJson, pattern, managerSignatureDiv, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                    
+                    // If pattern didn't match (might be due to formatting differences), try a more aggressive replacement
+                    if (bodyJson.Contains("Manager Signature:"))
+                    {
+                        // Find the index of "Manager Signature:" and work backwards/forwards to replace the entire div
+                        var managerIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
+                        if (managerIndex > 0)
+                        {
+                            // Find the start of the parent div (look backwards for "<div style=""flex: 1; text-align: left")
+                            var beforeManager = bodyJson.Substring(0, managerIndex);
+                            var divStartPattern = @"<div\s+style=""[^""]*flex:\s*1[^""]*text-align:\s*left[^""]*""[^>]*>";
+                            var divStartMatch = Regex.Match(beforeManager, divStartPattern, RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
+                            if (divStartMatch.Success)
+                            {
+                                var divStartIndex = divStartMatch.Index;
+                                // Find the end: match 4 closing </div> tags after Manager Signature
+                                var afterManager = bodyJson.Substring(divStartIndex);
+                                var divEndPattern = @"Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
+                                var divEndMatch = Regex.Match(afterManager, divEndPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                                if (divEndMatch.Success)
+                                {
+                                    var divEndIndex = divStartIndex + divEndMatch.Index + divEndMatch.Length;
+                                    bodyJson = bodyJson.Substring(0, divStartIndex) + managerSignatureDiv + bodyJson.Substring(divEndIndex);
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -539,6 +572,101 @@ public class ContractDraftsService : IContractDraftsService
     }
 
     /// <summary>
+    /// Update BodyJson of contract draft when a draft clause is updated.
+    /// This method finds the clause in BodyJson by template clause ID and updates its title and body.
+    /// </summary>
+    public async Task UpdateBodyJsonFromDraftClauseAsync(int contractDraftId, int draftClauseId, string newTitle, string newBody)
+    {
+        var contractDraft = await _contractDraftsRepository.GetAsync(cd => cd.Id == contractDraftId);
+        if (contractDraft == null || string.IsNullOrWhiteSpace(contractDraft.BodyJson))
+            return;
+
+        var draftClause = await _draftClausesRepository.GetAsync(dc => dc.Id == draftClauseId, "TemplateClause");
+        if (draftClause == null || draftClause.TemplateClausesId == null)
+            return; // Only update BodyJson for clauses linked to template clauses
+
+        var templateClauseId = draftClause.TemplateClausesId.Value;
+        var bodyJson = contractDraft.BodyJson;
+
+        // Find the clause section in BodyJson by template clause ID
+        var clauseSection = GetClauseSectionByTemplateClauseId(bodyJson, templateClauseId);
+        if (clauseSection == null)
+            return; // Clause not found in BodyJson
+
+        var (oldHeaderHtml, oldBodyHtml) = clauseSection.Value;
+
+        // Build new header HTML with updated title
+        // Extract the existing header structure but replace the title content
+        var headerMatch = Regex.Match(oldHeaderHtml, @"(<p>\s*<strong[^>]*>)(.*?)(</strong>\s*</p>)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        if (headerMatch.Success)
+        {
+            var newHeaderHtml = headerMatch.Groups[1].Value + newTitle + headerMatch.Groups[3].Value;
+            
+            // Find the start and end indices of the clause section
+            var clauseIdPattern = $@"data-clause-id=[""']?{templateClauseId}[""']?";
+            var clauseIdMatch = Regex.Match(bodyJson, clauseIdPattern, RegexOptions.IgnoreCase);
+            if (clauseIdMatch.Success)
+            {
+                var beforeClauseId = bodyJson[..clauseIdMatch.Index];
+                var paragraphStart = beforeClauseId.LastIndexOf("<p>", StringComparison.OrdinalIgnoreCase);
+                if (paragraphStart == -1)
+                {
+                    paragraphStart = beforeClauseId.LastIndexOf("<p ", StringComparison.OrdinalIgnoreCase);
+                }
+                
+                if (paragraphStart != -1)
+                {
+                    var clauseStartIndex = paragraphStart;
+                    var headerEndPattern = @"</strong>\s*</p>";
+                    var headerEndMatch = Regex.Match(
+                        bodyJson[clauseStartIndex..],
+                        headerEndPattern,
+                        RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                    
+                    if (headerEndMatch.Success)
+                    {
+                        var headerEndIndex = clauseStartIndex + headerEndMatch.Index + headerEndMatch.Length;
+                        
+                        // Find end of the clause body
+                        var nextClausePattern = @"<p>\s*<strong[^>]*>\s*Điều";
+                        var nextClauseMatch = Regex.Match(
+                            bodyJson[headerEndIndex..],
+                            nextClausePattern,
+                            RegexOptions.IgnoreCase);
+                        
+                        int clauseEndIndex;
+                        if (nextClauseMatch.Success)
+                        {
+                            clauseEndIndex = headerEndIndex + nextClauseMatch.Index;
+                        }
+                        else
+                        {
+                            var remainingText = bodyJson[headerEndIndex..];
+                            var closingDivIndex = remainingText.LastIndexOf("</div>", StringComparison.OrdinalIgnoreCase);
+                            clauseEndIndex = closingDivIndex > 0
+                                ? headerEndIndex + closingDivIndex
+                                : bodyJson.Length;
+                        }
+                        
+                        // Replace the entire clause section (header + body)
+                        var newBodyContent = !string.IsNullOrWhiteSpace(newBody) ? newBody : oldBodyHtml;
+                        var updatedClauseSection = newHeaderHtml + newBodyContent;
+                        
+                        bodyJson = bodyJson.Substring(0, clauseStartIndex) + 
+                                  updatedClauseSection + 
+                                  bodyJson.Substring(clauseEndIndex);
+                        
+                        // Update the contract draft's BodyJson
+                        contractDraft.BodyJson = bodyJson;
+                        contractDraft.UpdatedAt = DateTime.UtcNow;
+                        await _contractDraftsRepository.UpdateAsync(contractDraft);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Normalize HTML for comparison (ignore trivial whitespace differences).
     /// </summary>
     private string NormalizeHtmlForComparison(string? input)
@@ -660,6 +788,13 @@ public class ContractDraftsService : IContractDraftsService
 
         if (contractDraft.ManagerId != managerId)
             throw new UnauthorizedAccessException("You are not authorized to sign this contract");
+
+        // Bug Fix: Remove any existing manager signature first to ensure clean replacement
+        // This handles the case where customer requested changes and manager is signing again
+        if (!string.IsNullOrEmpty(contractDraft.BodyJson))
+        {
+            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
+        }
 
         // Add manager signature to contract (left side)
         contractDraft.BodyJson = AddSignatureToContract(contractDraft.BodyJson ?? "", request.Signature, "left");
@@ -1228,9 +1363,7 @@ public class ContractDraftsService : IContractDraftsService
                                 This verification code will expire in 5 minutes for security reasons.
                             </p>
                             
-                            <p style=""margin: 30px 0 0 0; color: #ef4444; font-size: 14px; line-height: 1.6; font-weight: 600;"">
-                                ⚠️ Important: After entering the code, you must sign the contract within 5 minutes. If you don't sign within this time, you'll need to verify again.
-                            </p>
+                        
                         </td>
                     </tr>
                     
