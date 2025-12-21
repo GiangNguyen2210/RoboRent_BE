@@ -115,7 +115,29 @@ builder.Services
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            // CRITICAL: Map userId claim to NameIdentifier for SignalR User identification
+            NameClaimType = ClaimTypes.NameIdentifier
+        };
+
+        // 🔴 CRITICAL: SignalR WebSocket authentication
+        // SignalR không support Authorization header trong WebSocket
+        // Phải đọc token từ query string: ws://...chatHub?access_token=xxx
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                
+                // Nếu request là đến SignalR hub
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                {
+                    context.Token = accessToken;
+                }
+                
+                return Task.CompletedTask;
+            }
         };
     })
     .AddGoogle("Google", options =>
