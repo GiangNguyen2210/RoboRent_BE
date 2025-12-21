@@ -10,7 +10,7 @@ public class ChatHub : Hub
     {
         var roomName = $"rental_{rentalId}";
         await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
-        
+
         // Notify others in room
         await Clients.OthersInGroup(roomName).SendAsync("UserJoined", Context.ConnectionId);
     }
@@ -20,7 +20,7 @@ public class ChatHub : Hub
     {
         var roomName = $"rental_{rentalId}";
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
-        
+
         await Clients.OthersInGroup(roomName).SendAsync("UserLeft", Context.ConnectionId);
     }
 
@@ -44,12 +44,13 @@ public class ChatHub : Hub
         var roomName = $"rental_{rentalId}";
         await Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, status);
     }
-    
+
     // Notify quote created
     public async Task NotifyQuoteCreated(int rentalId, int quoteId, int quoteNumber, decimal total)
     {
         var roomName = $"rental_{rentalId}";
-        await Clients.Group(roomName).SendAsync("QuoteCreated", new {
+        await Clients.Group(roomName).SendAsync("QuoteCreated", new
+        {
             QuoteId = quoteId,
             QuoteNumber = quoteNumber,
             Total = total

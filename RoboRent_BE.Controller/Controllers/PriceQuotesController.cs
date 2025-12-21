@@ -55,14 +55,18 @@ public class PriceQuotesController : ControllerBase
                 MessageType.PriceQuoteNotification
             );
             
-            // 3. Broadcast event riêng cho quote created
-            var roomName = $"rental_{request.RentalId}";
-            await _hubContext.Clients.Group(roomName).SendAsync("QuoteCreated", new
-            {
-                QuoteId = quote.Id,
-                QuoteNumber = quote.QuoteNumber,
-                Total = quote.Total
-            });
+            
+            // 🎯 REFACTORED: Targeted broadcast QuoteCreated
+            // Chỉ gửi đến Customer (Staff là người tạo, không cần notification!)
+            if (rental != null && rental.AccountId.HasValue) {
+                var customerId = rental.AccountId.Value.ToString();
+                await _hubContext.Clients.User(customerId).SendAsync("QuoteCreated", new
+                {
+                    QuoteId = quote.Id,
+                    QuoteNumber = quote.QuoteNumber,
+                    Total = quote.Total
+                });
+            }
             
             return Ok(quote);
         }
@@ -136,13 +140,46 @@ public class PriceQuotesController : ControllerBase
                 : $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.";
         
             await _notificationHelper.SendNotificationAsync(
-                quote.RentalId,
-                managerId,
-                content,
-                quote.Id
-            );
-        
-            return Ok(quote);
+            quote.RentalId,
+            managerId,
+            content,
+            quote.Id
+        );
+    
+        // 🎯 REFACTORED: Targeted SignalR broadcast
+        // Load Rental để lấy CustomerId và StaffId
+        var rental = await _rentalService.GetRentalAsync(quote.RentalId);
+        if (rental != null)
+        {
+            if (quote.Status == "Approved")
+            {
+                // Approved: Gửi đến Staff + Customer (Manager là người approve, không nhận)
+                var staffId = rental.StaffId?.ToString() ?? "";
+                var customerId = rental.AccountId?.ToString() ?? "";
+                var recipients = new string[] { staffId, customerId }.Where(id => !string.IsNullOrEmpty(id)).ToArray();
+                await _hubContext.Clients.Users(recipients).SendAsync("QuoteStatusChanged", new
+                {
+                    QuoteId = quote.Id,
+                    Status = quote.Status,
+                    QuoteNumber = quote.QuoteNumber,
+                    Total = quote.Total
+                });
+            }
+            else if (quote.Status == "Rejected")
+            {
+                // Rejected: Chỉ gửi đến Staff (Customer không cần biết Manager reject)
+                var staffId = rental.StaffId.ToString();
+                await _hubContext.Clients.User(staffId).SendAsync("QuoteStatusChanged", new
+                {
+                    QuoteId = quote.Id,
+                    Status = quote.Status,
+                    QuoteNumber = quote.QuoteNumber,
+                    Total = quote.Total
+                });
+            }
+        }
+    
+        return Ok(quote);
         }
         catch (Exception ex)
         {
@@ -175,10 +212,28 @@ public class PriceQuotesController : ControllerBase
                 quote.Id
             );
         
-            if (request.Action.ToLower() == "approve")
+            // 🎯 REFACTORED: Targeted SignalR broadcasts
+            var rental = await _rentalService.GetRentalAsync(quote.RentalId);
+            if (rental != null && rental.StaffId.HasValue)
             {
-                var roomName = $"rental_{quote.RentalId}";
-                await _hubContext.Clients.Group(roomName).SendAsync("QuoteAccepted", quote.Id);
+                var staffId = rental.StaffId.Value.ToString();
+                
+                if (request.Action.ToLower() == "approve")
+                {
+                    // QuoteAccepted: Chỉ gửi đến Staff (Customer là người accept, không cần notification!)
+                    await _hubContext.Clients.User(staffId).SendAsync("QuoteAccepted", quote.Id);
+                }
+                else if (request.Action.ToLower() == "reject")
+                {
+                    // 🔴 NEW: QuoteRejected event (FIX BUG #1!)
+                    // Chỉ gửi đến Staff (Customer là người reject, không cần notification!)
+                    await _hubContext.Clients.User(staffId).SendAsync("QuoteRejected", new
+                    {
+                        QuoteId = quote.Id,
+                        QuoteNumber = quote.QuoteNumber,
+                        Reason = request.Reason
+                    });
+                }
             }
         
             return Ok(new 
