@@ -45,13 +45,7 @@ public class MappingProfile : Profile
         
         CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
             .ForMember(dest => dest.ActivityTypeName,
-                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null))
-            .ForMember(dest => dest.EventActivityId,
-                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.EventActivityId : (int?)null))
-            .ForMember(dest => dest.EventActivityName,
-                opt => opt.MapFrom(src => src.ActivityType != null && src.ActivityType.EventActivity != null
-                    ? src.ActivityType.EventActivity.Name
-                    : null));
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null));
 
         CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
             .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));

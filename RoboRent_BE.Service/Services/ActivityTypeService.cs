@@ -20,8 +20,8 @@ public class ActivityTypeService: IActivityTypeService
 
     public async Task<List<ActivityTypeResponse>> GetAllActivitiesByEAId(int eventActivityId)
     {
-        Expression<Func<ActivityType, bool>> filter = at => at.EventActivityId == eventActivityId;
-        var result = await _repository.GetAllAsync(filter);
+        // Expression<Func<ActivityType, bool>> filter = at => at.EventActivityId == eventActivityId;
+        var result = await _repository.GetAllAsync();
         var response = result.ToList().Select(at => _mapper.Map<ActivityTypeResponse>(at)).ToList();
         return response;
     }

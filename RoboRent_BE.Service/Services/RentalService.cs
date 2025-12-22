@@ -36,10 +36,10 @@ public class RentalService : IRentalService
 
         // 1. Validate foreign keys
         var accountExists = await db.Accounts.AnyAsync(a => a.Id == createOrderRequest.AccountId);
-        var eventExists = await db.EventActivities.AnyAsync(e => e.Id == createOrderRequest.EventActivityId);
+        // var eventExists = await db.EventActivities.AnyAsync(e => e.Id == createOrderRequest.EventActivityId);
         var packageExists = await db.ActivityTypes.AnyAsync(p => p.Id == createOrderRequest.ActivityTypeId);
 
-        if (!accountExists || !eventExists || !packageExists)
+        if (!accountExists || !packageExists)
             throw new ArgumentException("Invalid foreign key reference.");
 
         var todayUtc = DateTime.UtcNow.Date;   // current VN date is UTC+7 but comparing UTC ok
@@ -70,10 +70,10 @@ public class RentalService : IRentalService
     {
         // Validate foreign keys first
         var accountExists = await _rentalRepository.GetDbContext().Accounts.AnyAsync(a => a.Id == updateOrderRequest.AccountId);
-        var eventExists = await _rentalRepository.GetDbContext().EventActivities.AnyAsync(e => e.Id == updateOrderRequest.EventActivityId);
+        // var eventExists = await _rentalRepository.GetDbContext().EventActivities.AnyAsync(e => e.Id == updateOrderRequest.EventActivityId);
         var packageExists = await _rentalRepository.GetDbContext().ActivityTypes.AnyAsync(p => p.Id == updateOrderRequest.ActivityTypeId);
 
-        if (!accountExists || !eventExists || !packageExists)
+        if (!accountExists || !packageExists)
             throw new ArgumentException("Invalid foreign key reference. Please check Account, Event, or RentalPackage ID.");
         
         var todayUtc = DateTime.UtcNow.Date;   // current VN date is UTC+7 but comparing UTC ok
@@ -201,7 +201,7 @@ public class RentalService : IRentalService
     {
         var rentals = await _rentalRepository.GetDbContext().Rentals
             .Include(r => r.EventActivity)
-            .Include(r => r.ActivityType.EventActivity)
+            // .Include(r => r.ActivityType.EventActivity)
             .Include(r => r.ActivityType)
             .Where(r => r.AccountId == accountId && r.IsDeleted == false)
             .OrderByDescending(r => r.CreatedDate)

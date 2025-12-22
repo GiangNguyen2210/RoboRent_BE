@@ -14,4 +14,6 @@ public partial class RoboType
     public string? Description { get; set; } =  string.Empty;
     
     public bool? IsDeleted { get; set; } =  false;
+    
+    public virtual ICollection<RobotAbility> RobotAbilities { get; set; } = new List<RobotAbility>();
 }
