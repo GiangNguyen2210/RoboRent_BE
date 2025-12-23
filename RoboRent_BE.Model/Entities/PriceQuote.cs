@@ -15,8 +15,6 @@ public partial class PriceQuote
     [ForeignKey(nameof(RentalId))]
     public virtual Rental Rental { get; set; } = null!;
 
-    public Double? Delivery { get; set; }  = 0;
-
     public Double? Deposit { get; set; } = 0;
 
     public Double? Complete { get; set; } = 0;

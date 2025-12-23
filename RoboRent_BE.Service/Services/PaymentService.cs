@@ -269,6 +269,24 @@ public class PaymentService : IPaymentService
             throw new Exception($"Failed to cancel payment link: {ex.Message}", ex);
         }
     }
+    
+    public async Task ExpirePendingPaymentsAsync()
+    {
+        var expiredPayments = await _paymentRecordRepo.GetExpiredPaymentRecordsAsync();
+        
+        foreach (var payment in expiredPayments)
+        {
+            payment.Status = "Expired";
+            payment.UpdatedAt = DateTime.UtcNow;
+            await _paymentRecordRepo.UpdateAsync(payment);
+            _logger.LogInformation($"Expired payment record #{payment.Id} (OrderCode: {payment.OrderCode})");
+        }
+        
+        if (expiredPayments.Any())
+        {
+            _logger.LogInformation($"✅ Expired {expiredPayments.Count()} payment record(s)");
+        }
+    }
 
     #endregion
 
@@ -328,7 +346,7 @@ public class PaymentService : IPaymentService
 
     private int CalculateDepositAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
                                   (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
 
         if (total <= 0)
@@ -344,7 +362,7 @@ public class PaymentService : IPaymentService
 
     private int CalculateFullAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((priceQuote.Delivery ?? 0) + (priceQuote.Deposit ?? 0) + 
+        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
                                   (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
 
         if (total <= 0)

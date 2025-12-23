@@ -29,7 +29,7 @@ public class ChatService : IChatService
     public async Task<ChatRoomResponse> GetOrCreateChatRoomAsync(int rentalId, int staffId, int customerId)
     {
         var existingRoom = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
-        
+
         if (existingRoom != null)
         {
             return MapToChatRoomResponse(existingRoom);
@@ -44,7 +44,7 @@ public class ChatService : IChatService
         };
 
         await _chatRoomRepo.AddAsync(newRoom);
-        
+
         var createdRoom = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
         return MapToChatRoomResponse(createdRoom!);
     }
@@ -52,7 +52,7 @@ public class ChatService : IChatService
     public async Task<ChatRoomResponse> GetChatRoomByRentalIdAsync(int rentalId)
     {
         var room = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
-        
+
         if (room == null)
         {
             throw new Exception($"Chat room not found for rental {rentalId}");
@@ -64,7 +64,7 @@ public class ChatService : IChatService
     public async Task<ChatMessagesPageResponse> GetChatMessagesAsync(int rentalId, int page = 1, int pageSize = 50)
     {
         var room = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
-        
+
         if (room == null)
         {
             throw new Exception($"Chat room not found for rental {rentalId}");
@@ -88,7 +88,7 @@ public class ChatService : IChatService
         var room = await _chatRoomRepo.GetByRentalIdAsync(request.RentalId);
 
         var rental = await _rentalRepo.GetAsync(r => r.Id == request.RentalId);
-        
+
         if (room == null)
         {
             throw new Exception($"Chat room not found for rental {request.RentalId}");
@@ -105,7 +105,7 @@ public class ChatService : IChatService
             rental.Status = "PendingDemo";
             await _rentalRepo.UpdateAsync(rental);
         }
-        
+
         var message = new ChatMessage
         {
             ChatRoomId = room.Id,
@@ -121,15 +121,15 @@ public class ChatService : IChatService
         };
 
         await _chatMessageRepo.AddAsync(message);
-        var chatRoom = await _chatRoomRepo.GetByRentalIdAsync(request.RentalId); 
+        var chatRoom = await _chatRoomRepo.GetByRentalIdAsync(request.RentalId);
         if (chatRoom != null)
         {
             chatRoom.UpdatedAt = DateTime.UtcNow;
             await _chatRoomRepo.UpdateAsync(chatRoom);
         }
-        
+
         var createdMessage = await _chatMessageRepo.GetByIdWithDetailsAsync(message.Id);
-        
+
         // ✅ Không lo SignalR nữa - Controller sẽ lo
         return MapToChatMessageResponse(createdMessage!);
     }
@@ -137,7 +137,7 @@ public class ChatService : IChatService
     public async Task<ChatMessageResponse> UpdateMessageStatusAsync(int messageId, UpdateMessageStatusRequest request)
     {
         var message = await _chatMessageRepo.GetByIdWithDetailsAsync(messageId);
-        
+
         if (message == null)
         {
             throw new Exception($"Message not found");
@@ -153,13 +153,14 @@ public class ChatService : IChatService
         if (request.Status == "Accepted")
         {
             rental.Status = "AcceptedDemo";
-        } else if (request.Status == "Rejected")
+        }
+        else if (request.Status == "Rejected")
         {
             rental.Status = "DeniedDemo";
         }
-        
+
         await _rentalRepo.UpdateAsync(rental);
-        
+
         message.Status = request.Status;
         await _chatMessageRepo.UpdateAsync(message);
 
@@ -170,7 +171,7 @@ public class ChatService : IChatService
     public async Task<int> GetUnreadCountAsync(int rentalId, int userId)
     {
         var room = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
-        
+
         if (room == null)
         {
             return 0;
@@ -178,18 +179,18 @@ public class ChatService : IChatService
 
         return await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, userId);
     }
-    
+
     public async Task<ChatRoomListResponse> GetChatRoomsByStaffIdAsync(int staffId, int page = 1, int pageSize = 50)
     {
         var roomsPage = await _chatRoomRepo.GetRoomsByStaffIdAsync(staffId, page, pageSize);
-        
+
         var roomDtos = new List<ChatRoomListItemDto>();
-        
+
         foreach (var room in roomsPage.Items)
         {
             var lastMessage = room.Messages?.FirstOrDefault();
             var unreadCount = await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, staffId);
-            
+
             roomDtos.Add(new ChatRoomListItemDto
             {
                 Id = room.Id,
@@ -198,14 +199,14 @@ public class ChatService : IChatService
                 PackageName = room.Rental?.ActivityType?.Name ?? "Unknown Package",  // ✅ FIX
                 EventDate = room.Rental?.EventDate?.ToString("MMM dd, yyyy") ?? "TBD", // ✅ FIX
                 Status = room.Rental?.Status ?? "Unknown",
-                RentalStatus = room.Rental?.Status ?? "Unknown",  
+                RentalStatus = room.Rental?.Status ?? "Unknown",
                 LastMessage = lastMessage?.Content ?? "No messages yet",
                 LastMessageTime = lastMessage?.CreatedAt,
                 UnreadCount = unreadCount,
                 CreatedAt = room.CreatedAt
             });
         }
-        
+
         return new ChatRoomListResponse
         {
             Rooms = roomDtos,
@@ -220,14 +221,14 @@ public class ChatService : IChatService
     public async Task<ChatRoomListResponse> GetChatRoomsByCustomerIdAsync(int customerId, int page = 1, int pageSize = 50)
     {
         var roomsPage = await _chatRoomRepo.GetRoomsByCustomerIdAsync(customerId, page, pageSize);
-        
+
         var roomDtos = new List<ChatRoomListItemDto>();
-        
+
         foreach (var room in roomsPage.Items)
         {
             var lastMessage = room.Messages?.FirstOrDefault();
             var unreadCount = await _chatMessageRepo.CountUnreadMessagesAsync(room.Id, customerId);
-            
+
             roomDtos.Add(new ChatRoomListItemDto
             {
                 Id = room.Id,
@@ -236,14 +237,14 @@ public class ChatService : IChatService
                 PackageName = room.Rental?.ActivityType?.Name ?? "Unknown Package",  // ✅ FIX
                 EventDate = room.Rental?.EventDate?.ToString("MMM dd, yyyy") ?? "TBD", // ✅ FIX
                 Status = room.Rental?.Status ?? "Unknown",
-                RentalStatus = room.Rental?.Status ?? "Unknown", 
+                RentalStatus = room.Rental?.Status ?? "Unknown",
                 LastMessage = lastMessage?.Content ?? "No messages yet",
                 LastMessageTime = lastMessage?.CreatedAt,
                 UnreadCount = unreadCount,
                 CreatedAt = room.CreatedAt
             });
         }
-        
+
         return new ChatRoomListResponse
         {
             Rooms = roomDtos,
@@ -264,12 +265,14 @@ public class ChatService : IChatService
             Staff = new StaffInfoDto
             {
                 Id = room.Staff.Id,
+                UserId = room.Staff.UserId,  // 🎯 For SignalR targeting
                 FullName = room.Staff.FullName ?? "Unknown",
                 PhoneNumber = room.Staff.PhoneNumber
             },
             Customer = new CustomerInfoDto
             {
                 Id = room.Customer.Id,
+                UserId = room.Customer.UserId,  // 🎯 For SignalR targeting
                 FullName = room.Customer.FullName ?? "Unknown",
                 PhoneNumber = room.Customer.PhoneNumber
             },
@@ -316,5 +319,30 @@ public class ChatService : IChatService
         if (message.ChatRoom?.CustomerId == message.SenderId)
             return "Customer";
         return "System";
+    }
+
+    public async Task MarkRentalMessagesAsReadAsync(int rentalId, int userId)
+    {
+        var room = await _chatRoomRepo.GetByRentalIdAsync(rentalId);
+
+        if (room == null)
+        {
+            throw new Exception($"Chat room not found for rental {rentalId}");
+        }
+
+        // Get unread messages efficiently (no GetAllAsync!)
+        var unreadMessages = await _chatMessageRepo.GetUnreadMessagesByRoomAndUserAsync(room.Id, userId);
+
+        // Mark them all as read in memory
+        foreach (var message in unreadMessages)
+        {
+            message.IsRead = true;
+        }
+
+        // Bulk update in single DB operation
+        if (unreadMessages.Any())
+        {
+            await _chatMessageRepo.UpdateRangeAsync(unreadMessages);
+        }
     }
 }

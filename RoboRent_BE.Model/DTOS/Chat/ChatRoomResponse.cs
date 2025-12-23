@@ -13,6 +13,7 @@ public class ChatRoomResponse
 public class StaffInfoDto
 {
     public int Id { get; set; }
+    public string? UserId { get; set; }  // Identity UserId for SignalR targeting
     public string FullName { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
 }
@@ -20,6 +21,7 @@ public class StaffInfoDto
 public class CustomerInfoDto
 {
     public int Id { get; set; }
+    public string? UserId { get; set; }  // Identity UserId for SignalR targeting
     public string FullName { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
 }

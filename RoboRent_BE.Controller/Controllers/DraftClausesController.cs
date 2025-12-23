@@ -40,7 +40,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Staff, Customer")]
+    [Authorize(Roles = "Manager, Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesById(int id)
     {
         try
@@ -72,7 +72,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("contract-draft/{contractDraftId}")]
-    [Authorize(Roles = "Staff, Customer")]
+    [Authorize(Roles = "Manager, Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByContractDraftId(int contractDraftId)
     {
         try
@@ -95,7 +95,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("template-clause/{templateClauseId}")]
-    [Authorize(Roles = "Staff, Customer")]
+    [Authorize(Roles = "Manager, Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByTemplateClauseId(int templateClauseId)
     {
         try
@@ -118,7 +118,7 @@ public class DraftClausesController : ControllerBase
     }
 
     [HttpGet("contract-draft/{contractDraftId}/modified/{isModified}")]
-    [Authorize(Roles = "Staff, Customer")]
+    [Authorize(Roles = "Manager, Staff, Customer")]
     public async Task<IActionResult> GetDraftClausesByIsModified(int contractDraftId, bool isModified)
     {
         try

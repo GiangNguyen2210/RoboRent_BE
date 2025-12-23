@@ -87,14 +87,58 @@ public class ChatController : ControllerBase
         try
         {
             int senderId = AuthHelper.GetCurrentUserId(User);
-            
+
             // 1. Service lưu message vào DB
             var message = await _chatService.SendMessageAsync(request, senderId);
-            
-            // 2. Controller broadcast qua SignalR
+
+            // 2. Controller broadcast qua SignalR to room
             var roomName = $"rental_{request.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", message);
-            
+
+            // 3. 🎯 NEW: Send notification to user so sidebar updates (Facebook-like)
+            // Get chat room to find Staff and Customer UserIds
+            try
+            {
+                var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(request.RentalId);
+
+                Console.WriteLine($"[DEBUG] NewMessageInRoom - SenderId: {senderId}, Staff.Id: {chatRoom.Staff.Id}, Customer.Id: {chatRoom.Customer.Id}");
+                Console.WriteLine($"[DEBUG] NewMessageInRoom - Staff.UserId: {chatRoom.Staff.UserId}, Customer.UserId: {chatRoom.Customer.UserId}");
+
+                // Determine recipient UserId (the other person in the chat)
+                // 🔴 IMPORTANT: SignalR uses Identity UserId, not Account.Id!
+                string? recipientUserId = senderId == chatRoom.Staff.Id
+                    ? chatRoom.Customer.UserId
+                    : chatRoom.Staff.UserId;
+
+                Console.WriteLine($"[DEBUG] NewMessageInRoom - Sending to recipientUserId: {recipientUserId}");
+
+                if (!string.IsNullOrEmpty(recipientUserId))
+                {
+                    // Send targeted event to recipient for sidebar update
+                    await _hubContext.Clients.User(recipientUserId).SendAsync("NewMessageInRoom", new
+                    {
+                        RentalId = request.RentalId,
+                        SenderId = senderId,
+                        SenderName = message.SenderName,
+                        Preview = message.Content?.Length > 50
+                            ? message.Content.Substring(0, 50) + "..."
+                            : message.Content,
+                        Timestamp = message.CreatedAt
+                    });
+
+                    Console.WriteLine($"[DEBUG] NewMessageInRoom - Event sent successfully to UserId: {recipientUserId}");
+                }
+                else
+                {
+                    Console.WriteLine($"[WARN] NewMessageInRoom - recipientUserId is null/empty, cannot send event");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Don't fail the whole operation if this fails
+                Console.WriteLine($"[ERROR] Failed to send NewMessageInRoom notification: {ex.Message}");
+            }
+
             return Ok(message);
         }
         catch (Exception ex)
@@ -115,11 +159,11 @@ public class ChatController : ControllerBase
         {
             // 1. Service update status trong DB
             var message = await _chatService.UpdateMessageStatusAsync(messageId, request);
-            
+
             // 2. Controller broadcast status change qua SignalR
             var roomName = $"rental_{message.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, request.Status);
-            
+
             return Ok(message);
         }
         catch (Exception ex)
@@ -137,7 +181,7 @@ public class ChatController : ControllerBase
         try
         {
             int userId = AuthHelper.GetCurrentUserId(User);
-            
+
             var count = await _chatService.GetUnreadCountAsync(rentalId, userId);
             return Ok(new { RentalId = rentalId, UnreadCount = count });
         }
@@ -146,7 +190,7 @@ public class ChatController : ControllerBase
             return BadRequest(new { Message = "Failed to get unread count", Error = ex.Message });
         }
     }
-    
+
     /// <summary>
     /// Lấy danh sách chat rooms của user hiện tại (tự động phân biệt Staff/Customer)
     /// </summary>
@@ -159,7 +203,7 @@ public class ChatController : ControllerBase
         {
             int userId = AuthHelper.GetCurrentUserId(User);
             string role = AuthHelper.GetCurrentUserRole(User);
-            
+
             if (role == "Staff")
             {
                 var rooms = await _chatService.GetChatRoomsByStaffIdAsync(userId, page, pageSize);
@@ -174,6 +218,24 @@ public class ChatController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { Message = "Failed to get chat rooms", Error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Mark all messages in a rental as read for current user
+    /// </summary>
+    [HttpPost("mark-rental-read/{rentalId}")]
+    public async Task<IActionResult> MarkRentalAsRead(int rentalId)
+    {
+        try
+        {
+            int userId = AuthHelper.GetCurrentUserId(User);
+            await _chatService.MarkRentalMessagesAsReadAsync(rentalId, userId);
+            return Ok(new { Message = "Messages marked as read" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to mark messages as read", Error = ex.Message });
         }
     }
 }

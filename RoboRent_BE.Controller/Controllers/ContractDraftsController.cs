@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RoboRent_BE.Controller.Hubs;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Service.Interfaces;
 using System.Security.Claims;
@@ -11,10 +13,14 @@ namespace RoboRent_BE.Controller.Controllers;
 public class ContractDraftsController : ControllerBase
 {
     private readonly IContractDraftsService _contractDraftsService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IRentalService _rentalService;
 
-    public ContractDraftsController(IContractDraftsService contractDraftsService)
+    public ContractDraftsController(IContractDraftsService contractDraftsService, IHubContext<ChatHub> hubContext, IRentalService rentalService)
     {
         _contractDraftsService = contractDraftsService;
+        _hubContext = hubContext;
+        _rentalService = rentalService;
     }
 
     [HttpGet]
@@ -339,6 +345,22 @@ public class ContractDraftsController : ControllerBase
                 });
             }
 
+            // 🎯 REFACTORED: Targeted broadcast
+            // Gửi đến Customer + Staff (Manager là người ký, không nhận!)
+            var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
+            if (rental != null)
+            {
+                var customerId = rental.AccountId?.ToString() ?? "";
+                var staffId = rental.StaffId?.ToString() ?? "";
+                var recipients = new string[] { customerId, staffId }.Where(id => !string.IsNullOrEmpty(id)).ToArray();
+                await _hubContext.Clients.Users(recipients).SendAsync("ContractPendingCustomerSignature", new
+                {
+                    ContractId = result.Id,
+                    RentalId = result.RentalId,
+                    Message = "Hợp đồng đã được Manager ký. Vui lòng kiểm tra và ký hợp đồng."
+                });
+            }
+
             return Ok(new
             {
                 success = true,
@@ -402,6 +424,20 @@ public class ContractDraftsController : ControllerBase
                 {
                     success = false,
                     message = "Contract draft not found"
+                });
+            }
+
+            // 🎯 REFACTORED: Targeted broadcast
+            // Chỉ gửi đến Staff (Customer là người ký, không nhận!)
+            var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
+            if (rental != null && rental.StaffId.HasValue)
+            {
+                var staffId = rental.StaffId.Value.ToString();
+                await _hubContext.Clients.User(staffId).SendAsync("ContractActivated", new
+                {
+                    ContractId = result.Id,
+                    RentalId = result.RentalId,
+                    Message = "🎉 Hợp đồng đã được Customer ký và kích hoạt! Delivery sẽ được tạo."
                 });
             }
 
@@ -618,6 +654,21 @@ public class ContractDraftsController : ControllerBase
                 {
                     success = false,
                     message = "Contract draft not found"
+                });
+            }
+
+            // 🎯 REFACTORED: Targeted broadcast
+            // Chỉ gửi đến Staff (Customer là người yêu cầu, không nhận!)
+            var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
+            if (rental != null && rental.StaffId.HasValue)
+            {
+                var staffId = rental.StaffId.Value.ToString();
+                await _hubContext.Clients.User(staffId).SendAsync("ContractChangeRequested", new
+                {
+                    ContractId = result.Id,
+                    RentalId = result.RentalId,
+                    Message = "Customer yêu cầu sửa đổi hợp đồng.",
+                    ChangeRequest = request.Comment
                 });
             }
 

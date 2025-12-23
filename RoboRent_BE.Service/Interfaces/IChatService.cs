@@ -12,4 +12,5 @@ public interface IChatService
     Task<int> GetUnreadCountAsync(int rentalId, int userId);
     Task<ChatRoomListResponse> GetChatRoomsByStaffIdAsync(int staffId, int page = 1, int pageSize = 50);
     Task<ChatRoomListResponse> GetChatRoomsByCustomerIdAsync(int customerId, int page = 1, int pageSize = 50);
+    Task MarkRentalMessagesAsReadAsync(int rentalId, int userId);
 }

@@ -9,6 +9,7 @@ public interface IGenericRepository<T> where T : class
     Task<T> GetAsync(Expression<Func<T, bool>> filter, string? includeProperties = null);
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);
+    Task<T> UpdateRangeAsync(IEnumerable<T> entities);
     Task<T> DeleteAsync(T entity);
     AppDbContext GetDbContext();
 }

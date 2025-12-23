@@ -1045,8 +1045,8 @@ public class ContractDraftsService : IContractDraftsService
             return null;
 
         // Validate status and staff
-        if (contractDraft.Status != "ChangeRequested" && contractDraft.Status !="Draft")
-            throw new InvalidOperationException("Contract must be in 'ChangeRequested' or 'Draft' status to revise");
+        if (contractDraft.Status != "ChangeRequested" && contractDraft.Status !="Draft" && contractDraft.Status != "Modified")
+            throw new InvalidOperationException("Contract must be in 'ChangeRequested', 'Draft' or 'Modified' status to revise");
 
         if (contractDraft.StaffId != staffId)
             throw new UnauthorizedAccessException("You are not authorized to revise this contract");

@@ -68,4 +68,11 @@ public class ChatMessageRepository : GenericRepository<ChatMessage>, IChatMessag
             await _dbContext.SaveChangesAsync();
         }
     }
+
+    public async Task<List<ChatMessage>> GetUnreadMessagesByRoomAndUserAsync(int chatRoomId, int userId)
+    {
+        return await DbSet
+            .Where(m => m.ChatRoomId == chatRoomId && !m.IsRead && m.SenderId != userId)
+            .ToListAsync();
+    }
 }

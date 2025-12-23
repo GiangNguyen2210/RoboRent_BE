@@ -8,4 +8,5 @@ public interface IPaymentRecordRepository : IGenericRepository<PaymentRecord>
     Task<List<PaymentRecord>> GetByRentalIdAsync(int rentalId);
     Task<PaymentRecord?> GetByRentalIdAndTypeAsync(int rentalId, string paymentType);
     Task<long> GetLastOrderCodeAsync();
+    Task<IEnumerable<PaymentRecord>> GetExpiredPaymentRecordsAsync();
 }
