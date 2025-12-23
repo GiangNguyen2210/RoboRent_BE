@@ -15,12 +15,12 @@ public class ActivityTypeController: ControllerBase
         _activityTypeService = activityTypeService;
     }
 
-    [HttpGet("{eventActivityId}")]
-    public async Task<IActionResult> GetAllActivityTypeByEAId(int eventActivityId)
+    [HttpGet]
+    public async Task<IActionResult> GetAllActivityType()
     {
         try
         {
-            var result = await _activityTypeService.GetAllActivitiesByEAId(eventActivityId);
+            var result = await _activityTypeService.GetAllActivities();
             return Ok(result);
         }
         catch (Exception e)

@@ -1,26 +1,25 @@
 using AutoMapper;
 using RoboRent_BE.Model.DTOs.RoboType;
-using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
-using RoboRent_BE.Repository.Repositories;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
 
 public class RoboTypeService : IRoboTypeService
 {
-    private readonly IRoboTypeRepository _roboTypeRepository;
+    private readonly IRoboTypeRepository _repository;
     private readonly IMapper _mapper;
-    public RoboTypeService(IRoboTypeRepository roboTypeRepository, IMapper mapper)
+    public RoboTypeService(IRoboTypeRepository repository,  IMapper mapper)
     {
-        _roboTypeRepository = roboTypeRepository;
+        _repository = repository;
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<RoboTypeResponse>> GetAllRoboTypeAsync()
+    public async Task<List<RoboTypeResponse>> GetAllAsync()
     {
-        var roboTypes = await _roboTypeRepository.GetAllAsync();
-        return _mapper.Map<IEnumerable<RoboTypeResponse>>(roboTypes);
+        var result = await _repository.GetAllAsync(null, "RobotAbilities");
+        var response = result.ToList().Select(rt => _mapper.Map<RoboTypeResponse>(rt)).ToList();
+        return response;
     }
 }

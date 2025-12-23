@@ -14,6 +14,8 @@ using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOs.RobotAbility;
+using RoboRent_BE.Model.DTOs.RoboType;
 using RoboRent_BE.Model.DTOs.RoboTypeOfActivity;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Model.Entities;
@@ -29,6 +31,14 @@ public class MappingProfile : Profile
     {
         CreateMap<FaceVerification, FaceVerificationsResponse>();
         CreateMap<FaceProfiles, FaceProfilesResponse>();
+
+        CreateMap<RoboType, RoboTypeResponse>()
+            .ForMember(
+                dest => dest.RobotAbilityResponses,
+                opt => opt.MapFrom(src => src.RobotAbilities)
+            );
+
+        CreateMap<RobotAbility, RobotAbilityResponse>();
         
         CreateMap<GroupScheduleUpdateRequest, GroupSchedule>();
         
@@ -47,13 +57,7 @@ public class MappingProfile : Profile
         
         CreateMap<ActivityTypeGroup, ActivityTypeGroupResponse>()
             .ForMember(dest => dest.ActivityTypeName,
-                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null))
-            .ForMember(dest => dest.EventActivityId,
-                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.EventActivityId : (int?)null))
-            .ForMember(dest => dest.EventActivityName,
-                opt => opt.MapFrom(src => src.ActivityType != null && src.ActivityType.EventActivity != null
-                    ? src.ActivityType.EventActivity.Name
-                    : null));
+                opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null));
 
         CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
             .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));

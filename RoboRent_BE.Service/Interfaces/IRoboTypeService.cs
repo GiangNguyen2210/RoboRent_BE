@@ -1,9 +1,10 @@
-using RoboRent_BE.Model.DTOs.ActivityTypeGroup;
 using RoboRent_BE.Model.DTOs.RoboType;
+using RoboRent_BE.Model.Entities;
 
 namespace RoboRent_BE.Service.Interfaces;
 
 public interface IRoboTypeService
 {
-    Task<IEnumerable<RoboTypeResponse>> GetAllRoboTypeAsync();
+    // Add custom methods here
+    public Task<List<RoboTypeResponse>> GetAllAsync();
 }

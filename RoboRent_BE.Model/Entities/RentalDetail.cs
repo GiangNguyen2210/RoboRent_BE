@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace RoboRent_BE.Model.Entities;
 
@@ -16,17 +17,12 @@ public class RentalDetail
     [Required] public int? RentalId { get; set; }
     
     [Required] public int? RoboTypeId { get; set; }
-    
-    public int? RobotAbilityId { get; set; }
 
-    public string? Script { get; set; } =  string.Empty;
+    public DateTime CreatedAd { get; set; } = DateTime.UtcNow;
 
-    public string? Branding { get; set; } = string.Empty;
+    public DateTime UpdatedAd { get; set; } = DateTime.UtcNow;
 
-    public string? Scenario { get; set; } =  string.Empty;
-
-    [ForeignKey("RobotAbilityId")] public virtual RobotAbility RobotAbility { get; set; } = null!;
-    
+    public bool? isLocked { get; set; }
     [ForeignKey("RoboTypeId")]  public virtual RoboType RoboType { get; set; } = null!;
     
     [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } = null!;

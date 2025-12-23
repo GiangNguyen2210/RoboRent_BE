@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Service.Interfaces;
-using RoboRent_BE.Service.Services;
 
 namespace RoboRent_BE.Controller.Controllers;
 
 [Controller]
 [Route("api/[controller]")]
-public class RoboTypeController: ControllerBase
+public class RoboTypeController : ControllerBase
 {
-    private readonly IRoboTypeService  _roboTypeService;
+    private readonly IRoboTypeService _roboTypeService;
 
     public RoboTypeController(IRoboTypeService roboTypeService)
     {
@@ -16,11 +15,11 @@ public class RoboTypeController: ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllRoboTypes()
+    public async Task<IActionResult> GetAllAsync()
     {
         try
         {
-            var result = await _roboTypeService.GetAllRoboTypeAsync();
+            var result = await _roboTypeService.GetAllAsync();
             return Ok(result);
         }
         catch (Exception e)

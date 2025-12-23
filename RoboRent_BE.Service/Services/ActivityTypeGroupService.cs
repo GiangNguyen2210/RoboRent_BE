@@ -26,7 +26,7 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
     {
         var result = await _repository.GetDbContext().ActivityTypeGroups
             .Include(a => a.ActivityType)
-            .ThenInclude(a => a.EventActivity)
+            // .ThenInclude(a => a.EventActivity)
             .ToListAsync();
 
         return result.Select(atg => _mapper.Map<ActivityTypeGroupResponse>(atg)).ToList();
