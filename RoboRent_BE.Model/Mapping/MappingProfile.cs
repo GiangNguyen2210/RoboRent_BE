@@ -14,6 +14,8 @@ using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOs.RobotAbility;
+using RoboRent_BE.Model.DTOs.RoboType;
 using RoboRent_BE.Model.DTOs.RoboTypeOfActivity;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
 using RoboRent_BE.Model.Entities;
@@ -28,6 +30,14 @@ public class MappingProfile : Profile
     {
         CreateMap<FaceVerification, FaceVerificationsResponse>();
         CreateMap<FaceProfiles, FaceProfilesResponse>();
+
+        CreateMap<RoboType, RoboTypeResponse>()
+            .ForMember(
+                dest => dest.RobotAbilityResponses,
+                opt => opt.MapFrom(src => src.RobotAbilities)
+            );
+
+        CreateMap<RobotAbility, RobotAbilityResponse>();
         
         CreateMap<GroupScheduleUpdateRequest, GroupSchedule>();
         

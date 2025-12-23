@@ -52,6 +52,8 @@ public partial class ActivityType
     public bool IsActive { get; set; } = true;
 
     public bool IsDeleted { get; set; } = false;
+    
+    public decimal DamageDeposit { get; set; } = 0m;
 
     public virtual ICollection<ActivityTypeGroup> ActivityTypeGroups { get; set; } = new List<ActivityTypeGroup>();
 }

@@ -406,7 +406,8 @@ public partial class AppDbContext : IdentityDbContext<
         Price = 7300000m, // 2h minimum
 
         IsActive = true,
-        IsDeleted = false
+        IsDeleted = false,
+        DamageDeposit = 5000000m
     },
 
     new ActivityType
@@ -431,7 +432,8 @@ public partial class AppDbContext : IdentityDbContext<
         Price = 11800000m, // 2h minimum
 
         IsActive = true,
-        IsDeleted = false
+        IsDeleted = false,
+        DamageDeposit = 10000000m
     },
 
     new ActivityType
@@ -456,7 +458,8 @@ public partial class AppDbContext : IdentityDbContext<
         Price = 18800000m, // 2h minimum
 
         IsActive = true,
-        IsDeleted = false
+        IsDeleted = false,
+        DamageDeposit = 20000000m
     }
 );
 

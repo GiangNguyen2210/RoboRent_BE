@@ -18,7 +18,7 @@ public class ActivityTypeService: IActivityTypeService
         _mapper = mapper;
     }
 
-    public async Task<List<ActivityTypeResponse>> GetAllActivitiesByEAId(int eventActivityId)
+    public async Task<List<ActivityTypeResponse>> GetAllActivities()
     {
         // Expression<Func<ActivityType, bool>> filter = at => at.EventActivityId == eventActivityId;
         var result = await _repository.GetAllAsync();

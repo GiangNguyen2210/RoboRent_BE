@@ -24,6 +24,7 @@ public class RobotAbilityValue
         [Required]
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+        public bool isUpdated { get; set; } = false;
         // Navigation
         [ForeignKey("RentalDetailId")]
         public RentalDetail RentalDetail { get; set; } = null!;
