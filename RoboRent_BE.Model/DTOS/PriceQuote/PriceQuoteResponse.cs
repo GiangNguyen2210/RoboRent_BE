@@ -1,21 +1,34 @@
 ﻿namespace RoboRent_BE.Model.DTOs.PriceQuote;
 
-// Response trả về thông tin báo giá
+/// <summary>
+/// Response trả về thông tin báo giá
+/// </summary>
 public class PriceQuoteResponse
 {
     public int Id { get; set; }
     public int RentalId { get; set; }
-    public double? Deposit { get; set; }
-    public double? Complete { get; set; }
-    public double? Service { get; set; }
-    public double? DeliveryFee { get; set; }       
-    public int? DeliveryDistance { get; set; }  
-    public double Total { get; set; } // Calculated: Deposit + Complete + Service + DeliveryFee
+
+    // === DEPOSIT COMPONENTS (LOCKED) ===
+    public decimal RentalFee { get; set; }
+    public decimal StaffFee { get; set; }
+    public decimal DamageDeposit { get; set; }
+
+    // === ADJUSTABLE FEES ===
+    public decimal? DeliveryFee { get; set; }
+    public int? DeliveryDistance { get; set; }
+    public decimal CustomizationFee { get; set; }
+
+    // === COMPUTED TOTALS ===
+    public decimal TotalDeposit { get; set; }  // 30% × (RentalFee + StaffFee) + DamageDeposit
+    public decimal TotalPayment { get; set; }  // 70% × (RentalFee + StaffFee) + DeliveryFee + CustomizationFee
+    public decimal GrandTotal { get; set; }    // TotalDeposit + TotalPayment
+
+    // === METADATA ===
     public string? StaffDescription { get; set; }
     public string? ManagerFeedback { get; set; }
     public string? CustomerReason { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? Status { get; set; }
-    public int QuoteNumber { get; set; } // Thứ tự: 1, 2, hoặc 3
+    public int QuoteNumber { get; set; }
     public int? ManagerId { get; set; }
 }

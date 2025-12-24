@@ -55,7 +55,7 @@ public class PaymentService : IPaymentService
         _payOS = new PayOS(clientId, apiKey, checksumKey);
         _returnUrl = config["PayOSSettings:ReturnUrl"];
         _cancelUrl = config["PayOSSettings:CancelUrl"];
-        
+
         _logger.LogInformation("✅ PaymentService initialized with PayOS SDK");
     }
 
@@ -176,7 +176,7 @@ public class PaymentService : IPaymentService
     public async Task ProcessWebhookAsync(long orderCode, string paymentStatus)
     {
         var paymentRecord = await _paymentRecordRepo.GetByOrderCodeAsync(orderCode);
-        
+
         if (paymentRecord == null)
         {
             _logger.LogWarning($"⚠️ PaymentRecord not found for OrderCode {orderCode}");
@@ -191,7 +191,7 @@ public class PaymentService : IPaymentService
 
         paymentRecord.Status = paymentStatus;
         paymentRecord.UpdatedAt = DateTime.UtcNow;
-        
+
         if (paymentStatus == "Paid")
         {
             paymentRecord.PaidAt = DateTime.UtcNow;
@@ -269,11 +269,11 @@ public class PaymentService : IPaymentService
             throw new Exception($"Failed to cancel payment link: {ex.Message}", ex);
         }
     }
-    
+
     public async Task ExpirePendingPaymentsAsync()
     {
         var expiredPayments = await _paymentRecordRepo.GetExpiredPaymentRecordsAsync();
-        
+
         foreach (var payment in expiredPayments)
         {
             payment.Status = "Expired";
@@ -281,7 +281,7 @@ public class PaymentService : IPaymentService
             await _paymentRecordRepo.UpdateAsync(payment);
             _logger.LogInformation($"Expired payment record #{payment.Id} (OrderCode: {payment.OrderCode})");
         }
-        
+
         if (expiredPayments.Any())
         {
             _logger.LogInformation($"✅ Expired {expiredPayments.Count()} payment record(s)");
@@ -325,7 +325,7 @@ public class PaymentService : IPaymentService
     private async Task<PriceQuote> GetApprovedPriceQuoteAsync(int rentalId)
     {
         var priceQuote = await _priceQuoteRepo.GetAsync(pq => pq.RentalId == rentalId && pq.Status == "Approved");
-        
+
         if (priceQuote == null)
             throw new Exception($"No approved PriceQuote found for Rental {rentalId}");
 
@@ -335,7 +335,7 @@ public class PaymentService : IPaymentService
     private async Task VerifyDepositPaidAsync(int rentalId)
     {
         var depositPayment = await _paymentRecordRepo.GetByRentalIdAndTypeAsync(rentalId, "Deposit");
-        
+
         if (depositPayment == null || depositPayment.Status != "Paid")
             throw new Exception($"Deposit payment must be paid before creating full payment");
     }
@@ -346,34 +346,34 @@ public class PaymentService : IPaymentService
 
     private int CalculateDepositAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
-                                  (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
+        // Use pre-calculated TotalDeposit from PriceQuote
+        decimal depositAmount = priceQuote.TotalDeposit;
 
-        if (total <= 0)
-            throw new Exception("Total amount must be greater than 0");
+        if (depositAmount <= 0)
+            throw new Exception("Deposit amount must be greater than 0");
 
-        int depositAmount = (int)Math.Round(total * 0.3m);
+        int amount = (int)Math.Round(depositAmount);
 
-        if (depositAmount < 1000)
-            throw new Exception($"Deposit amount too small: {depositAmount} VND (minimum: 1,000 VND)");
+        if (amount < 1000)
+            throw new Exception($"Deposit amount too small: {amount} VND (minimum: 1,000 VND)");
 
-        return depositAmount;
+        return amount;
     }
 
     private int CalculateFullAmount(PriceQuote priceQuote)
     {
-        decimal total = (decimal)((double)(priceQuote.DeliveryFee ?? 0) + (priceQuote.Deposit ?? 0) + 
-                                  (priceQuote.Complete ?? 0) + (priceQuote.Service ?? 0));
+        // Use pre-calculated TotalPayment from PriceQuote
+        decimal fullAmount = priceQuote.TotalPayment;
 
-        if (total <= 0)
-            throw new Exception("Total amount must be greater than 0");
+        if (fullAmount <= 0)
+            throw new Exception("Total payment amount must be greater than 0");
 
-        int fullAmount = (int)Math.Round(total * 0.7m);
+        int amount = (int)Math.Round(fullAmount);
 
-        if (fullAmount < 1000)
-            throw new Exception($"Full amount too small: {fullAmount} VND (minimum: 1,000 VND)");
+        if (amount < 1000)
+            throw new Exception($"Full amount too small: {amount} VND (minimum: 1,000 VND)");
 
-        return fullAmount;
+        return amount;
     }
 
     #endregion
@@ -404,13 +404,21 @@ public class PaymentService : IPaymentService
         var expiredAt = DateTime.UtcNow.AddDays(daysValid);
         int expiredAtUnix = GetUnixTimestamp(expiredAt);
 
+        // ⚠️ TEST MODE: Reduce amount for PayOS (no sandbox available)
+        // Original amount is stored in PaymentRecord, only PayOS QR shows reduced amount
+        const int TEST_MODE_DIVISOR = 1000;
+        const int TEST_MODE_MINIMUM = 2000;
+        int payosAmount = Math.Max(amount / TEST_MODE_DIVISOR, TEST_MODE_MINIMUM);
+
+        _logger.LogWarning($"⚠️ TEST MODE: Original amount {amount:N0} VND → PayOS amount {payosAmount:N0} VND (÷{TEST_MODE_DIVISOR}, min {TEST_MODE_MINIMUM})");
+
         var paymentData = new PaymentData(
             orderCode: orderCode,
-            amount: amount,
+            amount: payosAmount, // Use reduced amount for PayOS
             description: description,
-            items: new List<ItemData> 
-            { 
-                new ItemData(itemName, 1, amount) 
+            items: new List<ItemData>
+            {
+                new ItemData(itemName, 1, payosAmount) // Use reduced amount
             },
             returnUrl: _returnUrl,
             cancelUrl: _cancelUrl,
@@ -419,7 +427,8 @@ public class PaymentService : IPaymentService
             expiredAt: expiredAtUnix
         );
 
-        _logger.LogInformation($"🔄 Creating PayOS payment link - OrderCode: {orderCode}, Amount: {amount:N0} VND");
+        _logger.LogInformation($"🔄 Creating PayOS payment link - OrderCode: {orderCode}, Amount: {payosAmount:N0} VND (original: {amount:N0} VND)");
+
 
         try
         {
@@ -482,7 +491,7 @@ public class PaymentService : IPaymentService
         };
 
         await _actualDeliveryRepo.AddAsync(actualDelivery);
-        
+
         groupSchedule.Status = "scheduled";
         await _groupScheduleRepo.UpdateAsync(groupSchedule);
 
