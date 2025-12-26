@@ -11,11 +11,13 @@ public class RentalDetailService : IRentalDetailService
 {
     private readonly IRentalDetailRepository _rentalDetailRepository;
     private readonly IMapper _mapper;
+    private readonly IRobotAbilityValueRepository _robotAbilityValueRepository;
 
-    public RentalDetailService(IRentalDetailRepository rentalDetailRepository, IMapper mapper)
+    public RentalDetailService(IRentalDetailRepository rentalDetailRepository, IMapper mapper,  IRobotAbilityValueRepository robotAbilityValueRepository)
     {
         _rentalDetailRepository = rentalDetailRepository;
         _mapper = mapper;
+        _robotAbilityValueRepository = robotAbilityValueRepository;
     }
 
     public async Task<IEnumerable<RentalDetailResponse>> GetAllRentalDetailsAsync()
@@ -58,6 +60,15 @@ public class RentalDetailService : IRentalDetailService
             var rentalDetail = _mapper.Map<RentalDetail>(request);
 
             await _rentalDetailRepository.AddAsync(rentalDetail);
+
+            foreach (var roabivaluea in request.CreateRobotAbilityValueRequests)
+            {
+                var rboabivalue = _mapper.Map<RobotAbilityValue>(roabivaluea);
+
+                rboabivalue.RentalDetailId = rentalDetail.Id;
+            
+                await _robotAbilityValueRepository.AddAsync(rboabivalue);
+            }
             
             rentalDetailResponses.Add(_mapper.Map<RentalDetailResponse>(rentalDetail));
         }
@@ -83,6 +94,15 @@ public class RentalDetailService : IRentalDetailService
             rentalDetail = _mapper.Map(request, rentalDetail);
 
             await _rentalDetailRepository.UpdateAsync(rentalDetail);
+            
+            foreach (var roabivaluea in request.UpdateRobotAbilityValueRequests)
+            {
+                var rb = await _robotAbilityValueRepository.GetAsync(r => r.RentalDetailId == roabivaluea.RentalDetailId && r.RobotAbilityId == roabivaluea.RobotAbilityId);
+                
+                rb = _mapper.Map(roabivaluea, rb);
+                
+                await _robotAbilityValueRepository.UpdateAsync(rb);
+            }
             
             rentalDetailResponses.Add(_mapper.Map<RentalDetailResponse>(rentalDetail));
         }

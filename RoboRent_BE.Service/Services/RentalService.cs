@@ -66,60 +66,86 @@ public class RentalService : IRentalService
         return _mapper.Map<OrderResponse>(rental);
     }
 
-    public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrderRequest)
+public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrderRequest)
+{
+    // 1. Validate foreign keys
+    var db = _rentalRepository.GetDbContext();
+
+    var accountExists = await db.Accounts
+        .AnyAsync(a => a.Id == updateOrderRequest.AccountId);
+
+    var packageExists = await db.ActivityTypes
+        .AnyAsync(p => p.Id == updateOrderRequest.ActivityTypeId);
+
+    if (!accountExists || !packageExists)
+        throw new ArgumentException("Invalid foreign key reference. Please check Account or ActivityType ID.");
+
+    // 2. Validate event date (>= 6 days)
+    var todayUtc = DateTime.UtcNow.Date;
+    var minEventDate = todayUtc.AddDays(6);
+
+    if (updateOrderRequest.EventDate!.Value.Date < minEventDate)
+        throw new ArgumentException("Event date must be at least 6 days from today.");
+
+    // 3. Validate time
+    TimeSpan start = updateOrderRequest.StartTime!.Value.ToTimeSpan();
+    TimeSpan end = updateOrderRequest.EndTime!.Value.ToTimeSpan();
+
+    if (end <= start.Add(TimeSpan.FromHours(1)))
+        throw new ArgumentException("End time must be at least 1 hour after start.");
+
+    // 4. Get rental
+    Rental? rental = await db.Rentals
+        .FirstOrDefaultAsync(r => r.Id == updateOrderRequest.Id);
+
+    if (rental == null) return null;
+
+    // 5. Detect important changes BEFORE mapping
+    bool isLocationOrTimeChanged =
+        !string.Equals(rental.Address, updateOrderRequest.Address, StringComparison.OrdinalIgnoreCase)
+        || !string.Equals(rental.City, updateOrderRequest.City, StringComparison.OrdinalIgnoreCase)
+        || rental.StartTime != updateOrderRequest.StartTime
+        || rental.EndTime != updateOrderRequest.EndTime;
+
+    if (isLocationOrTimeChanged)
     {
-        // Validate foreign keys first
-        var accountExists = await _rentalRepository.GetDbContext().Accounts.AnyAsync(a => a.Id == updateOrderRequest.AccountId);
-        // var eventExists = await _rentalRepository.GetDbContext().EventActivities.AnyAsync(e => e.Id == updateOrderRequest.EventActivityId);
-        var packageExists = await _rentalRepository.GetDbContext().ActivityTypes.AnyAsync(p => p.Id == updateOrderRequest.ActivityTypeId);
-
-        if (!accountExists || !packageExists)
-            throw new ArgumentException("Invalid foreign key reference. Please check Account, Event, or RentalPackage ID.");
-        
-        var todayUtc = DateTime.UtcNow.Date;   // current VN date is UTC+7 but comparing UTC ok
-        var minEventDate = todayUtc.AddDays(6);
-
-        if (updateOrderRequest.EventDate.Value.Date < minEventDate)
-            throw new ArgumentException("Event date must be at least 6 days from today.");
-
-        TimeSpan start = updateOrderRequest.StartTime.Value.ToTimeSpan();
-        TimeSpan end = updateOrderRequest.EndTime.Value.ToTimeSpan();
-
-        // End must be at least 1 hour later
-        if (end <= start.Add(TimeSpan.FromHours(1)))
-            throw new ArgumentException("End time must be at least 1 hour after start.");
-        
-        Rental? rental = await _rentalRepository.GetDbContext().Rentals.FirstOrDefaultAsync(r => r.Id == updateOrderRequest.Id);
-        
-        if (rental == null) return null;
-
-        
-        if (updateOrderRequest.ActivityTypeId != rental.ActivityTypeId)
-        {
-            var list = await _rentalDetailRepository.GetAllAsync(rd => rd.RentalId == updateOrderRequest.Id);
-            _rentalDetailRepository.GetDbContext().RentalDetails.RemoveRange(list);
-            await _rentalDetailRepository.GetDbContext().SaveChangesAsync();
-        }
-        
-        if (rental.Status == "Received")
-        {
-            _mapper.Map(updateOrderRequest, rental);
-            rental.Status = "Received"; 
-        }
-
-        if (rental.Status == "Cancelled")
-        {
-            rental.Status = "Draft";
-        }
-        
-        _mapper.Map(updateOrderRequest, rental);
-
-        rental.UpdatedDate = DateTime.UtcNow;
-        
-        await _rentalRepository.UpdateAsync(rental);
-        
-        return _mapper.Map<OrderResponse>(rental);
+        rental.IsUpdated = true;
     }
+
+    // 6. If ActivityType changed → remove old rental details
+    if (updateOrderRequest.ActivityTypeId != rental.ActivityTypeId)
+    {
+        var details = await _rentalDetailRepository
+            .GetAllAsync(rd => rd.RentalId == updateOrderRequest.Id);
+
+        db.RentalDetails.RemoveRange(details);
+        await db.SaveChangesAsync();
+    }
+
+    // 7. Status handling
+    if (rental.Status == "Received")
+    {
+        _mapper.Map(updateOrderRequest, rental);
+        rental.Status = "Received";
+    }
+    else if (rental.Status == "Cancelled")
+    {
+        rental.Status = "Draft";
+        _mapper.Map(updateOrderRequest, rental);
+    }
+    else
+    {
+        _mapper.Map(updateOrderRequest, rental);
+    }
+
+    // 8. Update timestamp
+    rental.UpdatedDate = DateTime.UtcNow;
+
+    // 9. Save
+    await _rentalRepository.UpdateAsync(rental);
+
+    return _mapper.Map<OrderResponse>(rental);
+}
 
     public async Task<OrderResponse?> GetRentalAsync(int id)
     {

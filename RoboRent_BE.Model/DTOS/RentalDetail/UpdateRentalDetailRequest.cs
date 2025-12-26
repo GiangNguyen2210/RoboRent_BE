@@ -1,11 +1,13 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using RoboRent_BE.Model.DTOs.RobotAbilityValue;
 
 namespace RoboRent_BE.Model.DTOS.RentalDetail;
 
 public class UpdateRentalDetailRequest
 {
     public int Id { get; set; }
+    
     [DefaultValue(false)]
     public bool? IsDeleted { get; set; } = false;
     
@@ -15,11 +17,17 @@ public class UpdateRentalDetailRequest
     
     [Required] public int? RoboTypeId { get; set; }
     
-    public string? Script { get; set; } =  string.Empty;
+    public DateTime CreatedAd { get; set; } = DateTime.UtcNow;
 
-    public string? Branding { get; set; } = string.Empty;
+    public DateTime UpdatedAd { get; set; } = DateTime.UtcNow;
 
-    public string? Scenario { get; set; } =  string.Empty;
+    public bool? isLocked { get; set; }
+
+    [DefaultValue(false)]
+    public bool? IsUpdated { get; set; }
+
+    public List<UpdateRobotAbilityValueRequest> UpdateRobotAbilityValueRequests { get; set; } =
+        new List<UpdateRobotAbilityValueRequest>();
 }
 
 
