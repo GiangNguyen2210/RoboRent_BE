@@ -60,6 +60,9 @@ public class GroupScheduleService : IGroupScheduleService
         if (rental.StaffId != staffId)
             throw new Exception("The staff is not assigned to this rental.");
 
+        if (rental.Status != "AcceptedPriceQuote")
+            throw new Exception("Cannot create schedule. Rental must have an accepted price quote first.");
+
         GroupSchedule schedule;
 
         // A — Active schedule exists → BLOCK
