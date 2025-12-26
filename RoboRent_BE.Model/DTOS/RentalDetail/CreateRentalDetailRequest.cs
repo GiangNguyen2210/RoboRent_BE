@@ -15,9 +15,9 @@ public class CreateRentalDetailRequest
     
     [Required] public int? RoboTypeId { get; set; }
     
-    public DateTime CreatedAd { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdatedAd { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public bool? isLocked { get; set; }
 
