@@ -28,10 +28,10 @@ public class PriceQuoteService : IPriceQuoteService
         if (rental == null)
             throw new Exception("Rental not found");
 
-        var validStatuses = new[] { "Received", "AcceptedDemo", "PendingPriceQuote", "RejectedPriceQuote" };
+        var validStatuses = new[] { "Received", "PendingPriceQuote", "RejectedPriceQuote" };
         if (!validStatuses.Contains(rental.Status))
         {
-            throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: Received, AcceptedDemo hoặc PendingPriceQuote");
+            throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: Received hoặc PendingPriceQuote");
         }
 
         // Business Rule: Max 3 quotes per rental
