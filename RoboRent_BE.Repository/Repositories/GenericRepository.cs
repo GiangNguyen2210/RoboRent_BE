@@ -23,6 +23,22 @@ namespace RoboRent_BE.Repository.Repositories
             return entity;
         }
 
+        public async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null)
+                throw new ArgumentNullException(nameof(entities));
+
+            var list = entities as IList<T> ?? entities.ToList();
+
+            if (!list.Any())
+                return list;
+
+            await _db.AddRangeAsync(list);
+            await _db.SaveChangesAsync();
+
+            return list;
+        }
+
         public async Task<T> DeleteAsync(T entity)
         {
             _db.Remove(entity);

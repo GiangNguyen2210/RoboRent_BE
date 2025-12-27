@@ -1,3 +1,5 @@
+using RoboRent_BE.Model.DTOs.ActivityType;
+
 namespace RoboRent_BE.Model.DTOS.RentalOrder;
 
 public class OrderResponse
@@ -47,4 +49,6 @@ public class OrderResponse
     public string? ActivityTypeName { get; set; } = string.Empty;
     
     public string? CustomerName { get; set; } = string.Empty;
+
+    public ActivityTypeResponse ActivityTypeResponse { get; set; } = new ActivityTypeResponse();
 }

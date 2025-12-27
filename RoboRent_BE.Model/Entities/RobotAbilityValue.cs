@@ -7,13 +7,13 @@ public class RobotAbilityValue
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         [Required]
-        public long RentalDetailId { get; set; }
+        public int RentalDetailId { get; set; }
 
         [Required]
-        public long RobotAbilityId { get; set; }
+        public int RobotAbilityId { get; set; }
 
         // Store value
         public string? ValueText { get; set; }
@@ -22,7 +22,7 @@ public class RobotAbilityValue
         public string? ValueJson { get; set; }
 
         [Required]
-        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public bool isUpdated { get; set; } = false;
         // Navigation

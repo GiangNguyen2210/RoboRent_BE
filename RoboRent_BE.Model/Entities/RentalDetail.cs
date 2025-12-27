@@ -22,8 +22,12 @@ public class RentalDetail
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public bool? isLocked { get; set; }
-    [ForeignKey("RoboTypeId")] public virtual RoboType RoboType { get; set; } = null!;
+    public bool? isLocked { get; set; } = false;
 
+    public bool? IsUpdated { get; set; } = false;
+    [ForeignKey("RoboTypeId")]  public virtual RoboType RoboType { get; set; } = null!;
+    
     [ForeignKey("RentalId")] public virtual Rental Rental { get; set; } = null!;
+    
+    public virtual ICollection<RobotAbilityValue> RobotAbilityValues { get; set; } = new List<RobotAbilityValue>();
 }

@@ -18,6 +18,7 @@ public class RentalDetailRepository : GenericRepository<RentalDetail>, IRentalDe
             .Where(rd => rd.RentalId == rentalId && rd.IsDeleted == false)
             .Include(rd => rd.RoboType)
             .Include(rd => rd.Rental)
+            .Include(rd => rd.RobotAbilityValues)
             .ToListAsync();
     }
 
