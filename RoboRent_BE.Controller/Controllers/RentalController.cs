@@ -17,6 +17,38 @@ public class RentalController : ControllerBase
         _rentalService = rentalService;
     }
 
+    [HttpGet("get/updated/status/{rentalId}")]
+    public async Task<IActionResult> GetUpdatedStatus(int rentalId)
+    {
+        try
+        {
+            var res = await _rentalService.GetUpdatedStatusAsync(rentalId);
+
+            if (res == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Not found"
+                });
+            }
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+    
     [HttpPost("create")]
     public async Task<IActionResult> AddRental([FromBody] CreateOrderRequest createOrderRequest)
     {

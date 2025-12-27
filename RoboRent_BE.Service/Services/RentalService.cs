@@ -3,7 +3,9 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RoboRent_BE.Model.DTOs;
+using RoboRent_BE.Model.DTOs.RentalChangeLog;
 using RoboRent_BE.Model.DTOS.RentalOrder;
+using RoboRent_BE.Model.DTOs.RobotAbilityValue;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Repository.Repositories;
@@ -20,7 +22,8 @@ public class RentalService : IRentalService
     private readonly IRentalDetailRepository _rentalDetailRepository;
     private readonly IPaymentService _paymentService;
     private readonly IGroupScheduleRepository _groupScheduleRepository;
-    public RentalService(IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository,  IGroupScheduleRepository groupScheduleRepository, IPaymentService paymentService)
+    private readonly IRentalChangeLogRepository _rentalChangeLogRepository;
+    public RentalService(IRentalChangeLogRepository changeLogRepository,IMapper mapper,  IRentalRepository rentalRepository, IChatService chatService,  IRentalDetailRepository rentalDetailRepository,  IGroupScheduleRepository groupScheduleRepository, IPaymentService paymentService)
     {
         _mapper = mapper;
         _rentalRepository = rentalRepository;
@@ -28,6 +31,7 @@ public class RentalService : IRentalService
         _rentalDetailRepository = rentalDetailRepository;
         _groupScheduleRepository = groupScheduleRepository;
         _paymentService = paymentService;
+        _rentalChangeLogRepository = changeLogRepository;
     }
 
     public async Task<OrderResponse?> CreateRentalAsync(CreateOrderRequest createOrderRequest)
@@ -65,8 +69,8 @@ public class RentalService : IRentalService
 
         return _mapper.Map<OrderResponse>(rental);
     }
-
-public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrderRequest)
+    
+    public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrderRequest)
 {
     // 1. Validate foreign keys
     var db = _rentalRepository.GetDbContext();
@@ -95,25 +99,66 @@ public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrd
         throw new ArgumentException("End time must be at least 1 hour after start.");
 
     // 4. Get rental
-    Rental? rental = await db.Rentals
-        .FirstOrDefaultAsync(r => r.Id == updateOrderRequest.Id);
-
+    var rental = await db.Rentals.FirstOrDefaultAsync(r => r.Id == updateOrderRequest.Id);
     if (rental == null) return null;
 
-    // 5. Detect important changes BEFORE mapping
-    bool isLocationOrTimeChanged =
-        !string.Equals(rental.Address, updateOrderRequest.Address, StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(rental.City, updateOrderRequest.City, StringComparison.OrdinalIgnoreCase)
-        || rental.StartTime != updateOrderRequest.StartTime
-        || rental.EndTime != updateOrderRequest.EndTime;
+    // =========================
+    // 5. Build change logs BEFORE mapping
+    // =========================
+    var changeLogs = new List<RentalChangeLog>();
 
-    if (isLocationOrTimeChanged)
+    void AddChange(string fieldName, string? oldVal, string? newVal)
     {
-        rental.IsUpdated = true;
+        // null-safe compare
+        if (string.Equals(oldVal ?? "", newVal ?? "", StringComparison.Ordinal)) return;
+
+        changeLogs.Add(new RentalChangeLog
+        {
+            RentalId = rental.Id,
+            FieldName = fieldName,
+            OldValue = oldVal,
+            NewValue = newVal,
+            ChangedAtUtc = DateTime.UtcNow,
+
+            // ai update: nếu AccountId chính là người thao tác update (customer)
+            // nếu bạn có StaffId/ManagerId từ context thì thay vào đây
+            ChangedByAccountId = updateOrderRequest.AccountId!.Value
+        });
     }
 
+    // Log những field bạn muốn theo dõi
+    AddChange(nameof(Rental.Address), rental.Address, updateOrderRequest.Address);
+    AddChange(nameof(Rental.City), rental.City, updateOrderRequest.City);
+
+    AddChange(nameof(Rental.StartTime),
+        rental.StartTime?.ToString("HH:mm"),
+        updateOrderRequest.StartTime?.ToString("HH:mm"));
+
+    AddChange(nameof(Rental.EndTime),
+        rental.EndTime?.ToString("HH:mm"),
+        updateOrderRequest.EndTime?.ToString("HH:mm"));
+
+    AddChange(nameof(Rental.EventDate),
+        rental.EventDate?.Date.ToString("yyyy-MM-dd"),
+        updateOrderRequest.EventDate?.Date.ToString("yyyy-MM-dd"));
+
+    AddChange(nameof(Rental.ActivityTypeId),
+        rental.ActivityTypeId?.ToString(),
+        updateOrderRequest.ActivityTypeId?.ToString());
+
+    // Nếu bạn muốn log thêm:
+    AddChange(nameof(Rental.EventName), rental.EventName, updateOrderRequest.EventName);
+    AddChange(nameof(Rental.PhoneNumber), rental.PhoneNumber, updateOrderRequest.PhoneNumber);
+    AddChange(nameof(Rental.Email), rental.Email, updateOrderRequest.Email);
+    AddChange(nameof(Rental.Description), rental.Description, updateOrderRequest.Description);
+
+    // Mark update flag
+    if (changeLogs.Count > 0)
+        rental.IsUpdated = true;
+
     // 6. If ActivityType changed → remove old rental details
-    if (updateOrderRequest.ActivityTypeId != rental.ActivityTypeId)
+    bool isActivityTypeChanged = updateOrderRequest.ActivityTypeId != rental.ActivityTypeId;
+    if (isActivityTypeChanged)
     {
         var details = await _rentalDetailRepository
             .GetAllAsync(rd => rd.RentalId == updateOrderRequest.Id);
@@ -122,7 +167,7 @@ public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrd
         await db.SaveChangesAsync();
     }
 
-    // 7. Status handling
+    // 7. Status handling + mapping
     if (rental.Status == "Received")
     {
         _mapper.Map(updateOrderRequest, rental);
@@ -141,8 +186,26 @@ public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrd
     // 8. Update timestamp
     rental.UpdatedDate = DateTime.UtcNow;
 
-    // 9. Save
+    // 9. Save Rental
     await _rentalRepository.UpdateAsync(rental);
+
+    // 10. Save change logs via repo (sau khi update rental OK)
+    if (changeLogs.Count > 0)
+    {
+        // Tuỳ repo của bạn: AddRangeAsync / CreateBulkAsync / InsertMany...
+        await _rentalChangeLogRepository.AddRangeAsync(changeLogs);
+        // nếu repo không tự SaveChanges thì:
+        // await db.SaveChangesAsync();
+    }
+
+    // 11. (Optional) Xử lý 3 trường hợp theo loại change
+    // Bạn có thể route logic dựa trên changeLogs ở đây:
+    // - Time/location changed => notify staff + recalc schedule
+    // - EventDate changed => pending reconfirm
+    // - ActivityType changed => clear details + require re-config + re-quote
+    //
+    // Ví dụ:
+    // await HandleUpdateWorkflows(rental, changeLogs, isActivityTypeChanged);
 
     return _mapper.Map<OrderResponse>(rental);
 }
@@ -361,5 +424,44 @@ public async Task<OrderResponse?> UpdateRentalAsync(UpdateOrderRequest updateOrd
                 ExpiresAt = DateTime.UtcNow.AddMinutes(15)
             }
         };
+    }
+
+    public async Task<UpdatedStatusResponse?> GetUpdatedStatusAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+        
+        var rentalDetails =  await _rentalDetailRepository.GetAllAsync(rd => rd.RentalId == rental.Id, "RobotAbilityValues");
+
+        var res = new UpdatedStatusResponse
+        {
+            RentalIsUpdated = rental.IsUpdated
+        };
+
+        if (rental.IsUpdated.Value)
+        {
+            var rentalLogs = await _rentalChangeLogRepository.GetAllAsync(r =>
+                r.RentalId == rental.Id && r.ChangedAtUtc.Date == DateTime.UtcNow.Date);
+            
+            res.RentalChangeLogResponses = rentalLogs.ToList().Select(r => _mapper.Map<RentalChangeLogResponse>(r)).ToList();
+        }
+
+        foreach (var rentalDetail in rentalDetails.ToList())
+        {
+            foreach (var robotAbilityValue in rentalDetail.RobotAbilityValues)
+            {
+                if (robotAbilityValue.isUpdated)
+                {
+                    res.RobotAbilityValueResponses.Add(_mapper.Map<RobotAbilityValueResponse>(robotAbilityValue));
+                    if (!res.RentalDetailIsUpdated.Value)
+                    {
+                        res.RentalDetailIsUpdated = true;
+                    }
+                }
+            }
+        }
+        
+        return res;
     }
 }

@@ -693,17 +693,18 @@ namespace RoboRent_BE.Model.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
-                    Deposit = table.Column<double>(type: "double precision", nullable: true),
-                    Complete = table.Column<double>(type: "double precision", nullable: true),
-                    Service = table.Column<double>(type: "double precision", nullable: true),
+                    RentalFee = table.Column<decimal>(type: "numeric", nullable: false),
+                    StaffFee = table.Column<decimal>(type: "numeric", nullable: false),
+                    DamageDeposit = table.Column<decimal>(type: "numeric", nullable: false),
+                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
+                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
+                    CustomizationFee = table.Column<decimal>(type: "numeric", nullable: false),
                     StaffDescription = table.Column<string>(type: "text", nullable: true),
                     ManagerFeedback = table.Column<string>(type: "text", nullable: true),
                     CustomerReason = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
-                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
-                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
                     ManagerId = table.Column<int>(type: "integer", nullable: true),
                     SubmittedToManagerAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ManagerApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -718,6 +719,30 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PriceQuotes_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalChangeLogs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RentalId = table.Column<int>(type: "integer", nullable: false),
+                    FieldName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OldValue = table.Column<string>(type: "text", nullable: true),
+                    NewValue = table.Column<string>(type: "text", nullable: true),
+                    ChangedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ChangedByAccountId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalChangeLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalChangeLogs_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id",
@@ -757,8 +782,8 @@ namespace RoboRent_BE.Model.Migrations
                     Status = table.Column<string>(type: "text", nullable: true),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
                     RoboTypeId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     isLocked = table.Column<bool>(type: "boolean", nullable: true),
                     IsUpdated = table.Column<bool>(type: "boolean", nullable: true)
                 },
@@ -1624,6 +1649,11 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RentalId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RentalChangeLogs_RentalId",
+                table: "RentalChangeLogs",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RentalContracts_RentalId",
                 table: "RentalContracts",
                 column: "RentalId");
@@ -1734,6 +1764,9 @@ namespace RoboRent_BE.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "FaceVerifications");
+
+            migrationBuilder.DropTable(
+                name: "RentalChangeLogs");
 
             migrationBuilder.DropTable(
                 name: "RentalContracts");

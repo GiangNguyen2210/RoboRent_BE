@@ -64,6 +64,7 @@ public partial class AppDbContext : IdentityDbContext<
     public virtual DbSet<ActualDelivery> ActualDeliveries { get; set; } = null!;
     public virtual DbSet<RobotAbilityValue> RobotAbilityValues { get; set; } = null!;
     public virtual DbSet<PaymentRecord> PaymentRecords { get; set; } = null!;
+    public virtual DbSet<RentalChangeLog> RentalChangeLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

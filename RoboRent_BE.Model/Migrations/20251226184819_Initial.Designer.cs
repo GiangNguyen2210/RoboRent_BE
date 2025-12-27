@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251226134536_Initial")]
+    [Migration("20251226184819_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1273,23 +1273,23 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<double?>("Complete")
-                        .HasColumnType("double precision");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CustomerReason")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CustomizationFee")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("DamageDeposit")
+                        .HasColumnType("numeric");
+
                     b.Property<int?>("DeliveryDistance")
                         .HasColumnType("integer");
 
                     b.Property<decimal?>("DeliveryFee")
                         .HasColumnType("numeric");
-
-                    b.Property<double?>("Deposit")
-                        .HasColumnType("double precision");
 
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1303,14 +1303,17 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("RentalFee")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("RentalId")
                         .HasColumnType("integer");
 
-                    b.Property<double?>("Service")
-                        .HasColumnType("double precision");
-
                     b.Property<string>("StaffDescription")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("StaffFee")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Status")
                         .HasColumnType("text");
@@ -1408,6 +1411,41 @@ namespace RoboRent_BE.Model.Migrations
                     b.ToTable("Rentals");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ChangedByAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("RentalChangeLogs");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>
                 {
                     b.Property<int>("Id")
@@ -1449,7 +1487,7 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAd")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("IsDeleted")
@@ -1467,7 +1505,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAd")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("isLocked")
@@ -4455,6 +4493,17 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("EventActivity");
 
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rental");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>

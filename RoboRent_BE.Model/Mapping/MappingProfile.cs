@@ -11,6 +11,7 @@ using RoboRent_BE.Model.DTOs.EventSchedule;
 using RoboRent_BE.Model.DTOs.FaceProfiles;
 using RoboRent_BE.Model.DTOs.FaceVerifications;
 using RoboRent_BE.Model.DTOs.GroupSchedule;
+using RoboRent_BE.Model.DTOs.RentalChangeLog;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
@@ -39,6 +40,8 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.RobotAbilities)
             );
 
+        CreateMap<RentalChangeLog, RentalChangeLogResponse>();
+        
         CreateMap<RobotAbilityValue, RobotAbilityValueResponse>();
 
         CreateMap<UpdateRobotAbilityValueRequest, RobotAbilityValue>();
@@ -74,6 +77,8 @@ public class MappingProfile : Profile
 
         CreateMap<ActivityType, ActivityTypeResponse>();
         
+        CreateMap<RoboType, RoboTypeLiteResponse>();
+
         CreateMap<CreateOrderRequest, Rental>()
             .ForMember(dest => dest.EventName, opt => opt.MapFrom(src => src.EventName))
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))

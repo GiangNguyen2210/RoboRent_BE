@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RoboRent_BE.Model.DTOs.RoboType;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Controller.Controllers;
@@ -26,5 +27,12 @@ public class RoboTypeController : ControllerBase
         {
             return StatusCode(500, e.Message);
         }
+    }
+    
+    [HttpPost("by-ids")]
+    public async Task<IActionResult> GetByIds([FromBody] RoboTypesByIdsRequest req)
+    {
+        var result = await _roboTypeService.GetByIdsAsync(req.Ids);
+        return Ok(result);
     }
 }

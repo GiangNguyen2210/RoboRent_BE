@@ -7,4 +7,6 @@ public interface IRoboTypeService
 {
     // Add custom methods here
     public Task<List<RoboTypeResponse>> GetAllAsync();
+    public Task<List<RoboTypeLiteResponse>> GetByIdsAsync(List<int> ids);
+
 }

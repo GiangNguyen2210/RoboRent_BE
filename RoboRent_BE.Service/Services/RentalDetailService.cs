@@ -97,7 +97,10 @@ public class RentalDetailService : IRentalDetailService
             
             foreach (var roabivaluea in request.UpdateRobotAbilityValueRequests)
             {
-                var rb = await _robotAbilityValueRepository.GetAsync(r => r.RentalDetailId == roabivaluea.RentalDetailId && r.RobotAbilityId == roabivaluea.RobotAbilityId);
+                var rb = await _robotAbilityValueRepository
+                    .GetAsync(r => 
+                        r.RentalDetailId == roabivaluea.RentalDetailId 
+                        && r.RobotAbilityId == roabivaluea.RobotAbilityId);
                 
                 rb = _mapper.Map(roabivaluea, rb);
                 
