@@ -1,3 +1,6 @@
+using RoboRent_BE.Model.DTOs.RobotAbilityValue;
+using RoboRent_BE.Model.Entities;
+
 namespace RoboRent_BE.Model.DTOS.RentalDetail;
 
 public class RentalDetailResponse
@@ -22,6 +25,8 @@ public class RentalDetailResponse
     public string? RobotTypeName { get; set; } =  string.Empty;
     
     public string? RobotTypeDescription { get; set; } =  string.Empty;
+
+    public List<RobotAbilityValueResponse> RobotAbilityValueResponses { get; set; }  = new List<RobotAbilityValueResponse>();
 }
 
 

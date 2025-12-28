@@ -11,10 +11,12 @@ using RoboRent_BE.Model.DTOs.EventSchedule;
 using RoboRent_BE.Model.DTOs.FaceProfiles;
 using RoboRent_BE.Model.DTOs.FaceVerifications;
 using RoboRent_BE.Model.DTOs.GroupSchedule;
+using RoboRent_BE.Model.DTOs.RentalChangeLog;
 using RoboRent_BE.Model.DTOS.RentalContract;
 using RoboRent_BE.Model.DTOS.RentalDetail;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.DTOs.RobotAbility;
+using RoboRent_BE.Model.DTOs.RobotAbilityValue;
 using RoboRent_BE.Model.DTOs.RoboType;
 using RoboRent_BE.Model.DTOs.RoboTypeOfActivity;
 using RoboRent_BE.Model.DTOS.TemplateClauses;
@@ -38,6 +40,14 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.RobotAbilities)
             );
 
+        CreateMap<RentalChangeLog, RentalChangeLogResponse>();
+        
+        CreateMap<RobotAbilityValue, RobotAbilityValueResponse>();
+
+        CreateMap<UpdateRobotAbilityValueRequest, RobotAbilityValue>();
+        
+        CreateMap<CreateRobotAbilityValueRequest, RobotAbilityValue>();
+
         CreateMap<RobotAbility, RobotAbilityResponse>();
         
         CreateMap<GroupScheduleUpdateRequest, GroupSchedule>();
@@ -60,12 +70,15 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.ActivityType != null ? src.ActivityType.Name : null));
 
         CreateMap<RobotTypeOfActivity, RobotTypeOfActivityResponse>()
-            .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName));
+            .ForMember(dest => dest.RoboTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName))
+            .ForMember(dest => dest.RobotAbilityResponses, opt => opt.MapFrom(src => src.RoboType.RobotAbilities));
         
         CreateMap<EventActivity, EventActivityResponse>();
 
         CreateMap<ActivityType, ActivityTypeResponse>();
         
+        CreateMap<RoboType, RoboTypeLiteResponse>();
+
         CreateMap<CreateOrderRequest, Rental>()
             .ForMember(dest => dest.EventName, opt => opt.MapFrom(src => src.EventName))
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
@@ -77,7 +90,8 @@ public class MappingProfile : Profile
         CreateMap<Rental, OrderResponse>()
             .ForMember(dest => dest.EventActivityName, opt => opt.MapFrom(src => src.EventActivity.Name))
             .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src => src.ActivityType.Name))
-            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Account.FullName));
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Account.FullName))
+            .ForMember(dest => dest.ActivityTypeResponse, opt => opt.MapFrom(src => src.ActivityType));
 
         CreateMap<ModifyIdentityUser, UpdateUserResponse>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
@@ -95,7 +109,8 @@ public class MappingProfile : Profile
         CreateMap<UpdateRentalDetailRequest, RentalDetail>();
         CreateMap<RentalDetail, RentalDetailResponse>()
             .ForMember(dest => dest.RobotTypeName, opt => opt.MapFrom(src => src.RoboType.TypeName))
-            .ForMember(dest => dest.RobotTypeDescription, opt => opt.MapFrom(src => src.RoboType.Description));
+            .ForMember(dest => dest.RobotTypeDescription, opt => opt.MapFrom(src => src.RoboType.Description))
+            .ForMember(dest => dest.RobotAbilityValueResponses, opt => opt.MapFrom(src => src.RobotAbilityValues));
         // Rental Contract mappings
         CreateMap<CreateRentalContractRequest, RentalContract>();
         CreateMap<UpdateRentalContractRequest, RentalContract>();

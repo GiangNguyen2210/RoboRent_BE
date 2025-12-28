@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using RoboRent_BE.Model.DTOs.RobotAbilityValue;
 
 namespace RoboRent_BE.Model.DTOS.RentalDetail;
 
@@ -14,11 +15,14 @@ public class CreateRentalDetailRequest
     
     [Required] public int? RoboTypeId { get; set; }
     
-    public string? Script { get; set; } =  string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public string? Branding { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public string? Scenario { get; set; } =  string.Empty;
+    public bool? isLocked { get; set; }
+
+    public List<CreateRobotAbilityValueRequest> CreateRobotAbilityValueRequests { get; set; } =
+        new List<CreateRobotAbilityValueRequest>();
 }
 
 
