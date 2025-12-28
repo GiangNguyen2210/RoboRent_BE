@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddTransient<IPaymentRecordRepository, PaymentRecordRepository>();
         services.AddTransient<IFaceProfilesRepository, FaceProfilesRepository>();
         services.AddTransient<IFaceVerificationRepository, FaceVerificationRepository>();
+        services.AddTransient<RoboRent_BE.Service.Interfaces.INotificationRepository, NotificationRepository>();
         return services;
     }
 }

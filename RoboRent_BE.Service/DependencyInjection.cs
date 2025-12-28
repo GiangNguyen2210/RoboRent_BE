@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddHostedService<PaymentRecordsExpirationService>();
         services.AddTransient<IFaceProfilesService, FaceProfilesService>();
         services.AddTransient<IFaceVerificationService, FaceVerificationService>();
+        services.AddScoped<INotificationService, NotificationService>();
         return services;
     }
 }

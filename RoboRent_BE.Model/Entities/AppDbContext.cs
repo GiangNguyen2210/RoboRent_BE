@@ -63,6 +63,7 @@ public partial class AppDbContext : IdentityDbContext<
     public virtual DbSet<RobotAbility> RobotAbilities { get; set; } = null!;
     public virtual DbSet<ActualDelivery> ActualDeliveries { get; set; } = null!;
     public virtual DbSet<PaymentRecord> PaymentRecords { get; set; } = null!;
+    public virtual DbSet<Notification> Notifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

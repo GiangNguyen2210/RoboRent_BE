@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Controller.Helpers;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
+using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Controller.Controllers;
@@ -11,10 +12,14 @@ namespace RoboRent_BE.Controller.Controllers;
 public class ActualDeliveryController : ControllerBase
 {
     private readonly IActualDeliveryService _deliveryService;
+    private readonly INotificationService _notificationService;
 
-    public ActualDeliveryController(IActualDeliveryService deliveryService)
+    public ActualDeliveryController(
+        IActualDeliveryService deliveryService,
+        INotificationService notificationService)
     {
         _deliveryService = deliveryService;
+        _notificationService = notificationService;
     }
 
     /// <summary>
@@ -44,7 +49,20 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var delivery = await _deliveryService.AssignStaffAsync(id, request);
-            return Ok(delivery);  // ✅
+
+            // 🔔 Notify assigned Staff Tech
+            if (delivery.StaffId.HasValue)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    delivery.StaffId.Value,
+                    NotificationType.DeliveryAssigned,
+                    $"🚚 Bạn được phân công giao thiết bị cho sự kiện ngày {delivery.ScheduleInfo?.EventDate:dd/MM/yyyy}.",
+                    delivery.RentalInfo?.RentalId ?? 0,
+                    delivery.Id,
+                    isRealTime: true);
+            }
+
+            return Ok(delivery);
         }
         catch (Exception ex)
         {
@@ -57,7 +75,7 @@ public class ActualDeliveryController : ControllerBase
     /// </summary>
     [HttpGet("check-conflict")]
     public async Task<IActionResult> CheckConflict(
-        [FromQuery] int staffId, 
+        [FromQuery] int staffId,
         [FromQuery] int groupScheduleId)
     {
         try

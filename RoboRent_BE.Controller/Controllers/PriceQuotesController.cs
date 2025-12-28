@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using RoboRent_BE.Model.DTOs.Chat;
 using RoboRent_BE.Model.DTOs.PriceQuote;
 using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
-using RoboRent_BE.Controller.Hubs;
 using RoboRent_BE.Controller.Helpers;
 
 namespace RoboRent_BE.Controller.Controllers;
@@ -14,25 +11,24 @@ namespace RoboRent_BE.Controller.Controllers;
 public class PriceQuotesController : ControllerBase
 {
     private readonly IPriceQuoteService _priceQuoteService;
-    private readonly ChatNotificationHelper _notificationHelper;
-    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly INotificationService _notificationService;
     private readonly IRentalService _rentalService;
+    private readonly IAccountService _accountService;
 
     public PriceQuotesController(
         IPriceQuoteService priceQuoteService,
-        ChatNotificationHelper notificationHelper,
-        IHubContext<ChatHub> hubContext,
-        IRentalService rentalService)
+        INotificationService notificationService,
+        IRentalService rentalService,
+        IAccountService accountService)
     {
         _priceQuoteService = priceQuoteService;
-        _notificationHelper = notificationHelper;
-        _hubContext = hubContext;
+        _notificationService = notificationService;
         _rentalService = rentalService;
+        _accountService = accountService;
     }
 
     /// <summary>
     /// Tạo báo giá mới (max 3 lần)
-    /// Auto gửi notification vào chat
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreatePriceQuote([FromBody] CreatePriceQuoteRequest request)
@@ -41,39 +37,25 @@ public class PriceQuotesController : ControllerBase
         {
             int staffId = AuthHelper.GetCurrentUserId(User);
 
-            // 1. Service tạo quote (check < 3)
             var quote = await _priceQuoteService.CreatePriceQuoteAsync(request, staffId);
-            var rental = await _rentalService.GetRentalAsync(request.RentalId);
 
-            // 2. Gửi notification vào chat + broadcast qua SignalR
-            await _notificationHelper.SendNotificationAsync(
-                request.RentalId,
-                staffId,
-                $"📤 Staff đã tạo báo giá #{quote.QuoteNumber} và gửi lên Manager chờ duyệt",
-                quote.Id,
-                null,
-                MessageType.PriceQuoteNotification
-            );
-
-
-            // 🎯 REFACTORED: Targeted broadcast QuoteCreated
-            // Chỉ gửi đến Customer (Staff là người tạo, không cần notification!)
-            if (rental != null && rental.AccountId.HasValue)
+            // 🔔 Notify ALL Managers: Quote pending approval
+            var managers = await _accountService.GetAllManagerAccountsAsync();
+            if (managers != null && managers.Any())
             {
-                var customerId = rental.AccountId.Value.ToString();
-                await _hubContext.Clients.User(customerId).SendAsync("QuoteCreated", new
-                {
-                    QuoteId = quote.Id,
-                    QuoteNumber = quote.QuoteNumber,
-                    Total = quote.GrandTotal
-                });
+                await _notificationService.CreateNotificationsAsync(
+                    managers.Select(m => m.Id),
+                    NotificationType.QuotePendingApproval,
+                    $"📤 Báo giá #{quote.QuoteNumber} đang chờ duyệt.",
+                    request.RentalId,
+                    quote.Id,
+                    isRealTime: true);
             }
 
             return Ok(quote);
         }
-        catch (Exception ex)    
+        catch (Exception ex)
         {
-            // Check if error is about max quotes
             if (ex.Message.Contains("Maximum 3 quotes"))
             {
                 return BadRequest(new
@@ -107,7 +89,6 @@ public class PriceQuotesController : ControllerBase
 
     /// <summary>
     /// Lấy tất cả báo giá của 1 rental
-    /// Response bao gồm: danh sách quotes, tổng số quotes, và flag CanCreateMore
     /// </summary>
     [HttpGet("rental/{rentalId}")]
     public async Task<IActionResult> GetQuotesByRentalId(int rentalId)
@@ -123,7 +104,6 @@ public class PriceQuotesController : ControllerBase
         }
     }
 
-
     /// <summary>
     /// [MANAGER] Approve hoặc Reject báo giá
     /// </summary>
@@ -133,50 +113,35 @@ public class PriceQuotesController : ControllerBase
         try
         {
             int managerId = AuthHelper.GetCurrentUserId(User);
-
             var quote = await _priceQuoteService.ManagerActionAsync(id, request, managerId);
-
-            string content = request.Action.ToLower() == "approve"
-                ? $"✅ Manager đã duyệt báo giá #{quote.QuoteNumber}. Chờ Customer xác nhận."
-                : $"❌ Manager từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Feedback}. Vui lòng chỉnh sửa lại.";
-
-            await _notificationHelper.SendNotificationAsync(
-            quote.RentalId,
-            managerId,
-            content,
-            quote.Id
-        );
-
-            // 🎯 REFACTORED: Targeted SignalR broadcast
-            // Load Rental để lấy CustomerId và StaffId
             var rental = await _rentalService.GetRentalAsync(quote.RentalId);
-            if (rental != null)
+
+            if (request.Action.ToLower() == "approve")
             {
-                if (quote.Status == "Approved")
+                // 🔔 Notify Customer: New quote ready for review (don't mention manager)
+                if (rental?.AccountId != null)
                 {
-                    // Approved: Gửi đến Staff + Customer (Manager là người approve, không nhận)
-                    var staffId = rental.StaffId?.ToString() ?? "";
-                    var customerId = rental.AccountId?.ToString() ?? "";
-                    var recipients = new string[] { staffId, customerId }.Where(id => !string.IsNullOrEmpty(id)).ToArray();
-                    await _hubContext.Clients.Users(recipients).SendAsync("QuoteStatusChanged", new
-                    {
-                        QuoteId = quote.Id,
-                        Status = quote.Status,
-                        QuoteNumber = quote.QuoteNumber,
-                        Total = quote.GrandTotal
-                    });
+                    await _notificationService.CreateNotificationAsync(
+                        rental.AccountId.Value,
+                        NotificationType.QuoteApproved,
+                        $"📋 Bạn có báo giá mới #{quote.QuoteNumber}. Vui lòng xem và xác nhận.",
+                        quote.RentalId,
+                        quote.Id,
+                        isRealTime: true);
                 }
-                else if (quote.Status == "Rejected")
+            }
+            else
+            {
+                // 🔔 Notify Staff: Quote rejected by manager
+                if (rental?.StaffId != null)
                 {
-                    // Rejected: Chỉ gửi đến Staff (Customer không cần biết Manager reject)
-                    var staffId = rental.StaffId.ToString();
-                    await _hubContext.Clients.User(staffId).SendAsync("QuoteStatusChanged", new
-                    {
-                        QuoteId = quote.Id,
-                        Status = quote.Status,
-                        QuoteNumber = quote.QuoteNumber,
-                        Total = quote.GrandTotal
-                    });
+                    await _notificationService.CreateNotificationAsync(
+                        rental.StaffId.Value,
+                        NotificationType.QuoteRejected,
+                        $"❌ Báo giá #{quote.QuoteNumber} bị từ chối. Lý do: {request.Feedback}",
+                        quote.RentalId,
+                        quote.Id,
+                        isRealTime: true);
                 }
             }
 
@@ -197,43 +162,35 @@ public class PriceQuotesController : ControllerBase
         try
         {
             int customerId = AuthHelper.GetCurrentUserId(User);
-
             var quote = await _priceQuoteService.CustomerActionAsync(id, request, customerId);
-
-            string content = request.Action.ToLower() == "approve"
-                ? $"✅ Customer đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: ${quote.GrandTotal:N2}"
-                : quote.Status == "Expired"
-                    ? $"⏰ Báo giá #{quote.QuoteNumber} đã hết hạn (đã tạo đủ 3 báo giá)"
-                    : $"❌ Customer từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}. Vui lòng tạo báo giá mới.";
-
-            await _notificationHelper.SendNotificationAsync(
-                quote.RentalId,
-                customerId,
-                content,
-                quote.Id
-            );
-
-            // 🎯 REFACTORED: Targeted SignalR broadcasts
             var rental = await _rentalService.GetRentalAsync(quote.RentalId);
-            if (rental != null && rental.StaffId.HasValue)
-            {
-                var staffId = rental.StaffId.Value.ToString();
 
-                if (request.Action.ToLower() == "approve")
+            if (request.Action.ToLower() == "approve")
+            {
+                // 🔔 Notify Staff: Quote accepted by customer
+                if (rental?.StaffId != null)
                 {
-                    // QuoteAccepted: Chỉ gửi đến Staff (Customer là người accept, không cần notification!)
-                    await _hubContext.Clients.User(staffId).SendAsync("QuoteAccepted", quote.Id);
+                    await _notificationService.CreateNotificationAsync(
+                        rental.StaffId.Value,
+                        NotificationType.QuoteAccepted,
+                        $"✅ Khách hàng đã chấp nhận báo giá #{quote.QuoteNumber}. Tổng: {quote.GrandTotal:N0}₫",
+                        quote.RentalId,
+                        quote.Id,
+                        isRealTime: true);
                 }
-                else if (request.Action.ToLower() == "reject")
+            }
+            else
+            {
+                // 🔔 Notify Staff: Quote rejected by customer
+                if (rental?.StaffId != null)
                 {
-                    // 🔴 NEW: QuoteRejected event (FIX BUG #1!)
-                    // Chỉ gửi đến Staff (Customer là người reject, không cần notification!)
-                    await _hubContext.Clients.User(staffId).SendAsync("QuoteRejected", new
-                    {
-                        QuoteId = quote.Id,
-                        QuoteNumber = quote.QuoteNumber,
-                        Reason = request.Reason
-                    });
+                    await _notificationService.CreateNotificationAsync(
+                        rental.StaffId.Value,
+                        NotificationType.QuoteRejectedByCustomer,
+                        $"❌ Khách hàng từ chối báo giá #{quote.QuoteNumber}. Lý do: {request.Reason}",
+                        quote.RentalId,
+                        quote.Id,
+                        isRealTime: true);
                 }
             }
 
@@ -260,15 +217,20 @@ public class PriceQuotesController : ControllerBase
         try
         {
             int staffId = AuthHelper.GetCurrentUserId(User);
-
             var quote = await _priceQuoteService.UpdatePriceQuoteAsync(id, request, staffId);
 
-            await _notificationHelper.SendNotificationAsync(
-                quote.RentalId,
-                staffId,
-                $"🔄 Staff đã cập nhật báo giá #{quote.QuoteNumber} và gửi lại Manager",
-                quote.Id
-            );
+            // 🔔 Notify ALL Managers: Quote updated and resubmitted
+            var managers = await _accountService.GetAllManagerAccountsAsync();
+            if (managers != null && managers.Any())
+            {
+                await _notificationService.CreateNotificationsAsync(
+                    managers.Select(m => m.Id),
+                    NotificationType.QuotePendingApproval,
+                    $"🔄 Báo giá #{quote.QuoteNumber} đã được cập nhật và gửi lại.",
+                    quote.RentalId,
+                    quote.Id,
+                    isRealTime: true);
+            }
 
             return Ok(quote);
         }
