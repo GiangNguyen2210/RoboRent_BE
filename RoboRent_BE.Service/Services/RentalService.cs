@@ -464,4 +464,18 @@ public class RentalService : IRentalService
         
         return res;
     }
+
+    public async Task ExpireRentalContractAsync()
+    {
+        var rentals = await _rentalRepository.GetAllAsync();
+        foreach (var ren in rentals.ToList())
+        {
+            var period = ren.CreatedDate.Value.Date - DateTime.UtcNow.Date;
+            if (period.TotalDays > 3 && ren.Status != "DeliveryScheduled")
+            {
+                ren.Status = "Canceled";
+                await _rentalRepository.UpdateAsync(ren);
+            }
+        }
+    }
 }

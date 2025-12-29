@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddHostedService<PaymentRecordsExpirationService>();
         services.AddTransient<IFaceProfilesService, FaceProfilesService>();
         services.AddTransient<IFaceVerificationService, FaceVerificationService>();
+        services.AddHostedService<RentalExpirationService>();
         return services;
     }
 }
