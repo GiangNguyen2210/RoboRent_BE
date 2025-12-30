@@ -253,4 +253,27 @@ public class PriceQuotesController : ControllerBase
             return BadRequest(new { Message = "Failed to get quotes", Error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// [STAFF] Reject active quotes for rental when rental info is updated
+    /// </summary>
+    [HttpPost("reject-active-for-rental/{rentalId}")]
+    public async Task<IActionResult> RejectActiveQuotesForRental(int rentalId)
+    {
+        try
+        {
+            var rejectedCount = await _priceQuoteService.RejectActiveQuotesForRentalAsync(rentalId);
+            
+            return Ok(new
+            {
+                success = true,
+                message = $"Rejected {rejectedCount} active quote(s) for rental {rentalId}",
+                rejectedCount = rejectedCount
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = "Failed to reject active quotes", Error = ex.Message });
+        }
+    }
 }
