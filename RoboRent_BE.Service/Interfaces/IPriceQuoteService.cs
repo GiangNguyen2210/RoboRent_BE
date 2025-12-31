@@ -11,5 +11,6 @@ public interface IPriceQuoteService
     Task<PriceQuoteResponse> ManagerActionAsync(int quoteId, ManagerActionRequest request, int managerId);
     Task<PriceQuoteResponse> UpdatePriceQuoteAsync(int quoteId, UpdatePriceQuoteRequest request, int staffId);
     Task<List<ManagerQuoteListItemResponse>> GetAllQuotesForManagerAsync(string? status = null);
+    Task<int> RejectActiveQuotesForRentalAsync(int rentalId);
 
 }

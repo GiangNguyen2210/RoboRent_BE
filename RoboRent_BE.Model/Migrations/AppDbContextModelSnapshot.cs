@@ -1207,6 +1207,54 @@ namespace RoboRent_BE.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRealTime")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RecipientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientId");
+
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -4427,6 +4475,23 @@ namespace RoboRent_BE.Model.Migrations
                         .HasForeignKey("RentalId");
 
                     b.Navigation("ActivityTypeGroup");
+
+                    b.Navigation("Rental");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.Notification", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
+                    b.Navigation("Recipient");
 
                     b.Navigation("Rental");
                 });

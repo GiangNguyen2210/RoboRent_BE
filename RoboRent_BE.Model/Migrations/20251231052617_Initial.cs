@@ -253,7 +253,7 @@ namespace RoboRent_BE.Model.Migrations
                 name: "RobotAbilities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RobotTypeId = table.Column<int>(type: "integer", nullable: false),
                     Key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -409,7 +409,6 @@ namespace RoboRent_BE.Model.Migrations
                     ReceivedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EventDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
-                    IsUpdated = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
                     AccountId = table.Column<int>(type: "integer", nullable: false),
                     EventActivityId = table.Column<int>(type: "integer", nullable: true),
@@ -693,18 +692,17 @@ namespace RoboRent_BE.Model.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
-                    RentalFee = table.Column<decimal>(type: "numeric", nullable: false),
-                    StaffFee = table.Column<decimal>(type: "numeric", nullable: false),
-                    DamageDeposit = table.Column<decimal>(type: "numeric", nullable: false),
-                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
-                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
-                    CustomizationFee = table.Column<decimal>(type: "numeric", nullable: false),
+                    Deposit = table.Column<double>(type: "double precision", nullable: true),
+                    Complete = table.Column<double>(type: "double precision", nullable: true),
+                    Service = table.Column<double>(type: "double precision", nullable: true),
                     StaffDescription = table.Column<string>(type: "text", nullable: true),
                     ManagerFeedback = table.Column<string>(type: "text", nullable: true),
                     CustomerReason = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
+                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
+                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
                     ManagerId = table.Column<int>(type: "integer", nullable: true),
                     SubmittedToManagerAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ManagerApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -719,30 +717,6 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PriceQuotes_Rentals_RentalId",
-                        column: x => x.RentalId,
-                        principalTable: "Rentals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RentalChangeLogs",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalId = table.Column<int>(type: "integer", nullable: false),
-                    FieldName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    OldValue = table.Column<string>(type: "text", nullable: true),
-                    NewValue = table.Column<string>(type: "text", nullable: true),
-                    ChangedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ChangedByAccountId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RentalChangeLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RentalChangeLogs_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id",
@@ -782,10 +756,9 @@ namespace RoboRent_BE.Model.Migrations
                     Status = table.Column<string>(type: "text", nullable: true),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
                     RoboTypeId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    isLocked = table.Column<bool>(type: "boolean", nullable: true),
-                    IsUpdated = table.Column<bool>(type: "boolean", nullable: true)
+                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    isLocked = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1002,36 +975,6 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RobotAbilityValues",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RentalDetailId = table.Column<int>(type: "integer", nullable: false),
-                    RobotAbilityId = table.Column<int>(type: "integer", nullable: false),
-                    ValueText = table.Column<string>(type: "text", nullable: true),
-                    ValueJson = table.Column<string>(type: "jsonb", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    isUpdated = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RobotAbilityValues", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RobotAbilityValues_RentalDetails_RentalDetailId",
-                        column: x => x.RentalDetailId,
-                        principalTable: "RentalDetails",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_RobotAbilityValues_RobotAbilities_RobotAbilityId",
-                        column: x => x.RobotAbilityId,
-                        principalTable: "RobotAbilities",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ContractReports",
                 columns: table => new
                 {
@@ -1176,51 +1119,51 @@ namespace RoboRent_BE.Model.Migrations
                 columns: new[] { "Id", "AbilityGroup", "DataType", "Description", "IsActive", "IsOnSiteAdjustable", "IsPriceImpacting", "IsRequired", "JsonSchema", "Key", "Label", "LockAtCutoff", "Max", "MaxLength", "Min", "OptionsJson", "Placeholder", "Regex", "RobotTypeId", "UiControl" },
                 values: new object[,]
                 {
-                    { 1, "Branding & UI", "string", "Tên thương hiệu hiển thị trên màn hình robot.", true, false, false, true, null, "brandName", "Brand Name", true, null, 100, null, null, "VD: RoboRent", null, 1, "text" },
-                    { 2, "Branding & UI", "string", "Đường dẫn logo (PNG/SVG) hiển thị trên robot.", true, false, false, true, null, "logoUrl", "Logo URL", true, null, 500, null, null, "https://...", null, 1, "url" },
-                    { 3, "Branding & UI", "json", "Cấu hình giao diện (banner/background/color).", true, false, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"bannerUrl\":{\"type\":\"string\"},\r\n            \"backgroundUrl\":{\"type\":\"string\"},\r\n            \"primaryColor\":{\"type\":\"string\"},\r\n            \"secondaryColor\":{\"type\":\"string\"}\r\n          }\r\n        }", "themeAssets", "Theme Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 4, "Branding & UI", "string", "Text chào mừng hiển thị trên màn hình.", true, true, false, false, null, "welcomeScreenText", "Welcome Screen Text", true, null, 300, null, null, "Chào mừng bạn đến với...", null, 1, "textarea" },
-                    { 5, "Branding & UI", "string", "Link/QR điều hướng khách (landing page, form...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 1, "url" },
-                    { 6, "Branding & UI", "json", "Danh sách asset tài trợ hiển thị luân phiên.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "sponsorAssets", "Sponsor Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 7, "Greeting & Script", "string", "Kịch bản chào hỏi / giới thiệu ngắn.", true, false, false, false, null, "greetingScript", "Greeting Script", true, null, 2000, null, null, "Xin chào quý khách...", null, 1, "textarea" },
-                    { 8, "Greeting & Script", "enum[]", "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.", true, false, false, true, null, "languages", "Languages", true, null, null, null, "[\"VI\",\"EN\",\"JP\",\"KR\",\"CN\"]", null, null, 1, "multiSelect" },
-                    { 9, "Greeting & Script", "json", "Cấu hình giọng nói (tốc độ/độ cao...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 10, "Greeting & Script", "json", "Danh sách câu hỏi thường gặp (Q/A + keywords).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"question\":{\"type\":\"string\"},\r\n              \"answer\":{\"type\":\"string\"},\r\n              \"keywords\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"question\",\"answer\"]\r\n          }\r\n        }", "faqItems", "FAQ Items", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 11, "Check-in & Lead", "enum", "Chế độ check-in tại sự kiện.", true, false, false, true, null, "checkinMode", "Check-in Mode", true, null, null, null, "[\"None\",\"QR\",\"Form\"]", null, null, 1, "select" },
-                    { 12, "Check-in & Lead", "enum[]", "Các trường thu thập thông tin khách.", true, false, false, false, null, "leadFormFields", "Lead Form Fields", true, null, null, null, "[\"Name\",\"Phone\",\"Email\",\"Company\",\"Title\"]", null, null, 1, "multiSelect" },
-                    { 13, "Check-in & Lead", "string", "Thông báo quyền riêng tư khi thu thập dữ liệu.", true, false, false, false, null, "privacyNoticeText", "Privacy Notice Text", true, null, 2000, null, null, "Thông tin của bạn sẽ được sử dụng để...", null, 1, "textarea" },
-                    { 14, "Navigation", "json", "Danh sách điểm đến/booth để robot hướng dẫn.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"description\":{\"type\":\"string\"},\r\n              \"locationHint\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"name\"]\r\n          }\r\n        }", "pois", "Points of Interest (POI)", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 15, "Navigation", "json", "Quy tắc điều hướng (tốc độ, vùng cấm...).", true, true, true, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"noGoZones\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\r\n            \"preferredPaths\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n          }\r\n        }", "navigationRules", "Navigation Rules", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 16, "Show Set", "json", "Danh sách show set (nhạc + choreography + thời lượng + lặp).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"setName\":{\"type\":\"string\"},\r\n              \"musicTrackUrl\":{\"type\":\"string\"},\r\n              \"choreographyId\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":10},\r\n              \"repeatCount\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"setName\",\"durationSec\"]\r\n          }\r\n        }", "showSets", "Show Sets", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 17, "Show Set", "json", "Thứ tự chạy các set (theo index).", true, false, true, false, "{ \"type\":\"array\", \"items\":{\"type\":\"integer\",\"minimum\":0} }", "showOrder", "Show Order", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 18, "Cues & Triggers", "enum", "Cách kích hoạt biểu diễn.", true, false, false, true, null, "triggerMode", "Trigger Mode", true, null, null, null, "[\"Manual\",\"Scheduled\",\"RemoteSignal\"]", null, null, 2, "select" },
-                    { 19, "Cues & Triggers", "json", "Các cue/timecode điều khiển hành động trong show.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"timecodeSec\":{\"type\":\"integer\",\"minimum\":0},\r\n              \"action\":{\"type\":\"string\"},\r\n              \"note\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"timecodeSec\",\"action\"]\r\n          }\r\n        }", "cuePoints", "Cue Points", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 20, "Stage & Safety", "json", "Khu vực sân khấu và khoảng cách an toàn.", true, false, false, true, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"widthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"depthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"safeDistanceM\":{\"type\":\"number\",\"minimum\":0.5}\r\n          },\r\n          \"required\":[\"widthM\",\"depthM\",\"safeDistanceM\"]\r\n        }", "stageZone", "Stage Zone", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 21, "Stage & Safety", "json", "Giới hạn an toàn (tốc độ khớp, góc tay chân...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxJointSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"maxLimbAngle\":{\"type\":\"number\",\"minimum\":10,\"maximum\":180},\r\n            \"emergencyStopRequired\":{\"type\":\"boolean\"}\r\n          }\r\n        }", "safetyLimits", "Safety Limits", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 22, "Stage & Safety", "bool", "Có yêu cầu rehearsal trước giờ chạy show hay không.", true, false, true, true, null, "rehearsalRequired", "Rehearsal Required", true, null, null, null, null, null, null, 2, "switch" },
-                    { 23, "Stage & Safety", "enum", "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.", true, false, false, true, null, "riskLevel", "Risk Level", true, null, null, null, "[\"Low\",\"Medium\",\"High\"]", null, null, 2, "select" },
-                    { 24, "Visual Style", "string", "Theme trang phục/LED cho robot (nếu có).", true, false, true, false, null, "costumeOrLedTheme", "Costume/LED Theme", true, null, 200, null, null, "VD: Neon / Tết / Christmas...", null, 2, "text" },
-                    { 25, "Visual Style", "string", "1-2 câu chào mở đầu/kết thúc show.", true, true, false, false, null, "introOutroLines", "Intro/Outro Lines", true, null, 500, null, null, "Xin chào quý khách...", null, 2, "textarea" },
-                    { 26, "Script Timeline", "json", "Kịch bản theo timeline (blockTitle/text/language/duration).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"blockTitle\":{\"type\":\"string\"},\r\n              \"timecode\":{\"type\":\"string\"},\r\n              \"text\":{\"type\":\"string\"},\r\n              \"language\":{\"type\":\"string\"},\r\n              \"estimatedDurationSec\":{\"type\":\"integer\",\"minimum\":5},\r\n              \"interactionPrompts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"blockTitle\",\"text\"]\r\n          }\r\n        }", "scriptBlocks", "Script Blocks", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 27, "Voice & Pronunciation", "json", "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"term\":{\"type\":\"string\"},\r\n              \"phonetic\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"term\",\"phonetic\"]\r\n          }\r\n        }", "pronunciationDict", "Pronunciation Dictionary", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 28, "Voice & Pronunciation", "json", "Cấu hình giọng MC (rate/pitch/volume).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 29, "Voice & Pronunciation", "json", "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\r\n            \"quietHoursVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 30, "On-screen Assets", "json", "Asset hiển thị (QR/Image/Slide + thời lượng).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"type\":{\"type\":\"string\"},\r\n              \"url\":{\"type\":\"string\"},\r\n              \"displayDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"type\",\"url\"]\r\n          }\r\n        }", "screenAssets", "On-screen Assets", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 31, "On-screen Assets", "json", "Cấu hình countdown (nếu dùng).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"enabled\":{\"type\":\"boolean\"},\r\n            \"targetTime\":{\"type\":\"string\"}\r\n          }\r\n        }", "countdownSettings", "Countdown Settings", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 32, "Co-host Mode", "bool", "Có MC người phối hợp hay không.", true, false, false, true, null, "humanMcPresent", "Human MC Present", true, null, null, null, null, null, null, 3, "switch" },
-                    { 33, "Co-host Mode", "json", "Cue chuyển giao giữa robot và MC người.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"cue\":{\"type\":\"string\"},\r\n              \"who\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"cue\",\"who\"]\r\n          }\r\n        }", "handoffCues", "Handoff Cues", true, null, null, null, "[\"Robot\",\"Human\"]", null, null, 3, "jsonEditor" },
-                    { 34, "Ad Playlist", "json", "Playlist quảng cáo (image/video + duration + order).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"assetUrl\":{\"type\":\"string\"},\r\n              \"assetType\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":1},\r\n              \"order\":{\"type\":\"integer\",\"minimum\":0}\r\n            },\r\n            \"required\":[\"assetUrl\",\"assetType\",\"durationSec\"]\r\n          }\r\n        }", "adPlaylist", "Ad Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 35, "Ad Playlist", "json", "Quy tắc chạy playlist (khung giờ, interval, peak mode).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"start\":{\"type\":\"string\"},\r\n            \"end\":{\"type\":\"string\"},\r\n            \"peakMode\":{\"type\":\"boolean\"},\r\n            \"intervalSec\":{\"type\":\"integer\",\"minimum\":5}\r\n          }\r\n        }", "scheduleRules", "Schedule Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 36, "Audio & Announcement", "json", "Danh sách audio (nhạc nền) nếu sử dụng.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "audioPlaylist", "Audio Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 37, "Audio & Announcement", "string", "Script thông báo/mời chào tại booth.", true, false, false, false, null, "announcementScript", "Announcement Script", true, null, 2000, null, null, "Mời quý khách ghé booth...", null, 4, "textarea" },
-                    { 38, "Audio & Announcement", "json", "Cấu hình âm lượng phát tại booth.", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 39, "CTA & Lead", "string", "Link/QR cho CTA (landing page, đăng ký...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 4, "url" },
-                    { 40, "CTA & Lead", "string", "Text CTA hiển thị trên màn hình/booth.", true, true, false, false, null, "ctaText", "CTA Text", true, null, 200, null, null, "Quét QR để nhận ưu đãi!", null, 4, "text" },
-                    { 41, "CTA & Lead", "string", "Luật voucher/ưu đãi (nếu có).", true, false, true, false, null, "voucherRule", "Voucher Rule", true, null, 2000, null, null, "VD: Giảm 10% cho 100 khách đầu tiên...", null, 4, "textarea" },
-                    { 42, "Booth Route", "enum", "Chế độ di chuyển tại booth.", true, false, false, true, null, "routeMode", "Route Mode", true, null, null, null, "[\"Static\",\"Patrol\"]", null, null, 4, "select" },
-                    { 43, "Booth Route", "json", "Các điểm dừng khi robot patrol.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"stopDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"name\",\"stopDurationSec\"]\r\n          }\r\n        }", "routePoints", "Route Points", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 44, "Booth Route", "json", "Khu vực tránh (nếu có).", true, true, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "avoidZones", "Avoid Zones", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 45, "Booth Route", "number", "Tốc độ tối đa (m/s) khi di chuyển.", true, true, false, false, null, "maxSpeed", "Max Speed", true, 2.0m, null, 0.1m, null, null, null, 4, "number" }
+                    { 1L, "Branding & UI", "string", "Tên thương hiệu hiển thị trên màn hình robot.", true, false, false, true, null, "brandName", "Brand Name", true, null, 100, null, null, "VD: RoboRent", null, 1, "text" },
+                    { 2L, "Branding & UI", "string", "Đường dẫn logo (PNG/SVG) hiển thị trên robot.", true, false, false, true, null, "logoUrl", "Logo URL", true, null, 500, null, null, "https://...", null, 1, "url" },
+                    { 3L, "Branding & UI", "json", "Cấu hình giao diện (banner/background/color).", true, false, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"bannerUrl\":{\"type\":\"string\"},\r\n            \"backgroundUrl\":{\"type\":\"string\"},\r\n            \"primaryColor\":{\"type\":\"string\"},\r\n            \"secondaryColor\":{\"type\":\"string\"}\r\n          }\r\n        }", "themeAssets", "Theme Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 4L, "Branding & UI", "string", "Text chào mừng hiển thị trên màn hình.", true, true, false, false, null, "welcomeScreenText", "Welcome Screen Text", true, null, 300, null, null, "Chào mừng bạn đến với...", null, 1, "textarea" },
+                    { 5L, "Branding & UI", "string", "Link/QR điều hướng khách (landing page, form...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 1, "url" },
+                    { 6L, "Branding & UI", "json", "Danh sách asset tài trợ hiển thị luân phiên.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "sponsorAssets", "Sponsor Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 7L, "Greeting & Script", "string", "Kịch bản chào hỏi / giới thiệu ngắn.", true, false, false, false, null, "greetingScript", "Greeting Script", true, null, 2000, null, null, "Xin chào quý khách...", null, 1, "textarea" },
+                    { 8L, "Greeting & Script", "enum[]", "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.", true, false, false, true, null, "languages", "Languages", true, null, null, null, "[\"VI\",\"EN\",\"JP\",\"KR\",\"CN\"]", null, null, 1, "multiSelect" },
+                    { 9L, "Greeting & Script", "json", "Cấu hình giọng nói (tốc độ/độ cao...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 10L, "Greeting & Script", "json", "Danh sách câu hỏi thường gặp (Q/A + keywords).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"question\":{\"type\":\"string\"},\r\n              \"answer\":{\"type\":\"string\"},\r\n              \"keywords\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"question\",\"answer\"]\r\n          }\r\n        }", "faqItems", "FAQ Items", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 11L, "Check-in & Lead", "enum", "Chế độ check-in tại sự kiện.", true, false, false, true, null, "checkinMode", "Check-in Mode", true, null, null, null, "[\"None\",\"QR\",\"Form\"]", null, null, 1, "select" },
+                    { 12L, "Check-in & Lead", "enum[]", "Các trường thu thập thông tin khách.", true, false, false, false, null, "leadFormFields", "Lead Form Fields", true, null, null, null, "[\"Name\",\"Phone\",\"Email\",\"Company\",\"Title\"]", null, null, 1, "multiSelect" },
+                    { 13L, "Check-in & Lead", "string", "Thông báo quyền riêng tư khi thu thập dữ liệu.", true, false, false, false, null, "privacyNoticeText", "Privacy Notice Text", true, null, 2000, null, null, "Thông tin của bạn sẽ được sử dụng để...", null, 1, "textarea" },
+                    { 14L, "Navigation", "json", "Danh sách điểm đến/booth để robot hướng dẫn.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"description\":{\"type\":\"string\"},\r\n              \"locationHint\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"name\"]\r\n          }\r\n        }", "pois", "Points of Interest (POI)", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 15L, "Navigation", "json", "Quy tắc điều hướng (tốc độ, vùng cấm...).", true, true, true, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"noGoZones\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\r\n            \"preferredPaths\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n          }\r\n        }", "navigationRules", "Navigation Rules", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 16L, "Show Set", "json", "Danh sách show set (nhạc + choreography + thời lượng + lặp).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"setName\":{\"type\":\"string\"},\r\n              \"musicTrackUrl\":{\"type\":\"string\"},\r\n              \"choreographyId\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":10},\r\n              \"repeatCount\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"setName\",\"durationSec\"]\r\n          }\r\n        }", "showSets", "Show Sets", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 17L, "Show Set", "json", "Thứ tự chạy các set (theo index).", true, false, true, false, "{ \"type\":\"array\", \"items\":{\"type\":\"integer\",\"minimum\":0} }", "showOrder", "Show Order", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 18L, "Cues & Triggers", "enum", "Cách kích hoạt biểu diễn.", true, false, false, true, null, "triggerMode", "Trigger Mode", true, null, null, null, "[\"Manual\",\"Scheduled\",\"RemoteSignal\"]", null, null, 2, "select" },
+                    { 19L, "Cues & Triggers", "json", "Các cue/timecode điều khiển hành động trong show.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"timecodeSec\":{\"type\":\"integer\",\"minimum\":0},\r\n              \"action\":{\"type\":\"string\"},\r\n              \"note\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"timecodeSec\",\"action\"]\r\n          }\r\n        }", "cuePoints", "Cue Points", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 20L, "Stage & Safety", "json", "Khu vực sân khấu và khoảng cách an toàn.", true, false, false, true, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"widthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"depthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"safeDistanceM\":{\"type\":\"number\",\"minimum\":0.5}\r\n          },\r\n          \"required\":[\"widthM\",\"depthM\",\"safeDistanceM\"]\r\n        }", "stageZone", "Stage Zone", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 21L, "Stage & Safety", "json", "Giới hạn an toàn (tốc độ khớp, góc tay chân...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxJointSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"maxLimbAngle\":{\"type\":\"number\",\"minimum\":10,\"maximum\":180},\r\n            \"emergencyStopRequired\":{\"type\":\"boolean\"}\r\n          }\r\n        }", "safetyLimits", "Safety Limits", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 22L, "Stage & Safety", "bool", "Có yêu cầu rehearsal trước giờ chạy show hay không.", true, false, true, true, null, "rehearsalRequired", "Rehearsal Required", true, null, null, null, null, null, null, 2, "switch" },
+                    { 23L, "Stage & Safety", "enum", "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.", true, false, false, true, null, "riskLevel", "Risk Level", true, null, null, null, "[\"Low\",\"Medium\",\"High\"]", null, null, 2, "select" },
+                    { 24L, "Visual Style", "string", "Theme trang phục/LED cho robot (nếu có).", true, false, true, false, null, "costumeOrLedTheme", "Costume/LED Theme", true, null, 200, null, null, "VD: Neon / Tết / Christmas...", null, 2, "text" },
+                    { 25L, "Visual Style", "string", "1-2 câu chào mở đầu/kết thúc show.", true, true, false, false, null, "introOutroLines", "Intro/Outro Lines", true, null, 500, null, null, "Xin chào quý khách...", null, 2, "textarea" },
+                    { 26L, "Script Timeline", "json", "Kịch bản theo timeline (blockTitle/text/language/duration).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"blockTitle\":{\"type\":\"string\"},\r\n              \"timecode\":{\"type\":\"string\"},\r\n              \"text\":{\"type\":\"string\"},\r\n              \"language\":{\"type\":\"string\"},\r\n              \"estimatedDurationSec\":{\"type\":\"integer\",\"minimum\":5},\r\n              \"interactionPrompts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"blockTitle\",\"text\"]\r\n          }\r\n        }", "scriptBlocks", "Script Blocks", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 27L, "Voice & Pronunciation", "json", "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"term\":{\"type\":\"string\"},\r\n              \"phonetic\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"term\",\"phonetic\"]\r\n          }\r\n        }", "pronunciationDict", "Pronunciation Dictionary", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 28L, "Voice & Pronunciation", "json", "Cấu hình giọng MC (rate/pitch/volume).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 29L, "Voice & Pronunciation", "json", "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\r\n            \"quietHoursVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 30L, "On-screen Assets", "json", "Asset hiển thị (QR/Image/Slide + thời lượng).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"type\":{\"type\":\"string\"},\r\n              \"url\":{\"type\":\"string\"},\r\n              \"displayDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"type\",\"url\"]\r\n          }\r\n        }", "screenAssets", "On-screen Assets", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 31L, "On-screen Assets", "json", "Cấu hình countdown (nếu dùng).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"enabled\":{\"type\":\"boolean\"},\r\n            \"targetTime\":{\"type\":\"string\"}\r\n          }\r\n        }", "countdownSettings", "Countdown Settings", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 32L, "Co-host Mode", "bool", "Có MC người phối hợp hay không.", true, false, false, true, null, "humanMcPresent", "Human MC Present", true, null, null, null, null, null, null, 3, "switch" },
+                    { 33L, "Co-host Mode", "json", "Cue chuyển giao giữa robot và MC người.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"cue\":{\"type\":\"string\"},\r\n              \"who\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"cue\",\"who\"]\r\n          }\r\n        }", "handoffCues", "Handoff Cues", true, null, null, null, "[\"Robot\",\"Human\"]", null, null, 3, "jsonEditor" },
+                    { 34L, "Ad Playlist", "json", "Playlist quảng cáo (image/video + duration + order).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"assetUrl\":{\"type\":\"string\"},\r\n              \"assetType\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":1},\r\n              \"order\":{\"type\":\"integer\",\"minimum\":0}\r\n            },\r\n            \"required\":[\"assetUrl\",\"assetType\",\"durationSec\"]\r\n          }\r\n        }", "adPlaylist", "Ad Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 35L, "Ad Playlist", "json", "Quy tắc chạy playlist (khung giờ, interval, peak mode).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"start\":{\"type\":\"string\"},\r\n            \"end\":{\"type\":\"string\"},\r\n            \"peakMode\":{\"type\":\"boolean\"},\r\n            \"intervalSec\":{\"type\":\"integer\",\"minimum\":5}\r\n          }\r\n        }", "scheduleRules", "Schedule Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 36L, "Audio & Announcement", "json", "Danh sách audio (nhạc nền) nếu sử dụng.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "audioPlaylist", "Audio Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 37L, "Audio & Announcement", "string", "Script thông báo/mời chào tại booth.", true, false, false, false, null, "announcementScript", "Announcement Script", true, null, 2000, null, null, "Mời quý khách ghé booth...", null, 4, "textarea" },
+                    { 38L, "Audio & Announcement", "json", "Cấu hình âm lượng phát tại booth.", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 39L, "CTA & Lead", "string", "Link/QR cho CTA (landing page, đăng ký...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 4, "url" },
+                    { 40L, "CTA & Lead", "string", "Text CTA hiển thị trên màn hình/booth.", true, true, false, false, null, "ctaText", "CTA Text", true, null, 200, null, null, "Quét QR để nhận ưu đãi!", null, 4, "text" },
+                    { 41L, "CTA & Lead", "string", "Luật voucher/ưu đãi (nếu có).", true, false, true, false, null, "voucherRule", "Voucher Rule", true, null, 2000, null, null, "VD: Giảm 10% cho 100 khách đầu tiên...", null, 4, "textarea" },
+                    { 42L, "Booth Route", "enum", "Chế độ di chuyển tại booth.", true, false, false, true, null, "routeMode", "Route Mode", true, null, null, null, "[\"Static\",\"Patrol\"]", null, null, 4, "select" },
+                    { 43L, "Booth Route", "json", "Các điểm dừng khi robot patrol.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"stopDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"name\",\"stopDurationSec\"]\r\n          }\r\n        }", "routePoints", "Route Points", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 44L, "Booth Route", "json", "Khu vực tránh (nếu có).", true, true, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "avoidZones", "Avoid Zones", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 45L, "Booth Route", "number", "Tốc độ tối đa (m/s) khi di chuyển.", true, true, false, false, null, "maxSpeed", "Max Speed", true, 2.0m, null, 0.1m, null, null, null, 4, "number" }
                 });
 
             migrationBuilder.InsertData(
@@ -1649,11 +1592,6 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RentalId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RentalChangeLogs_RentalId",
-                table: "RentalChangeLogs",
-                column: "RentalId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RentalContracts_RentalId",
                 table: "RentalContracts",
                 column: "RentalId");
@@ -1692,16 +1630,6 @@ namespace RoboRent_BE.Model.Migrations
                 name: "IX_RobotAbilities_RobotTypeId",
                 table: "RobotAbilities",
                 column: "RobotTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RobotAbilityValues_RentalDetailId",
-                table: "RobotAbilityValues",
-                column: "RentalDetailId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RobotAbilityValues_RobotAbilityId",
-                table: "RobotAbilityValues",
-                column: "RobotAbilityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RobotInGroups_RobotId",
@@ -1766,13 +1694,13 @@ namespace RoboRent_BE.Model.Migrations
                 name: "FaceVerifications");
 
             migrationBuilder.DropTable(
-                name: "RentalChangeLogs");
-
-            migrationBuilder.DropTable(
                 name: "RentalContracts");
 
             migrationBuilder.DropTable(
-                name: "RobotAbilityValues");
+                name: "RentalDetails");
+
+            migrationBuilder.DropTable(
+                name: "RobotAbilities");
 
             migrationBuilder.DropTable(
                 name: "RobotInGroups");
@@ -1800,12 +1728,6 @@ namespace RoboRent_BE.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "FaceProfiles");
-
-            migrationBuilder.DropTable(
-                name: "RentalDetails");
-
-            migrationBuilder.DropTable(
-                name: "RobotAbilities");
 
             migrationBuilder.DropTable(
                 name: "Robots");

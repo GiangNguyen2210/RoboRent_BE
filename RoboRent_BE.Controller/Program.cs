@@ -69,7 +69,8 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddHttpClient();
 
-builder.Services.AddScoped<ChatNotificationHelper>();
+// SignalR broadcaster (implements ISignalRBroadcaster for NotificationService)
+builder.Services.AddScoped<RoboRent_BE.Service.Interfaces.ISignalRBroadcaster, RoboRent_BE.Controller.Infrastructure.SignalRBroadcaster>();
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>

@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using RoboRent_BE.Controller.Hubs;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
+using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
 using System.Security.Claims;
 
@@ -13,13 +12,16 @@ namespace RoboRent_BE.Controller.Controllers;
 public class ContractDraftsController : ControllerBase
 {
     private readonly IContractDraftsService _contractDraftsService;
-    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly INotificationService _notificationService;
     private readonly IRentalService _rentalService;
 
-    public ContractDraftsController(IContractDraftsService contractDraftsService, IHubContext<ChatHub> hubContext, IRentalService rentalService)
+    public ContractDraftsController(
+        IContractDraftsService contractDraftsService,
+        INotificationService notificationService,
+        IRentalService rentalService)
     {
         _contractDraftsService = contractDraftsService;
-        _hubContext = hubContext;
+        _notificationService = notificationService;
         _rentalService = rentalService;
     }
 
@@ -345,20 +347,17 @@ public class ContractDraftsController : ControllerBase
                 });
             }
 
-            // 🎯 REFACTORED: Targeted broadcast
-            // Gửi đến Customer + Staff (Manager là người ký, không nhận!)
+            // 🔔 Notify Customer: Contract signed by manager
             var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
-            if (rental != null)
+            if (rental?.AccountId != null)
             {
-                var customerId = rental.AccountId?.ToString() ?? "";
-                var staffId = rental.StaffId?.ToString() ?? "";
-                var recipients = new string[] { customerId, staffId }.Where(id => !string.IsNullOrEmpty(id)).ToArray();
-                await _hubContext.Clients.Users(recipients).SendAsync("ContractPendingCustomerSignature", new
-                {
-                    ContractId = result.Id,
-                    RentalId = result.RentalId,
-                    Message = "Hợp đồng đã được Manager ký. Vui lòng kiểm tra và ký hợp đồng."
-                });
+                await _notificationService.CreateNotificationAsync(
+                    rental.AccountId.Value,
+                    NotificationType.ContractManagerSigned,
+                    "📝 Hợp đồng đã được Manager ký. Vui lòng kiểm tra và ký hợp đồng.",
+                    result.RentalId ?? 0,
+                    result.Id,
+                    isRealTime: true);
             }
 
             return Ok(new
@@ -427,18 +426,17 @@ public class ContractDraftsController : ControllerBase
                 });
             }
 
-            // 🎯 REFACTORED: Targeted broadcast
-            // Chỉ gửi đến Staff (Customer là người ký, không nhận!)
+            // 🔔 Notify Staff: Contract signed by customer
             var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
-            if (rental != null && rental.StaffId.HasValue)
+            if (rental?.StaffId != null)
             {
-                var staffId = rental.StaffId.Value.ToString();
-                await _hubContext.Clients.User(staffId).SendAsync("ContractActivated", new
-                {
-                    ContractId = result.Id,
-                    RentalId = result.RentalId,
-                    Message = "🎉 Hợp đồng đã được Customer ký và kích hoạt! Delivery sẽ được tạo."
-                });
+                await _notificationService.CreateNotificationAsync(
+                    rental.StaffId.Value,
+                    NotificationType.ContractCustomerSigned,
+                    "🎉 Hợp đồng đã được Customer ký và kích hoạt! Delivery sẽ được tạo.",
+                    result.RentalId ?? 0,
+                    result.Id,
+                    isRealTime: true);
             }
 
             return Ok(new
@@ -539,7 +537,7 @@ public class ContractDraftsController : ControllerBase
         {
             var managerId = GetCurrentUserId();
             var result = await _contractDraftsService.ManagerCancelContractAsync(id, request, managerId);
-            
+
             if (result == null)
             {
                 return NotFound(new
@@ -593,7 +591,7 @@ public class ContractDraftsController : ControllerBase
         {
             var customerId = GetCurrentUserId();
             var result = await _contractDraftsService.CustomerRejectContractAsync(id, request, customerId);
-            
+
             if (result == null)
             {
                 return NotFound(new
@@ -647,7 +645,7 @@ public class ContractDraftsController : ControllerBase
         {
             var customerId = GetCurrentUserId();
             var result = await _contractDraftsService.CustomerRequestChangeAsync(id, request, customerId);
-            
+
             if (result == null)
             {
                 return NotFound(new
@@ -657,19 +655,17 @@ public class ContractDraftsController : ControllerBase
                 });
             }
 
-            // 🎯 REFACTORED: Targeted broadcast
-            // Chỉ gửi đến Staff (Customer là người yêu cầu, không nhận!)
+            // 🔔 Notify Staff: Customer requests contract changes
             var rental = await _rentalService.GetRentalAsync(result.RentalId ?? 0);
-            if (rental != null && rental.StaffId.HasValue)
+            if (rental?.StaffId != null)
             {
-                var staffId = rental.StaffId.Value.ToString();
-                await _hubContext.Clients.User(staffId).SendAsync("ContractChangeRequested", new
-                {
-                    ContractId = result.Id,
-                    RentalId = result.RentalId,
-                    Message = "Customer yêu cầu sửa đổi hợp đồng.",
-                    ChangeRequest = request.Comment
-                });
+                await _notificationService.CreateNotificationAsync(
+                    rental.StaffId.Value,
+                    NotificationType.ContractChangeRequested,
+                    $"📋 Customer yêu cầu sửa đổi hợp đồng: {request.Comment}",
+                    result.RentalId ?? 0,
+                    result.Id,
+                    isRealTime: true);
             }
 
             return Ok(new
@@ -742,7 +738,7 @@ public class ContractDraftsController : ControllerBase
         {
             var staffId = GetCurrentUserId();
             var result = await _contractDraftsService.SendToManagerAsync(id, staffId);
-            
+
             if (result == null)
             {
                 return NotFound(new
@@ -817,7 +813,7 @@ public class ContractDraftsController : ControllerBase
         {
             var staffId = GetCurrentUserId();
             var result = await _contractDraftsService.ReviseContractAsync(id, request, staffId);
-            
+
             if (result == null)
             {
                 return NotFound(new
@@ -871,7 +867,7 @@ public class ContractDraftsController : ControllerBase
         {
             var customerId = GetCurrentUserId();
             var result = await _contractDraftsService.SendVerificationCodeAsync(id, customerId);
-            
+
             if (!result)
             {
                 return BadRequest(new
@@ -936,7 +932,7 @@ public class ContractDraftsController : ControllerBase
         {
             var customerId = GetCurrentUserId();
             var result = await _contractDraftsService.VerifyCodeAsync(id, request.Code, customerId);
-            
+
             if (!result)
             {
                 return BadRequest(new

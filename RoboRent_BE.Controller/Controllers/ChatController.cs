@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using RoboRent_BE.Model.DTOs.Chat;
+using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Controller.Hubs;
 using RoboRent_BE.Controller.Helpers;
@@ -14,11 +15,16 @@ public class ChatController : ControllerBase
 {
     private readonly IChatService _chatService;
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly INotificationService _notificationService;
 
-    public ChatController(IChatService chatService, IHubContext<ChatHub> hubContext)
+    public ChatController(
+        IChatService chatService,
+        IHubContext<ChatHub> hubContext,
+        INotificationService notificationService)
     {
         _chatService = chatService;
         _hubContext = hubContext;
+        _notificationService = notificationService;
     }
 
     /// <summary>
@@ -139,6 +145,26 @@ public class ChatController : ControllerBase
                 Console.WriteLine($"[ERROR] Failed to send NewMessageInRoom notification: {ex.Message}");
             }
 
+            // 4. 🔔 Send bell notification for Demo messages
+            if (request.MessageType == MessageType.Demo)
+            {
+                try
+                {
+                    var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(request.RentalId);
+                    await _notificationService.CreateNotificationAsync(
+                        chatRoom.Customer.Id,
+                        NotificationType.DemoCreated,
+                        $"🎬 Staff đã gửi video demo cho sự kiện của bạn. Vui lòng xem và đánh giá.",
+                        request.RentalId,
+                        message.Id,
+                        isRealTime: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Failed to send demo notification: {ex.Message}");
+                }
+            }
+
             return Ok(message);
         }
         catch (Exception ex)
@@ -163,6 +189,37 @@ public class ChatController : ControllerBase
             // 2. Controller broadcast status change qua SignalR
             var roomName = $"rental_{message.RentalId}";
             await _hubContext.Clients.Group(roomName).SendAsync("DemoStatusChanged", messageId, request.Status);
+
+            // 3. 🔔 Send notification to Staff
+            try
+            {
+                var chatRoom = await _chatService.GetChatRoomByRentalIdAsync(message.RentalId);
+
+                if (request.Status == "Accepted")
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        chatRoom.Staff.Id,
+                        NotificationType.DemoAccepted,
+                        $"✅ Khách hàng đã chấp nhận video demo. Bước tiếp: Gửi hợp đồng.",
+                        message.RentalId,
+                        messageId,
+                        isRealTime: true);
+                }
+                else if (request.Status == "Rejected")
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        chatRoom.Staff.Id,
+                        NotificationType.DemoRejected,
+                        $"❌ Khách hàng đã từ chối video demo. Vui lòng gửi demo mới.",
+                        message.RentalId,
+                        messageId,
+                        isRealTime: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to send demo status notification: {ex.Message}");
+            }
 
             return Ok(message);
         }

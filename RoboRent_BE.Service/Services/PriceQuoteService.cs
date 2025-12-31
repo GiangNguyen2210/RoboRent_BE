@@ -11,14 +11,21 @@ public class PriceQuoteService : IPriceQuoteService
     private readonly IPriceQuoteRepository _priceQuoteRepo;
     private readonly IRentalRepository _rentalRepo;
     private readonly IGroupScheduleRepository _groupScheduleRepo;
+    private readonly IRentalDetailRepository _rentalDetailRepo;
+    private readonly IRobotAbilityValueRepository _robotAbilityValueRepo;
+    
     public PriceQuoteService(
         IPriceQuoteRepository priceQuoteRepo,
         IRentalRepository rentalRepo,
-        IGroupScheduleRepository groupScheduleRepo)
+        IGroupScheduleRepository groupScheduleRepo,
+        IRentalDetailRepository rentalDetailRepo,
+        IRobotAbilityValueRepository robotAbilityValueRepo)
     {
         _priceQuoteRepo = priceQuoteRepo;
         _rentalRepo = rentalRepo;
         _groupScheduleRepo = groupScheduleRepo;
+        _rentalDetailRepo = rentalDetailRepo;
+        _robotAbilityValueRepo = robotAbilityValueRepo;
     }
 
     public async Task<PriceQuoteResponse> CreatePriceQuoteAsync(CreatePriceQuoteRequest request, int staffId)
@@ -58,46 +65,19 @@ public class PriceQuoteService : IPriceQuoteService
         if (activityType == null)
             throw new Exception("ActivityType not found for this rental");
 
-        // Calculate billable hours from Rental
-        decimal billableHours = 2m; // Default minimum
-        if (rental.StartTime.HasValue && rental.EndTime.HasValue)
-        {
-            var durationMinutes = (rental.EndTime.Value.ToTimeSpan() - rental.StartTime.Value.ToTimeSpan()).TotalMinutes;
-            // Apply minimum and billing increment
-            durationMinutes = Math.Max(durationMinutes, activityType.MinimumMinutes);
-            // Round up to billing increment
-            var increment = activityType.BillingIncrementMinutes > 0 ? activityType.BillingIncrementMinutes : 30;
-            durationMinutes = Math.Ceiling(durationMinutes / increment) * increment;
-            billableHours = (decimal)durationMinutes / 60m;
-        }
-
-        // Calculate fees
-        decimal rentalFee = activityType.HourlyRate * billableHours;
-        decimal staffFee = activityType.TechnicalStaffFeePerHour * activityType.OperatorCount * billableHours;
-        decimal damageDeposit = activityType.DamageDeposit;
-
-        // Calculate DeliveryFee
-        decimal? deliveryFee = null;
-        int? deliveryDistance = null;
-
-        if (!string.IsNullOrWhiteSpace(rental.City))
-        {
-            var (fee, distance) = CalculateDeliveryFee(rental.City);
-            deliveryFee = fee;
-            deliveryDistance = distance;
-        }
+        var calculatedFees = CalculateQuoteFeesFromRental(rental, activityType);
 
         // Create new quote with auto-calculated values
         var quote = new PriceQuote
         {
             RentalId = request.RentalId,
             // LOCKED deposit components (auto-calculated)
-            RentalFee = rentalFee,
-            StaffFee = staffFee,
-            DamageDeposit = damageDeposit,
+            RentalFee = calculatedFees.RentalFee,
+            StaffFee = calculatedFees.StaffFee,
+            DamageDeposit = calculatedFees.DamageDeposit,
             // Adjustable fees
-            DeliveryFee = deliveryFee,
-            DeliveryDistance = deliveryDistance,
+            DeliveryFee = calculatedFees.DeliveryFee,
+            DeliveryDistance = calculatedFees.DeliveryDistance,
             CustomizationFee = request.CustomizationFee ?? 0m,
             // Metadata
             StaffDescription = request.StaffDescription,
@@ -362,6 +342,115 @@ public class PriceQuoteService : IPriceQuoteService
             QuoteNumber = quoteNumber,
             ManagerId = quote.ManagerId
         };
+    }
+
+    public async Task<int> RejectActiveQuotesForRentalAsync(int rentalId)
+    {
+        // 1. Find all active quotes for this rental
+        var allQuotes = await _priceQuoteRepo.GetByRentalIdAsync(rentalId);
+        var activeQuotes = allQuotes.Where(q =>
+            q.IsDeleted != true &&
+            (q.Status == "PendingManager" || q.Status == "PendingCustomer" || q.Status == "Approved")
+        ).ToList();
+
+        if (!activeQuotes.Any())
+        {
+            return 0; // No active quotes to reject
+        }
+
+        // 2. Load rental with ActivityType for recalculation
+        var rental = await _rentalRepo.GetAsync(r => r.Id == rentalId, "ActivityType");
+        if (rental == null)
+            throw new Exception("Rental not found");
+
+        var activityType = rental.ActivityType;
+        if (activityType == null)
+            throw new Exception("ActivityType not found for this rental");
+
+        // 3. Calculate new fees based on current rental info
+        var calculatedFees = CalculateQuoteFeesFromRental(rental, activityType);
+
+        // 4. Reject all active quotes and recalculate fees (keep CustomizationFee)
+        foreach (var quote in activeQuotes)
+        {
+            quote.Status = "RejectedManager";
+            quote.ManagerFeedback = "Rental information has been updated. Please update the quote.";
+            
+            // Recalculate all auto-calculated fields based on current rental info
+            quote.RentalFee = calculatedFees.RentalFee;
+            quote.StaffFee = calculatedFees.StaffFee;
+            quote.DamageDeposit = calculatedFees.DamageDeposit;
+            quote.DeliveryFee = calculatedFees.DeliveryFee;
+            quote.DeliveryDistance = calculatedFees.DeliveryDistance;
+            
+            // Keep CustomizationFee as is (staff input field)
+            // CustomizationFee remains unchanged
+            
+            await _priceQuoteRepo.UpdateAsync(quote);
+        }
+
+        // 5. Reset flags: Rental.IsUpdated
+        if (rental != null)
+        {
+            rental.IsUpdated = false;
+            await _rentalRepo.UpdateAsync(rental);
+        }
+
+        // 6. Reset flags: RentalDetail.IsUpdated and RobotAbilityValue.isUpdated
+        var rentalDetails = await _rentalDetailRepo.GetAllAsync(rd => rd.RentalId == rentalId, "RobotAbilityValues");
+        
+        foreach (var rentalDetail in rentalDetails)
+        {
+            rentalDetail.IsUpdated = false;
+            
+            // Reset all RobotAbilityValue.isUpdated flags
+            foreach (var robotAbilityValue in rentalDetail.RobotAbilityValues)
+            {
+                robotAbilityValue.isUpdated = false;
+                await _robotAbilityValueRepo.UpdateAsync(robotAbilityValue);
+            }
+            
+            await _rentalDetailRepo.UpdateAsync(rentalDetail);
+        }
+
+        return activeQuotes.Count;
+    }
+
+    /// <summary>
+    /// Helper method to calculate all quote fees from rental and activity type
+    /// </summary>
+    private (decimal RentalFee, decimal StaffFee, decimal DamageDeposit, decimal? DeliveryFee, int? DeliveryDistance) CalculateQuoteFeesFromRental(Rental rental, ActivityType activityType)
+    {
+        // Calculate billable hours from Rental
+        decimal billableHours = 2m; // Default minimum
+        if (rental.StartTime.HasValue && rental.EndTime.HasValue)
+        {
+            var durationMinutes = (rental.EndTime.Value.ToTimeSpan() - rental.StartTime.Value.ToTimeSpan()).TotalMinutes;
+            // Apply minimum and billing increment
+            durationMinutes = Math.Max(durationMinutes, activityType.MinimumMinutes);
+            // Round up to billing increment
+            var increment = activityType.BillingIncrementMinutes > 0 ? activityType.BillingIncrementMinutes : 30;
+            durationMinutes = Math.Ceiling(durationMinutes / increment) * increment;
+            billableHours = (decimal)durationMinutes / 60m;
+        }
+
+        // Calculate fees
+        decimal rentalFee = activityType.HourlyRate * billableHours;
+        decimal staffFee = activityType.TechnicalStaffFeePerHour * activityType.OperatorCount * billableHours;
+        decimal damageDeposit = activityType.DamageDeposit;
+
+        // Calculate DeliveryFee
+        decimal? deliveryFee = null;
+        int? deliveryDistance = null;
+
+        if (!string.IsNullOrWhiteSpace(rental.City))
+        {
+            var (fee, distance) = CalculateDeliveryFee(rental.City);
+            deliveryFee = fee;
+            deliveryDistance = distance;
+        }
+
+        return (rentalFee, staffFee, damageDeposit, deliveryFee, deliveryDistance);
     }
 
     private (decimal Fee, int? Distance) CalculateDeliveryFee(string city)
