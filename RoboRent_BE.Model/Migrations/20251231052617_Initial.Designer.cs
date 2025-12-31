@@ -12,7 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251226184819_Initial")]
+    [Migration("20251231052617_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1054,9 +1054,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ActivityTypeGroupId")
                         .HasColumnType("integer");
 
-                    b.Property<TimeOnly?>("DeliveryTime")
-                        .HasColumnType("time without time zone");
-
                     b.Property<TimeOnly?>("EndTime")
                         .HasColumnType("time without time zone");
 
@@ -1077,6 +1074,9 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<int?>("RentalId")
                         .HasColumnType("integer");
+
+                    b.Property<TimeOnly?>("SetupTime")
+                        .HasColumnType("time without time zone");
 
                     b.Property<TimeOnly?>("StartTime")
                         .HasColumnType("time without time zone");
@@ -1545,28 +1545,28 @@ namespace RoboRent_BE.Model.Migrations
                         new
                         {
                             Id = 1,
-                            Description = "Robot lễ tân, chào đón khách, hỗ trợ check-in, hướng dẫn khu vực và hiển thị nội dung thương hiệu",
+                            Description = "Robot lễ tân được sử dụng tại khu vực đón tiếp sự kiện, đóng vai trò như một “front-desk di động”. Robot có khả năng hiển thị đầy đủ nhận diện thương hiệu của khách hàng trên màn hình, bao gồm tên thương hiệu, logo, giao diện màu sắc, banner, hình nền và các nội dung chào mừng. Ngoài ra, robot còn có thể hiển thị QR hoặc CTA để điều hướng khách truy cập tới website, landing page hoặc biểu mẫu đăng ký, cũng như trình chiếu các nội dung tài trợ theo kịch bản.\n\nVề tương tác, robot hỗ trợ chào hỏi và giao tiếp theo kịch bản được cấu hình sẵn, có thể sử dụng nhiều ngôn ngữ khác nhau. Giọng nói, tốc độ đọc, cao độ và âm lượng đều có thể điều chỉnh để phù hợp với không gian sự kiện. Robot cũng có khả năng trả lời các câu hỏi thường gặp thông qua danh sách FAQ được chuẩn bị trước.\n\nTrong trường hợp cần thiết, robot có thể hỗ trợ check-in và thu thập thông tin khách tham dự thông qua QR code hoặc form nhập liệu, kèm theo thông báo quyền riêng tư. Ngoài ra, robot còn có thể hướng dẫn khách di chuyển đến các khu vực, booth hoặc điểm tham quan trong sự kiện, dựa trên danh sách điểm đến và các quy tắc điều hướng đã được cấu hình trước nhằm đảm bảo an toàn.",
                             IsDeleted = false,
                             TypeName = "Reception Robot"
                         },
                         new
                         {
                             Id = 2,
-                            Description = "Robot biểu diễn sân khấu, nhảy múa, trình diễn theo show set và kịch bản được cấu hình",
+                            Description = "Robot biểu diễn được thiết kế để trình diễn trên sân khấu theo kịch bản và chương trình cụ thể. Robot có thể chạy một hoặc nhiều show set được cấu hình sẵn, mỗi show bao gồm nhạc nền, biên đạo, thời lượng và số lần lặp. Thứ tự chạy các tiết mục được xác định rõ ràng nhằm đảm bảo mạch chương trình.\n\nRobot hỗ trợ nhiều hình thức kích hoạt biểu diễn, bao gồm kích hoạt thủ công, theo lịch trình hoặc thông qua tín hiệu điều khiển từ xa. Trong quá trình biểu diễn, các điểm cue hoặc timecode có thể được sử dụng để điều khiển hành động của robot theo đúng nhịp chương trình.\n\nĐể đảm bảo an toàn, robot yêu cầu cấu hình đầy đủ khu vực sân khấu, khoảng cách an toàn và các giới hạn kỹ thuật như tốc độ khớp hoặc góc chuyển động. Một số chương trình có thể yêu cầu rehearsal trước giờ diễn chính thức. Mức độ rủi ro của chương trình cũng được đánh giá để phục vụ công tác quản lý và vận hành.\n\nNgoài phần biểu diễn chính, robot có thể được cá nhân hóa về mặt hình ảnh thông qua trang phục hoặc hiệu ứng LED, đồng thời có thể phát các câu chào mở đầu và kết thúc nhằm tăng tính kết nối với khán giả.",
                             IsDeleted = false,
                             TypeName = "Performance Robot"
                         },
                         new
                         {
                             Id = 3,
-                            Description = "Robot dẫn chương trình (MC), storytelling, đọc kịch bản theo timeline và tương tác với khán giả",
+                            Description = "Robot Host đóng vai trò như một MC dẫn chương trình, hoạt động theo timeline sự kiện. Nội dung dẫn được chia thành các khối kịch bản, mỗi khối bao gồm tiêu đề, nội dung lời dẫn, ngôn ngữ sử dụng, thời lượng ước tính và các gợi ý tương tác với khán giả. Điều này giúp robot dẫn dắt chương trình một cách mạch lạc và linh hoạt.\n\nRobot hỗ trợ cấu hình chi tiết về giọng nói, bao gồm tốc độ, cao độ và âm lượng, đồng thời có thể sử dụng từ điển phát âm riêng để đọc chính xác tên riêng, thương hiệu hoặc thuật ngữ đặc thù. Âm lượng cũng có thể được điều chỉnh theo từng ngữ cảnh hoặc khung giờ yên tĩnh.\n\nTrong quá trình dẫn chương trình, robot có thể hiển thị thêm các nội dung hỗ trợ trên màn hình như hình ảnh, QR code, slide hoặc countdown cho các mốc thời gian quan trọng. Khi sự kiện có MC người tham gia, robot có thể phối hợp dẫn chương trình thông qua các cue chuyển giao rõ ràng giữa robot và MC, đảm bảo chương trình diễn ra trôi chảy.",
                             IsDeleted = false,
                             TypeName = "Host Robot"
                         },
                         new
                         {
                             Id = 4,
-                            Description = "Robot quảng bá thương hiệu, hỗ trợ booth, chạy nội dung marketing, CTA và thu hút khách tham dự",
+                            Description = "Robot Promotion được sử dụng trong các hoạt động quảng bá, activation và booth marketing. Robot có khả năng chạy playlist quảng cáo bao gồm hình ảnh hoặc video theo thứ tự và thời lượng được xác định trước. Việc phát nội dung có thể tuân theo lịch trình cụ thể, khung giờ cao điểm hoặc chu kỳ lặp để tối ưu khả năng tiếp cận khách tham quan.\n\nRobot cũng có thể phát nhạc nền hoặc các đoạn thông báo mời chào, với âm lượng được điều chỉnh phù hợp với không gian booth. Các nội dung kêu gọi hành động như QR code, thông điệp CTA hoặc thông tin ưu đãi, voucher có thể được hiển thị nhằm thu hút và chuyển đổi khách hàng.\n\nVề di chuyển, robot có thể đứng cố định hoặc di chuyển tuần tra trong khu vực booth theo lộ trình được xác định trước. Các điểm dừng, khu vực cần tránh và tốc độ di chuyển tối đa đều được cấu hình nhằm đảm bảo an toàn cho khách tham dự và không gian trưng bày.",
                             IsDeleted = false,
                             TypeName = "Promotion Robot"
                         });
@@ -4595,7 +4595,7 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotTypeOfActivity", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityType", "ActivityType")
-                        .WithMany()
+                        .WithMany("RobotTypeOfActivities")
                         .HasForeignKey("ActivityTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4642,6 +4642,8 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
                 {
                     b.Navigation("ActivityTypeGroups");
+
+                    b.Navigation("RobotTypeOfActivities");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>

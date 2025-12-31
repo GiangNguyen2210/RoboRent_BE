@@ -39,6 +39,8 @@ public static class DependencyInjection
 
         services.AddTransient<IRobotAbilityValueRepository, RobotAbilityValueRepository>();
         services.AddTransient<IRentalChangeLogRepository, RentalChangeLogRepository>();
+
+        services.AddTransient<IRobotAbilityRepository, RobotAbilityRepository>();
         return services;
     }
 }

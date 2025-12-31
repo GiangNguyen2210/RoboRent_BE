@@ -87,4 +87,33 @@ public class ActivityTypeGroupController : ControllerBase
             });
         }
     }
+
+    [HttpGet("staff/get/all/group/ActivityTypeGroup/{Id}")]
+    public async Task<IActionResult> GetAllActivityTypeGroupForActivityTypeAsync(int Id)
+    {
+        try
+        {
+            var res = await _service.GetGroupByActivityTypeId(Id);
+
+            if (res == null) return NotFound(new
+            {
+                success = false,
+                message = "Activity type group not found"
+            });
+
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }

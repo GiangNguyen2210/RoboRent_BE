@@ -1,3 +1,5 @@
+using RoboRent_BE.Model.DTOs.RoboType;
+
 namespace RoboRent_BE.Model.DTOs.ActivityType;
 
 public class ActivityTypeResponse
@@ -47,4 +49,6 @@ public class ActivityTypeResponse
     public bool IsActive { get; set; } = true;
 
     public bool IsDeleted { get; set; } = false;
+    
+    public List<RoboTypeResponse>  RoboTypes { get; set; } = new List<RoboTypeResponse>();
 }

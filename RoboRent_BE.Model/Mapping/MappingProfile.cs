@@ -55,7 +55,8 @@ public class MappingProfile : Profile
         CreateMap<StaffUpdateRequest, Rental>();
         
         CreateMap<GroupScheduleCreateRequest, GroupSchedule>();
-        CreateMap<RoboType, RoboTypeResponse>();
+        CreateMap<RoboType, RoboTypeResponse>()
+            .ForMember(dest => dest.RobotAbilityResponses, opt => opt.MapFrom(src => src.RobotAbilities));
 
         CreateMap<GroupSchedule, GroupScheduleResponse>()
             .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.Rental.StaffId))
@@ -75,9 +76,8 @@ public class MappingProfile : Profile
         
         CreateMap<EventActivity, EventActivityResponse>();
 
-        CreateMap<ActivityType, ActivityTypeResponse>();
-        
-        CreateMap<RoboType, RoboTypeLiteResponse>();
+        CreateMap<ActivityType, ActivityTypeResponse>()
+            .ForMember(d => d.RoboTypes, opt => opt.Ignore()); // gán thủ công        CreateMap<RoboType, RoboTypeLiteResponse>();
 
         CreateMap<CreateOrderRequest, Rental>()
             .ForMember(dest => dest.EventName, opt => opt.MapFrom(src => src.EventName))
