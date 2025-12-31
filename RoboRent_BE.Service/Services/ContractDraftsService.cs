@@ -309,49 +309,50 @@ public class ContractDraftsService : IContractDraftsService
             if (side == "left")
             {
                 // Add/update manager signature (left side)
-                var managerSignatureDiv = $@"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
-        <div style=""margin-bottom: 10px;"">
-            <strong>Manager Signature:</strong>
-        </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+                var signatureValue = $@"<div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
             {signature}
-        </div>
-        <div style=""margin-top: 10px; font-size: 12px;"">
+        </div>";
+                
+                var dateValue = $@"<div style=""margin-top: 10px; font-size: 12px;"">
             {DateTime.UtcNow.ToString("MM/dd/yyyy")}
-        </div>
-    </div>";
+        </div>";
 
-                // Check if manager signature already exists (including placeholder)
+                // Check if manager signature section exists
                 if (bodyJson.Contains("Manager Signature:"))
                 {
-                    // Improved regex pattern to match manager signature div more reliably
-                    // This pattern handles both signed signatures and empty placeholders
-                    // Matches from opening div with left alignment until we find all closing divs
-                    var pattern = @"<div\s+style=""flex:\s*1;\s*text-align:\s*left[^""]*""[^>]*>[\s\S]*?Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
-                    bodyJson = Regex.Replace(bodyJson, pattern, managerSignatureDiv, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                    // Find and replace just the signature value and date divs, not the entire structure
+                    // First, find the position of "Manager Signature:"
+                    var managerSigIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
                     
-                    // If pattern didn't match (might be due to formatting differences), try a more aggressive replacement
-                    if (bodyJson.Contains("Manager Signature:"))
+                    if (managerSigIndex >= 0)
                     {
-                        // Find the index of "Manager Signature:" and work backwards/forwards to replace the entire div
-                        var managerIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
-                        if (managerIndex > 0)
+                        // Find the closing </strong></div> after "Manager Signature:"
+                        var afterStrongClose = bodyJson.IndexOf("</strong>", managerSigIndex);
+                        if (afterStrongClose >= 0)
                         {
-                            // Find the start of the parent div (look backwards for "<div style=""flex: 1; text-align: left")
-                            var beforeManager = bodyJson.Substring(0, managerIndex);
-                            var divStartPattern = @"<div\s+style=""[^""]*flex:\s*1[^""]*text-align:\s*left[^""]*""[^>]*>";
-                            var divStartMatch = Regex.Match(beforeManager, divStartPattern, RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
-                            if (divStartMatch.Success)
+                            var afterFirstDiv = bodyJson.IndexOf("</div>", afterStrongClose);
+                            if (afterFirstDiv >= 0)
                             {
-                                var divStartIndex = divStartMatch.Index;
-                                // Find the end: match 4 closing </div> tags after Manager Signature
-                                var afterManager = bodyJson.Substring(divStartIndex);
-                                var divEndPattern = @"Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
-                                var divEndMatch = Regex.Match(afterManager, divEndPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-                                if (divEndMatch.Success)
+                                // Now we're positioned right after the "Manager Signature:" label
+                                // Find the next two </div> closing tags (signature div and date div)
+                                var signatureDivStart = afterFirstDiv + 6; // Skip past </div>
+                                
+                                // Find the signature div (the one with cursive font)
+                                var signatureDivEnd = bodyJson.IndexOf("</div>", signatureDivStart);
+                                if (signatureDivEnd >= 0)
                                 {
-                                    var divEndIndex = divStartIndex + divEndMatch.Index + divEndMatch.Length;
-                                    bodyJson = bodyJson.Substring(0, divStartIndex) + managerSignatureDiv + bodyJson.Substring(divEndIndex);
+                                    // Find the date div
+                                    var dateDivStart = signatureDivEnd + 6;
+                                    var dateDivEnd = bodyJson.IndexOf("</div>", dateDivStart);
+                                    
+                                    if (dateDivEnd >= 0)
+                                    {
+                                        // Replace both the signature and date divs
+                                        var beforeSignature = bodyJson.Substring(0, signatureDivStart);
+                                        var afterDate = bodyJson.Substring(dateDivEnd + 6);
+                                        
+                                        bodyJson = beforeSignature + "\n        " + signatureValue + "\n        " + dateValue + afterDate;
+                                    }
                                 }
                             }
                         }
@@ -359,7 +360,15 @@ public class ContractDraftsService : IContractDraftsService
                 }
                 else
                 {
-                    // Insert manager signature before customer signature
+                    // Insert manager signature before customer signature - this shouldn't happen normally
+                    var managerSignatureDiv = $@"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
+        <div style=""margin-bottom: 10px;"">
+            <strong>Manager Signature:</strong>
+        </div>
+        {signatureValue}
+        {dateValue}
+    </div>";
+                    
                     bodyJson = bodyJson.Replace(
                         @"<div style=""flex: 1; text-align: right",
                         managerSignatureDiv + @"<div style=""flex: 1; text-align: right");
@@ -803,14 +812,8 @@ public class ContractDraftsService : IContractDraftsService
         if (contractDraft.ManagerId != managerId)
             throw new UnauthorizedAccessException("You are not authorized to sign this contract");
 
-        // Bug Fix: Remove any existing manager signature first to ensure clean replacement
-        // This handles the case where customer requested changes and manager is signing again
-        if (!string.IsNullOrEmpty(contractDraft.BodyJson))
-        {
-            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
-        }
-
         // Add manager signature to contract (left side)
+        // The AddSignatureToContract method handles both adding new and replacing existing signatures
         contractDraft.BodyJson = AddSignatureToContract(contractDraft.BodyJson ?? "", request.Signature, "left");
 
         // Update status to PendingCustomerSignature
@@ -1426,8 +1429,8 @@ public class ContractDraftsService : IContractDraftsService
         if (string.IsNullOrEmpty(contractDraft.BodyJson))
             throw new InvalidOperationException("Contract body is empty");
 
-        // Store original body JSON if not already stored (when customer downloads for signing)
-        if (string.IsNullOrEmpty(contractDraft.OriginalBodyJson) && contractDraft.Status == "PendingCustomerSignature")
+        // Store original body JSON snapshot when customer downloads for signing
+        if (contractDraft.Status == "PendingCustomerSignature")
         {
             contractDraft.OriginalBodyJson = contractDraft.BodyJson;
             await _contractDraftsRepository.UpdateAsync(contractDraft);
@@ -1520,8 +1523,8 @@ public class ContractDraftsService : IContractDraftsService
         if (string.IsNullOrEmpty(contractDraft.BodyJson))
             throw new InvalidOperationException("Contract body is empty");
 
-        // Store original body JSON if not already stored
-        if (string.IsNullOrEmpty(contractDraft.OriginalBodyJson) && contractDraft.Status == "PendingCustomerSignature")
+        // Store original body JSON snapshot when customer downloads for signing
+        if (contractDraft.Status == "PendingCustomerSignature")
         {
             contractDraft.OriginalBodyJson = contractDraft.BodyJson;
             await _contractDraftsRepository.UpdateAsync(contractDraft);
