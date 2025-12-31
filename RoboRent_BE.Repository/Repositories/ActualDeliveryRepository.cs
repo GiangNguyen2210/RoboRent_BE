@@ -29,7 +29,7 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.Staff)
             .Where(d => d.StaffId == staffId)
             .OrderBy(d => d.GroupSchedule.EventDate)
-            .ThenBy(d => d.GroupSchedule.DeliveryTime)
+            // .ThenBy(d => d.GroupSchedule.DeliveryTime)
             .ToListAsync();
     }
 
@@ -42,7 +42,7 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.Staff)
             .Where(d => d.GroupSchedule.EventDate >= from.Date && d.GroupSchedule.EventDate <= to.Date)
             .OrderBy(d => d.GroupSchedule.EventDate)
-            .ThenBy(d => d.GroupSchedule.DeliveryTime)
+            // .ThenBy(d => d.GroupSchedule.DeliveryTime)
             .ToListAsync();
     }
 
@@ -110,7 +110,7 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
         "customer" => query.OrderBy(d => d.GroupSchedule.Rental!.Account!.FullName),
         "location" => query.OrderBy(d => d.GroupSchedule.EventLocation),
         _ => query.OrderBy(d => d.GroupSchedule.EventDate)
-                    .ThenBy(d => d.GroupSchedule.DeliveryTime) // Sort by time nếu cùng ngày
+                    // .ThenBy(d => d.GroupSchedule.DeliveryTime) // Sort by time nếu cùng ngày
     };
 
     // Pagination

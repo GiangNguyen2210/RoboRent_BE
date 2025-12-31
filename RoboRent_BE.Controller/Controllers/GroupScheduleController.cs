@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Model.DTOs.GroupSchedule;
 using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Controller.Controllers;
@@ -10,10 +11,14 @@ namespace RoboRent_BE.Controller.Controllers;
 public class GroupScheduleController : ControllerBase
 {
     private readonly IGroupScheduleService _groupScheduleService;
+    private readonly INotificationService _notificationService;
 
-    public GroupScheduleController(IGroupScheduleService groupScheduleService)
+    public GroupScheduleController(
+        IGroupScheduleService groupScheduleService,
+        INotificationService notificationService)
     {
         _groupScheduleService = groupScheduleService;
+        _notificationService = notificationService;
     }
 
     [HttpGet("staff/get/all/schedules/{groupId}")]
@@ -22,7 +27,7 @@ public class GroupScheduleController : ControllerBase
         try
         {
             var res = await _groupScheduleService.GetGroupScheduleByGroupId(groupId);
-            
+
             return Ok(new
             {
                 success = true,
@@ -54,7 +59,19 @@ public class GroupScheduleController : ControllerBase
                     messsage = "TypeActivityGroup or Rental could not be found."
                 });
             }
-            
+
+            // 🔔 Notify Customer about new schedule
+            if (res.CustomerId.HasValue && res.RentalId.HasValue)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    res.CustomerId.Value,
+                    NotificationType.ScheduleCreated,
+                    $"📅 Lịch trình đã được tạo cho sự kiện ngày {res.EventDate:dd/MM/yyyy}. Vui lòng kiểm tra.",
+                    res.RentalId.Value,
+                    res.Id,
+                    isRealTime: true);
+            }
+
             return Ok(new
             {
                 success = true,
@@ -70,9 +87,9 @@ public class GroupScheduleController : ControllerBase
             });
         }
     }
-    
+
     [HttpPut("staff/update/{scheduleId}")]
-    public async Task<IActionResult> UpdateGroupSchedule(int  scheduleId, [FromBody] GroupScheduleUpdateRequest request)
+    public async Task<IActionResult> UpdateGroupSchedule(int scheduleId, [FromBody] GroupScheduleUpdateRequest request)
     {
         try
         {
@@ -86,7 +103,19 @@ public class GroupScheduleController : ControllerBase
                     messsage = "TypeActivityGroup/Rental/Schedule could not be found."
                 });
             }
-            
+
+            // 🔔 Notify Customer about schedule update
+            if (res.CustomerId.HasValue && res.RentalId.HasValue)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    res.CustomerId.Value,
+                    NotificationType.ScheduleUpdated,
+                    $"📅 Lịch trình ngày {res.EventDate:dd/MM/yyyy} đã được cập nhật. Vui lòng kiểm tra.",
+                    res.RentalId.Value,
+                    res.Id,
+                    isRealTime: true);
+            }
+
             return Ok(new
             {
                 success = true,
@@ -119,6 +148,18 @@ public class GroupScheduleController : ControllerBase
                 });
             }
 
+            // 🔔 Notify Customer about schedule cancellation
+            if (res.CustomerId.HasValue && res.RentalId.HasValue)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    res.CustomerId.Value,
+                    NotificationType.ScheduleCancelled,
+                    $"📅 Lịch trình ngày {res.EventDate:dd/MM/yyyy} đã bị hủy. Vui lòng liên hệ nhân viên.",
+                    res.RentalId.Value,
+                    res.Id,
+                    isRealTime: true);
+            }
+
             return Ok();
         }
         catch (Exception e)
@@ -138,7 +179,7 @@ public class GroupScheduleController : ControllerBase
         try
         {
             var res = await _groupScheduleService.CustomerGetGroupScheduleByRentalId(rentalId);
-            
+
             if (res == null) return NotFound(new
             {
                 success = false,

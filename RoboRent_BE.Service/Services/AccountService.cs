@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Repository.Interfaces;
@@ -7,10 +9,12 @@ namespace RoboRent_BE.Service.Services;
 public class AccountService : IAccountService
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly UserManager<ModifyIdentityUser> _userManager;
 
-    public AccountService(IAccountRepository accountRepository)
+    public AccountService(IAccountRepository accountRepository, UserManager<ModifyIdentityUser> userManager)
     {
         _accountRepository = accountRepository;
+        _userManager = userManager;
     }
 
     public async Task<Account> CreatePendingAccountAsync(string userId, string? fullName)
@@ -62,5 +66,27 @@ public class AccountService : IAccountService
         account.PhoneNumber = phoneNumber;
         await _accountRepository.UpdateAsync(account);
         return true;
+    }
+
+    public async Task<List<Account>> GetAllStaffAccountsAsync()
+    {
+        // Get all users with Staff role
+        var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+        var staffUserIds = staffUsers.Select(u => u.Id).ToList();
+
+        // Get corresponding Account records
+        var allAccounts = await _accountRepository.GetAllAsync();
+        return allAccounts.Where(a => staffUserIds.Contains(a.UserId)).ToList();
+    }
+
+    public async Task<List<Account>> GetAllManagerAccountsAsync()
+    {
+        // Get all users with Manager role
+        var managerUsers = await _userManager.GetUsersInRoleAsync("Manager");
+        var managerUserIds = managerUsers.Select(u => u.Id).ToList();
+
+        // Get corresponding Account records
+        var allAccounts = await _accountRepository.GetAllAsync();
+        return allAccounts.Where(a => managerUserIds.Contains(a.UserId)).ToList();
     }
 }

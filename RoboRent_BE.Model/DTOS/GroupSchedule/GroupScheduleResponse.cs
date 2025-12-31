@@ -12,7 +12,7 @@ public class GroupScheduleResponse
 
     public string? EventCity { get; set; } =  string.Empty;
 
-    public TimeOnly? DeliveryTime { get; set; }
+    public TimeOnly? SetupTime { get; set; }
 
     public TimeOnly? StartTime { get; set; }
 

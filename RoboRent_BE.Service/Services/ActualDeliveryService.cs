@@ -252,14 +252,14 @@ public class ActualDeliveryService : IActualDeliveryService
         }
 
         if (!targetSchedule.EventDate.HasValue || 
-            !targetSchedule.DeliveryTime.HasValue || 
+            // !targetSchedule.DeliveryTime.HasValue || 
             !targetSchedule.FinishTime.HasValue)
         {
             throw new Exception("GroupSchedule must have EventDate, DeliveryTime, and FinishTime");
         }
 
         // Calculate target time range
-        var targetStart = targetSchedule.EventDate.Value.Date + targetSchedule.DeliveryTime.Value.ToTimeSpan();
+        var targetStart = targetSchedule.EventDate.Value.Date;// + targetSchedule.DeliveryTime.Value.ToTimeSpan();
         var targetEnd = targetSchedule.EventDate.Value.Date + targetSchedule.FinishTime.Value.ToTimeSpan();
 
         // Get all deliveries of this staff around same date
@@ -276,13 +276,13 @@ public class ActualDeliveryService : IActualDeliveryService
             var schedule = delivery.GroupSchedule;
 
             if (!schedule.EventDate.HasValue || 
-                !schedule.DeliveryTime.HasValue || 
+                // !schedule.DeliveryTime.HasValue || 
                 !schedule.FinishTime.HasValue)
             {
                 continue;
             }
 
-            var existStart = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
+            var existStart = schedule.EventDate.Value.Date;// + schedule.DeliveryTime.Value.ToTimeSpan();
             var existEnd = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
 
             // Check overlap
@@ -354,10 +354,10 @@ public class ActualDeliveryService : IActualDeliveryService
 
         if (schedule?.EventDate.HasValue == true)
         {
-            if (schedule.DeliveryTime.HasValue)
-            {
-                scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
-            }
+            // if (schedule.DeliveryTime.HasValue)
+            // {
+            //     scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
+            // }
             if (schedule.FinishTime.HasValue)
             {
                 scheduledPickupTime = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
@@ -388,7 +388,7 @@ public class ActualDeliveryService : IActualDeliveryService
                 EventDate = schedule.EventDate,
                 EventLocation = schedule.EventLocation,
                 EventCity = schedule.EventCity,
-                DeliveryTime = schedule.DeliveryTime,
+                // DeliveryTime = schedule.DeliveryTime,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
                 FinishTime = schedule.FinishTime

@@ -12,7 +12,11 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251226184819_Initial")]
+<<<<<<<< HEAD:RoboRent_BE.Model/Migrations/20251231052617_Initial.Designer.cs
+    [Migration("20251231052617_Initial")]
+========
+    [Migration("20251223161150_Initial")]
+>>>>>>>> be/dangkhoa:RoboRent_BE.Model/Migrations/20251223161150_Initial.Designer.cs
     partial class Initial
     {
         /// <inheritdoc />
@@ -1054,9 +1058,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ActivityTypeGroupId")
                         .HasColumnType("integer");
 
-                    b.Property<TimeOnly?>("DeliveryTime")
-                        .HasColumnType("time without time zone");
-
                     b.Property<TimeOnly?>("EndTime")
                         .HasColumnType("time without time zone");
 
@@ -1077,6 +1078,9 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<int?>("RentalId")
                         .HasColumnType("integer");
+
+                    b.Property<TimeOnly?>("SetupTime")
+                        .HasColumnType("time without time zone");
 
                     b.Property<TimeOnly?>("StartTime")
                         .HasColumnType("time without time zone");
@@ -1273,23 +1277,23 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<double?>("Complete")
+                        .HasColumnType("double precision");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CustomerReason")
                         .HasColumnType("text");
 
-                    b.Property<decimal>("CustomizationFee")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("DamageDeposit")
-                        .HasColumnType("numeric");
-
                     b.Property<int?>("DeliveryDistance")
                         .HasColumnType("integer");
 
                     b.Property<decimal?>("DeliveryFee")
                         .HasColumnType("numeric");
+
+                    b.Property<double?>("Deposit")
+                        .HasColumnType("double precision");
 
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1303,17 +1307,14 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("RentalFee")
-                        .HasColumnType("numeric");
-
                     b.Property<int>("RentalId")
                         .HasColumnType("integer");
 
+                    b.Property<double?>("Service")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("StaffDescription")
                         .HasColumnType("text");
-
-                    b.Property<decimal>("StaffFee")
-                        .HasColumnType("numeric");
 
                     b.Property<string>("Status")
                         .HasColumnType("text");
@@ -1374,9 +1375,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<bool?>("IsUpdated")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("text");
 
@@ -1409,41 +1407,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("Rentals");
-                });
-
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("ChangedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ChangedByAccountId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FieldName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("text");
-
-                    b.Property<int>("RentalId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RentalId");
-
-                    b.ToTable("RentalChangeLogs");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>
@@ -1487,13 +1450,10 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("CreatedAd")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool?>("IsUpdated")
                         .HasColumnType("boolean");
 
                     b.Property<int>("RentalId")
@@ -1505,7 +1465,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAd")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("isLocked")
@@ -1545,28 +1505,28 @@ namespace RoboRent_BE.Model.Migrations
                         new
                         {
                             Id = 1,
-                            Description = "Robot lễ tân, chào đón khách, hỗ trợ check-in, hướng dẫn khu vực và hiển thị nội dung thương hiệu",
+                            Description = "Robot lễ tân được sử dụng tại khu vực đón tiếp sự kiện, đóng vai trò như một “front-desk di động”. Robot có khả năng hiển thị đầy đủ nhận diện thương hiệu của khách hàng trên màn hình, bao gồm tên thương hiệu, logo, giao diện màu sắc, banner, hình nền và các nội dung chào mừng. Ngoài ra, robot còn có thể hiển thị QR hoặc CTA để điều hướng khách truy cập tới website, landing page hoặc biểu mẫu đăng ký, cũng như trình chiếu các nội dung tài trợ theo kịch bản.\n\nVề tương tác, robot hỗ trợ chào hỏi và giao tiếp theo kịch bản được cấu hình sẵn, có thể sử dụng nhiều ngôn ngữ khác nhau. Giọng nói, tốc độ đọc, cao độ và âm lượng đều có thể điều chỉnh để phù hợp với không gian sự kiện. Robot cũng có khả năng trả lời các câu hỏi thường gặp thông qua danh sách FAQ được chuẩn bị trước.\n\nTrong trường hợp cần thiết, robot có thể hỗ trợ check-in và thu thập thông tin khách tham dự thông qua QR code hoặc form nhập liệu, kèm theo thông báo quyền riêng tư. Ngoài ra, robot còn có thể hướng dẫn khách di chuyển đến các khu vực, booth hoặc điểm tham quan trong sự kiện, dựa trên danh sách điểm đến và các quy tắc điều hướng đã được cấu hình trước nhằm đảm bảo an toàn.",
                             IsDeleted = false,
                             TypeName = "Reception Robot"
                         },
                         new
                         {
                             Id = 2,
-                            Description = "Robot biểu diễn sân khấu, nhảy múa, trình diễn theo show set và kịch bản được cấu hình",
+                            Description = "Robot biểu diễn được thiết kế để trình diễn trên sân khấu theo kịch bản và chương trình cụ thể. Robot có thể chạy một hoặc nhiều show set được cấu hình sẵn, mỗi show bao gồm nhạc nền, biên đạo, thời lượng và số lần lặp. Thứ tự chạy các tiết mục được xác định rõ ràng nhằm đảm bảo mạch chương trình.\n\nRobot hỗ trợ nhiều hình thức kích hoạt biểu diễn, bao gồm kích hoạt thủ công, theo lịch trình hoặc thông qua tín hiệu điều khiển từ xa. Trong quá trình biểu diễn, các điểm cue hoặc timecode có thể được sử dụng để điều khiển hành động của robot theo đúng nhịp chương trình.\n\nĐể đảm bảo an toàn, robot yêu cầu cấu hình đầy đủ khu vực sân khấu, khoảng cách an toàn và các giới hạn kỹ thuật như tốc độ khớp hoặc góc chuyển động. Một số chương trình có thể yêu cầu rehearsal trước giờ diễn chính thức. Mức độ rủi ro của chương trình cũng được đánh giá để phục vụ công tác quản lý và vận hành.\n\nNgoài phần biểu diễn chính, robot có thể được cá nhân hóa về mặt hình ảnh thông qua trang phục hoặc hiệu ứng LED, đồng thời có thể phát các câu chào mở đầu và kết thúc nhằm tăng tính kết nối với khán giả.",
                             IsDeleted = false,
                             TypeName = "Performance Robot"
                         },
                         new
                         {
                             Id = 3,
-                            Description = "Robot dẫn chương trình (MC), storytelling, đọc kịch bản theo timeline và tương tác với khán giả",
+                            Description = "Robot Host đóng vai trò như một MC dẫn chương trình, hoạt động theo timeline sự kiện. Nội dung dẫn được chia thành các khối kịch bản, mỗi khối bao gồm tiêu đề, nội dung lời dẫn, ngôn ngữ sử dụng, thời lượng ước tính và các gợi ý tương tác với khán giả. Điều này giúp robot dẫn dắt chương trình một cách mạch lạc và linh hoạt.\n\nRobot hỗ trợ cấu hình chi tiết về giọng nói, bao gồm tốc độ, cao độ và âm lượng, đồng thời có thể sử dụng từ điển phát âm riêng để đọc chính xác tên riêng, thương hiệu hoặc thuật ngữ đặc thù. Âm lượng cũng có thể được điều chỉnh theo từng ngữ cảnh hoặc khung giờ yên tĩnh.\n\nTrong quá trình dẫn chương trình, robot có thể hiển thị thêm các nội dung hỗ trợ trên màn hình như hình ảnh, QR code, slide hoặc countdown cho các mốc thời gian quan trọng. Khi sự kiện có MC người tham gia, robot có thể phối hợp dẫn chương trình thông qua các cue chuyển giao rõ ràng giữa robot và MC, đảm bảo chương trình diễn ra trôi chảy.",
                             IsDeleted = false,
                             TypeName = "Host Robot"
                         },
                         new
                         {
                             Id = 4,
-                            Description = "Robot quảng bá thương hiệu, hỗ trợ booth, chạy nội dung marketing, CTA và thu hút khách tham dự",
+                            Description = "Robot Promotion được sử dụng trong các hoạt động quảng bá, activation và booth marketing. Robot có khả năng chạy playlist quảng cáo bao gồm hình ảnh hoặc video theo thứ tự và thời lượng được xác định trước. Việc phát nội dung có thể tuân theo lịch trình cụ thể, khung giờ cao điểm hoặc chu kỳ lặp để tối ưu khả năng tiếp cận khách tham quan.\n\nRobot cũng có thể phát nhạc nền hoặc các đoạn thông báo mời chào, với âm lượng được điều chỉnh phù hợp với không gian booth. Các nội dung kêu gọi hành động như QR code, thông điệp CTA hoặc thông tin ưu đãi, voucher có thể được hiển thị nhằm thu hút và chuyển đổi khách hàng.\n\nVề di chuyển, robot có thể đứng cố định hoặc di chuyển tuần tra trong khu vực booth theo lộ trình được xác định trước. Các điểm dừng, khu vực cần tránh và tốc độ di chuyển tối đa đều được cấu hình nhằm đảm bảo an toàn cho khách tham dự và không gian trưng bày.",
                             IsDeleted = false,
                             TypeName = "Promotion Robot"
                         });
@@ -2575,11 +2535,11 @@ namespace RoboRent_BE.Model.Migrations
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbility", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("AbilityGroup")
                         .HasMaxLength(50)
@@ -2656,7 +2616,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = 1L,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Tên thương hiệu hiển thị trên màn hình robot.",
@@ -2674,7 +2634,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 2,
+                            Id = 2L,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Đường dẫn logo (PNG/SVG) hiển thị trên robot.",
@@ -2692,7 +2652,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 3,
+                            Id = 3L,
                             AbilityGroup = "Branding & UI",
                             DataType = "json",
                             Description = "Cấu hình giao diện (banner/background/color).",
@@ -2709,7 +2669,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 4,
+                            Id = 4L,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Text chào mừng hiển thị trên màn hình.",
@@ -2727,7 +2687,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 5,
+                            Id = 5L,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Link/QR điều hướng khách (landing page, form...).",
@@ -2745,7 +2705,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 6,
+                            Id = 6L,
                             AbilityGroup = "Branding & UI",
                             DataType = "json",
                             Description = "Danh sách asset tài trợ hiển thị luân phiên.",
@@ -2762,7 +2722,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 7,
+                            Id = 7L,
                             AbilityGroup = "Greeting & Script",
                             DataType = "string",
                             Description = "Kịch bản chào hỏi / giới thiệu ngắn.",
@@ -2780,7 +2740,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 8,
+                            Id = 8L,
                             AbilityGroup = "Greeting & Script",
                             DataType = "enum[]",
                             Description = "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.",
@@ -2797,7 +2757,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 9,
+                            Id = 9L,
                             AbilityGroup = "Greeting & Script",
                             DataType = "json",
                             Description = "Cấu hình giọng nói (tốc độ/độ cao...).",
@@ -2814,7 +2774,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 10,
+                            Id = 10L,
                             AbilityGroup = "Greeting & Script",
                             DataType = "json",
                             Description = "Danh sách câu hỏi thường gặp (Q/A + keywords).",
@@ -2831,7 +2791,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 11,
+                            Id = 11L,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "enum",
                             Description = "Chế độ check-in tại sự kiện.",
@@ -2848,7 +2808,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 12,
+                            Id = 12L,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "enum[]",
                             Description = "Các trường thu thập thông tin khách.",
@@ -2865,7 +2825,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 13,
+                            Id = 13L,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "string",
                             Description = "Thông báo quyền riêng tư khi thu thập dữ liệu.",
@@ -2883,7 +2843,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 14,
+                            Id = 14L,
                             AbilityGroup = "Navigation",
                             DataType = "json",
                             Description = "Danh sách điểm đến/booth để robot hướng dẫn.",
@@ -2900,7 +2860,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 15,
+                            Id = 15L,
                             AbilityGroup = "Navigation",
                             DataType = "json",
                             Description = "Quy tắc điều hướng (tốc độ, vùng cấm...).",
@@ -2917,7 +2877,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 16,
+                            Id = 16L,
                             AbilityGroup = "Show Set",
                             DataType = "json",
                             Description = "Danh sách show set (nhạc + choreography + thời lượng + lặp).",
@@ -2934,7 +2894,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 17,
+                            Id = 17L,
                             AbilityGroup = "Show Set",
                             DataType = "json",
                             Description = "Thứ tự chạy các set (theo index).",
@@ -2951,7 +2911,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 18,
+                            Id = 18L,
                             AbilityGroup = "Cues & Triggers",
                             DataType = "enum",
                             Description = "Cách kích hoạt biểu diễn.",
@@ -2968,7 +2928,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 19,
+                            Id = 19L,
                             AbilityGroup = "Cues & Triggers",
                             DataType = "json",
                             Description = "Các cue/timecode điều khiển hành động trong show.",
@@ -2985,7 +2945,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 20,
+                            Id = 20L,
                             AbilityGroup = "Stage & Safety",
                             DataType = "json",
                             Description = "Khu vực sân khấu và khoảng cách an toàn.",
@@ -3002,7 +2962,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 21,
+                            Id = 21L,
                             AbilityGroup = "Stage & Safety",
                             DataType = "json",
                             Description = "Giới hạn an toàn (tốc độ khớp, góc tay chân...).",
@@ -3019,7 +2979,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 22,
+                            Id = 22L,
                             AbilityGroup = "Stage & Safety",
                             DataType = "bool",
                             Description = "Có yêu cầu rehearsal trước giờ chạy show hay không.",
@@ -3035,7 +2995,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 23,
+                            Id = 23L,
                             AbilityGroup = "Stage & Safety",
                             DataType = "enum",
                             Description = "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.",
@@ -3052,7 +3012,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 24,
+                            Id = 24L,
                             AbilityGroup = "Visual Style",
                             DataType = "string",
                             Description = "Theme trang phục/LED cho robot (nếu có).",
@@ -3070,7 +3030,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 25,
+                            Id = 25L,
                             AbilityGroup = "Visual Style",
                             DataType = "string",
                             Description = "1-2 câu chào mở đầu/kết thúc show.",
@@ -3088,7 +3048,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 26,
+                            Id = 26L,
                             AbilityGroup = "Script Timeline",
                             DataType = "json",
                             Description = "Kịch bản theo timeline (blockTitle/text/language/duration).",
@@ -3105,7 +3065,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 27,
+                            Id = 27L,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.",
@@ -3122,7 +3082,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 28,
+                            Id = 28L,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Cấu hình giọng MC (rate/pitch/volume).",
@@ -3139,7 +3099,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 29,
+                            Id = 29L,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).",
@@ -3156,7 +3116,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 30,
+                            Id = 30L,
                             AbilityGroup = "On-screen Assets",
                             DataType = "json",
                             Description = "Asset hiển thị (QR/Image/Slide + thời lượng).",
@@ -3173,7 +3133,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 31,
+                            Id = 31L,
                             AbilityGroup = "On-screen Assets",
                             DataType = "json",
                             Description = "Cấu hình countdown (nếu dùng).",
@@ -3190,7 +3150,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 32,
+                            Id = 32L,
                             AbilityGroup = "Co-host Mode",
                             DataType = "bool",
                             Description = "Có MC người phối hợp hay không.",
@@ -3206,7 +3166,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 33,
+                            Id = 33L,
                             AbilityGroup = "Co-host Mode",
                             DataType = "json",
                             Description = "Cue chuyển giao giữa robot và MC người.",
@@ -3224,7 +3184,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 34,
+                            Id = 34L,
                             AbilityGroup = "Ad Playlist",
                             DataType = "json",
                             Description = "Playlist quảng cáo (image/video + duration + order).",
@@ -3241,7 +3201,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 35,
+                            Id = 35L,
                             AbilityGroup = "Ad Playlist",
                             DataType = "json",
                             Description = "Quy tắc chạy playlist (khung giờ, interval, peak mode).",
@@ -3258,7 +3218,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 36,
+                            Id = 36L,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "json",
                             Description = "Danh sách audio (nhạc nền) nếu sử dụng.",
@@ -3275,7 +3235,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 37,
+                            Id = 37L,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "string",
                             Description = "Script thông báo/mời chào tại booth.",
@@ -3293,7 +3253,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 38,
+                            Id = 38L,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "json",
                             Description = "Cấu hình âm lượng phát tại booth.",
@@ -3310,7 +3270,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 39,
+                            Id = 39L,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Link/QR cho CTA (landing page, đăng ký...).",
@@ -3328,7 +3288,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 40,
+                            Id = 40L,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Text CTA hiển thị trên màn hình/booth.",
@@ -3346,7 +3306,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 41,
+                            Id = 41L,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Luật voucher/ưu đãi (nếu có).",
@@ -3364,7 +3324,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 42,
+                            Id = 42L,
                             AbilityGroup = "Booth Route",
                             DataType = "enum",
                             Description = "Chế độ di chuyển tại booth.",
@@ -3381,7 +3341,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 43,
+                            Id = 43L,
                             AbilityGroup = "Booth Route",
                             DataType = "json",
                             Description = "Các điểm dừng khi robot patrol.",
@@ -3398,7 +3358,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 44,
+                            Id = 44L,
                             AbilityGroup = "Booth Route",
                             DataType = "json",
                             Description = "Khu vực tránh (nếu có).",
@@ -3415,7 +3375,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 45,
+                            Id = 45L,
                             AbilityGroup = "Booth Route",
                             DataType = "number",
                             Description = "Tốc độ tối đa (m/s) khi di chuyển.",
@@ -3431,41 +3391,6 @@ namespace RoboRent_BE.Model.Migrations
                             RobotTypeId = 4,
                             UiControl = "number"
                         });
-                });
-
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbilityValue", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("RentalDetailId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RobotAbilityId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ValueJson")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("ValueText")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("isUpdated")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RentalDetailId");
-
-                    b.HasIndex("RobotAbilityId");
-
-                    b.ToTable("RobotAbilityValues");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotInGroup", b =>
@@ -4495,17 +4420,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Staff");
                 });
 
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
-                {
-                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
-                        .WithMany()
-                        .HasForeignKey("RentalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Rental");
-                });
-
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
@@ -4554,25 +4468,6 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("RoboType");
                 });
 
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbilityValue", b =>
-                {
-                    b.HasOne("RoboRent_BE.Model.Entities.RentalDetail", "RentalDetail")
-                        .WithMany("RobotAbilityValues")
-                        .HasForeignKey("RentalDetailId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RoboRent_BE.Model.Entities.RobotAbility", "RobotAbility")
-                        .WithMany()
-                        .HasForeignKey("RobotAbilityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RentalDetail");
-
-                    b.Navigation("RobotAbility");
-                });
-
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotInGroup", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityTypeGroup", "ActivityTypeGroup")
@@ -4595,7 +4490,7 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotTypeOfActivity", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ActivityType", "ActivityType")
-                        .WithMany()
+                        .WithMany("RobotTypeOfActivities")
                         .HasForeignKey("ActivityTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4642,6 +4537,8 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityType", b =>
                 {
                     b.Navigation("ActivityTypeGroups");
+
+                    b.Navigation("RobotTypeOfActivities");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ActivityTypeGroup", b =>
@@ -4657,11 +4554,6 @@ namespace RoboRent_BE.Model.Migrations
             modelBuilder.Entity("RoboRent_BE.Model.Entities.EventActivity", b =>
                 {
                     b.Navigation("ActivityTypes");
-                });
-
-            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalDetail", b =>
-                {
-                    b.Navigation("RobotAbilityValues");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RoboType", b =>

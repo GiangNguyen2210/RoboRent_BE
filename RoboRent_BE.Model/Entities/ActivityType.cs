@@ -56,4 +56,5 @@ public partial class ActivityType
     public decimal DamageDeposit { get; set; } = 0m;
 
     public virtual ICollection<ActivityTypeGroup> ActivityTypeGroups { get; set; } = new List<ActivityTypeGroup>();
+    public virtual ICollection<RobotTypeOfActivity> RobotTypeOfActivities { get; set; } = new List<RobotTypeOfActivity>();
 }
