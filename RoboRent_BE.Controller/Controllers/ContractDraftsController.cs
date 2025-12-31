@@ -973,5 +973,166 @@ public class ContractDraftsController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Download contract as PDF
+    /// </summary>
+    [HttpGet("{id}/download/pdf")]
+    [Authorize]
+    public async Task<IActionResult> DownloadContractAsPdf(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var pdfBytes = await _contractDraftsService.DownloadContractAsPdfAsync(id, userId);
+            
+            var contractDraft = await _contractDraftsService.GetContractDraftsByIdAsync(id);
+            var fileName = $"Contract_{id}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+            
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Download contract as Word document
+    /// </summary>
+    [HttpGet("{id}/download/word")]
+    [Authorize]
+    public async Task<IActionResult> DownloadContractAsWord(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var wordBytes = await _contractDraftsService.DownloadContractAsWordAsync(id, userId);
+            
+            var contractDraft = await _contractDraftsService.GetContractDraftsByIdAsync(id);
+            var fileName = $"Contract_{id}_{DateTime.UtcNow:yyyyMMdd}.docx";
+            
+            return File(wordBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Customer signs contract by uploading signed file
+    /// </summary>
+    [HttpPost("{id}/customer-sign-file")]
+    [Authorize]
+    public async Task<IActionResult> CustomerSignContractWithFile(int id, IFormFile signedContractFile)
+    {
+        if (signedContractFile == null || signedContractFile.Length == 0)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Signed contract file is required"
+            });
+        }
+
+        // Validate file type
+        var allowedExtensions = new[] { ".pdf", ".docx", ".html", ".htm" };
+        var fileExtension = Path.GetExtension(signedContractFile.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Invalid file type. Allowed types: PDF, Word (.docx), or HTML"
+            });
+        }
+
+        try
+        {
+            var customerId = GetCurrentUserId();
+            var result = await _contractDraftsService.CustomerSignContractWithFileAsync(id, signedContractFile, customerId);
+            
+            if (result == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Contract draft not found"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = result,
+                message = "Contract signed by customer and activated"
+            });
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return Unauthorized(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }
 

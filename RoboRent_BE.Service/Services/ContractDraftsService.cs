@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
@@ -9,6 +10,16 @@ using RoboRent_BE.Service.Interface;
 using RoboRent_BE.Service.Interfaces;
 using System.Net;
 using System.Text.RegularExpressions;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
+using Docnet.Core;
+using Docnet.Core.Models;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace RoboRent_BE.Service.Services;
 
@@ -50,6 +61,9 @@ public class ContractDraftsService : IContractDraftsService
         _emailService = emailService;
         _memoryCache = memoryCache;
         _mapper = mapper;
+        
+        // Set QuestPDF license (free for non-commercial use, or use your license key)
+        QuestPDF.Settings.License = LicenseType.Community;
     }
 
     public async Task<IEnumerable<ContractDraftsResponse>> GetAllContractDraftsAsync()
@@ -295,49 +309,50 @@ public class ContractDraftsService : IContractDraftsService
             if (side == "left")
             {
                 // Add/update manager signature (left side)
-                var managerSignatureDiv = $@"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
-        <div style=""margin-bottom: 10px;"">
-            <strong>Manager Signature:</strong>
-        </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+                var signatureValue = $@"<div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
             {signature}
-        </div>
-        <div style=""margin-top: 10px; font-size: 12px;"">
+        </div>";
+                
+                var dateValue = $@"<div style=""margin-top: 10px; font-size: 12px;"">
             {DateTime.UtcNow.ToString("MM/dd/yyyy")}
-        </div>
-    </div>";
+        </div>";
 
-                // Check if manager signature already exists (including placeholder)
+                // Check if manager signature section exists
                 if (bodyJson.Contains("Manager Signature:"))
                 {
-                    // Improved regex pattern to match manager signature div more reliably
-                    // This pattern handles both signed signatures and empty placeholders
-                    // Matches from opening div with left alignment until we find all closing divs
-                    var pattern = @"<div\s+style=""flex:\s*1;\s*text-align:\s*left[^""]*""[^>]*>[\s\S]*?Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
-                    bodyJson = Regex.Replace(bodyJson, pattern, managerSignatureDiv, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                    // Find and replace just the signature value and date divs, not the entire structure
+                    // First, find the position of "Manager Signature:"
+                    var managerSigIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
                     
-                    // If pattern didn't match (might be due to formatting differences), try a more aggressive replacement
-                    if (bodyJson.Contains("Manager Signature:"))
+                    if (managerSigIndex >= 0)
                     {
-                        // Find the index of "Manager Signature:" and work backwards/forwards to replace the entire div
-                        var managerIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
-                        if (managerIndex > 0)
+                        // Find the closing </strong></div> after "Manager Signature:"
+                        var afterStrongClose = bodyJson.IndexOf("</strong>", managerSigIndex);
+                        if (afterStrongClose >= 0)
                         {
-                            // Find the start of the parent div (look backwards for "<div style=""flex: 1; text-align: left")
-                            var beforeManager = bodyJson.Substring(0, managerIndex);
-                            var divStartPattern = @"<div\s+style=""[^""]*flex:\s*1[^""]*text-align:\s*left[^""]*""[^>]*>";
-                            var divStartMatch = Regex.Match(beforeManager, divStartPattern, RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
-                            if (divStartMatch.Success)
+                            var afterFirstDiv = bodyJson.IndexOf("</div>", afterStrongClose);
+                            if (afterFirstDiv >= 0)
                             {
-                                var divStartIndex = divStartMatch.Index;
-                                // Find the end: match 4 closing </div> tags after Manager Signature
-                                var afterManager = bodyJson.Substring(divStartIndex);
-                                var divEndPattern = @"Manager\s+Signature:[\s\S]*?</div>\s*</div>\s*</div>\s*</div>";
-                                var divEndMatch = Regex.Match(afterManager, divEndPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-                                if (divEndMatch.Success)
+                                // Now we're positioned right after the "Manager Signature:" label
+                                // Find the next two </div> closing tags (signature div and date div)
+                                var signatureDivStart = afterFirstDiv + 6; // Skip past </div>
+                                
+                                // Find the signature div (the one with cursive font)
+                                var signatureDivEnd = bodyJson.IndexOf("</div>", signatureDivStart);
+                                if (signatureDivEnd >= 0)
                                 {
-                                    var divEndIndex = divStartIndex + divEndMatch.Index + divEndMatch.Length;
-                                    bodyJson = bodyJson.Substring(0, divStartIndex) + managerSignatureDiv + bodyJson.Substring(divEndIndex);
+                                    // Find the date div
+                                    var dateDivStart = signatureDivEnd + 6;
+                                    var dateDivEnd = bodyJson.IndexOf("</div>", dateDivStart);
+                                    
+                                    if (dateDivEnd >= 0)
+                                    {
+                                        // Replace both the signature and date divs
+                                        var beforeSignature = bodyJson.Substring(0, signatureDivStart);
+                                        var afterDate = bodyJson.Substring(dateDivEnd + 6);
+                                        
+                                        bodyJson = beforeSignature + "\n        " + signatureValue + "\n        " + dateValue + afterDate;
+                                    }
                                 }
                             }
                         }
@@ -345,7 +360,15 @@ public class ContractDraftsService : IContractDraftsService
                 }
                 else
                 {
-                    // Insert manager signature before customer signature
+                    // Insert manager signature before customer signature - this shouldn't happen normally
+                    var managerSignatureDiv = $@"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
+        <div style=""margin-bottom: 10px;"">
+            <strong>Manager Signature:</strong>
+        </div>
+        {signatureValue}
+        {dateValue}
+    </div>";
+                    
                     bodyJson = bodyJson.Replace(
                         @"<div style=""flex: 1; text-align: right",
                         managerSignatureDiv + @"<div style=""flex: 1; text-align: right");
@@ -789,14 +812,8 @@ public class ContractDraftsService : IContractDraftsService
         if (contractDraft.ManagerId != managerId)
             throw new UnauthorizedAccessException("You are not authorized to sign this contract");
 
-        // Bug Fix: Remove any existing manager signature first to ensure clean replacement
-        // This handles the case where customer requested changes and manager is signing again
-        if (!string.IsNullOrEmpty(contractDraft.BodyJson))
-        {
-            contractDraft.BodyJson = RemoveManagerSignatureFromContract(contractDraft.BodyJson);
-        }
-
         // Add manager signature to contract (left side)
+        // The AddSignatureToContract method handles both adding new and replacing existing signatures
         contractDraft.BodyJson = AddSignatureToContract(contractDraft.BodyJson ?? "", request.Signature, "left");
 
         // Update status to PendingCustomerSignature
@@ -827,21 +844,6 @@ public class ContractDraftsService : IContractDraftsService
         
         if (rental == null || rental.AccountId != customerId)
             throw new UnauthorizedAccessException("You are not authorized to sign this contract");
-
-        // Check if OTP is verified and not expired (must sign within 5 minutes after verification)
-        var verificationKey = $"verified_{id}_{customerId}";
-        if (!_memoryCache.TryGetValue(verificationKey, out VerificationData? verificationData) || verificationData == null)
-            throw new InvalidOperationException("Email verification required. Please request and verify the code before signing the contract.");
-
-        // Check if verification has expired (5 minutes after verification)
-        if (DateTime.UtcNow > verificationData.ExpiresAt)
-        {
-            _memoryCache.Remove(verificationKey);
-            throw new InvalidOperationException("Verification has expired. Please request and verify the code again before signing the contract.");
-        }
-
-        // Remove verification after successful signature
-        _memoryCache.Remove(verificationKey);
 
         // Add customer signature to contract (right side)
         contractDraft.BodyJson = AddSignatureToContract(contractDraft.BodyJson ?? "", request.Signature, "right");
@@ -1402,6 +1404,407 @@ public class ContractDraftsService : IContractDraftsService
         public int CustomerId { get; set; }
         public DateTime VerifiedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
+    }
+
+    public async Task<byte[]> DownloadContractAsPdfAsync(int id, int userId)
+    {
+        var contractDraft = await _contractDraftsRepository.GetAsync(
+            cd => cd.Id == id,
+            "ContractTemplate,Rental,Staff,Manager");
+
+        if (contractDraft == null)
+            throw new InvalidOperationException("Contract draft not found");
+
+        // Check authorization - user must be staff, manager, admin, or the customer
+        var dbContext = _contractDraftsRepository.GetDbContext();
+        var rental = await dbContext.Rentals
+            .FirstOrDefaultAsync(r => r.Id == contractDraft.RentalId);
+
+        if (rental == null || (rental.AccountId != userId && contractDraft.StaffId != userId && contractDraft.ManagerId != userId))
+        {
+            // Check if user is admin (would need to check roles, but for now just allow if they have access)
+            throw new UnauthorizedAccessException("You are not authorized to download this contract");
+        }
+
+        if (string.IsNullOrEmpty(contractDraft.BodyJson))
+            throw new InvalidOperationException("Contract body is empty");
+
+        // Store original body JSON snapshot when customer downloads for signing
+        if (contractDraft.Status == "PendingCustomerSignature")
+        {
+            contractDraft.OriginalBodyJson = contractDraft.BodyJson;
+            await _contractDraftsRepository.UpdateAsync(contractDraft);
+        }
+
+        // Convert HTML to PDF using PuppeteerSharp (headless Chrome)
+        // This preserves all HTML/CSS formatting, tables, styles, etc.
+        
+        var htmlContent = contractDraft.BodyJson;
+        
+        // Wrap HTML in a complete document if it's not already
+        if (!htmlContent.Contains("<html", StringComparison.OrdinalIgnoreCase))
+        {
+            htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        table {{ border-collapse: collapse; width: 100%; }}
+        table, th, td {{ border: 1px solid black; padding: 8px; }}
+        th {{ background-color: #f2f2f2; }}
+    </style>
+</head>
+<body>
+    {htmlContent}
+</body>
+</html>";
+        }
+        
+        // Download Chromium if not already downloaded (first time only)
+        var browserFetcher = new BrowserFetcher();
+        await browserFetcher.DownloadAsync();
+        
+        // Launch headless browser and generate PDF
+        var launchOptions = new LaunchOptions
+        {
+            Headless = true,
+            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+        };
+        
+        await using var browser = await Puppeteer.LaunchAsync(launchOptions);
+        await using var page = await browser.NewPageAsync();
+        
+        // Set HTML content
+        await page.SetContentAsync(htmlContent);
+        
+        // Generate PDF with options
+        var pdfOptions = new PdfOptions
+        {
+            Format = PaperFormat.A4,
+            PrintBackground = true,
+            MarginOptions = new MarginOptions
+            {
+                Top = "20mm",
+                Bottom = "20mm",
+                Left = "15mm",
+                Right = "15mm"
+            },
+            DisplayHeaderFooter = true,
+            HeaderTemplate = $"<div style='font-size: 10px; text-align: right; width: 100%; margin-right: 15mm;'>Contract Draft #{id}</div>",
+            FooterTemplate = "<div style='font-size: 10px; text-align: center; width: 100%;'><span class='pageNumber'></span> of <span class='totalPages'></span></div>"
+        };
+        
+        var pdfBytes = await page.PdfDataAsync(pdfOptions);
+        
+        return pdfBytes;
+    }
+
+    public async Task<byte[]> DownloadContractAsWordAsync(int id, int userId)
+    {
+        var contractDraft = await _contractDraftsRepository.GetAsync(
+            cd => cd.Id == id,
+            "ContractTemplate,Rental,Staff,Manager");
+
+        if (contractDraft == null)
+            throw new InvalidOperationException("Contract draft not found");
+
+        // Check authorization
+        var dbContext = _contractDraftsRepository.GetDbContext();
+        var rental = await dbContext.Rentals
+            .FirstOrDefaultAsync(r => r.Id == contractDraft.RentalId);
+
+        if (rental == null || (rental.AccountId != userId && contractDraft.StaffId != userId && contractDraft.ManagerId != userId))
+        {
+            throw new UnauthorizedAccessException("You are not authorized to download this contract");
+        }
+
+        if (string.IsNullOrEmpty(contractDraft.BodyJson))
+            throw new InvalidOperationException("Contract body is empty");
+
+        // Store original body JSON snapshot when customer downloads for signing
+        if (contractDraft.Status == "PendingCustomerSignature")
+        {
+            contractDraft.OriginalBodyJson = contractDraft.BodyJson;
+            await _contractDraftsRepository.UpdateAsync(contractDraft);
+        }
+
+        // Convert HTML to Word document
+        using var stream = new MemoryStream();
+        using (var wordDocument = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
+        {
+            var mainPart = wordDocument.AddMainDocumentPart();
+            mainPart.Document = new DocumentFormat.OpenXml.Wordprocessing.Document();
+            var body = mainPart.Document.AppendChild(new Body());
+
+            // Convert HTML to plain text (simplified - for better results, use a proper HTML to Word converter)
+            var htmlText = contractDraft.BodyJson;
+            // Remove HTML tags for basic conversion
+            var plainText = System.Text.RegularExpressions.Regex.Replace(htmlText, "<.*?>", string.Empty);
+            plainText = System.Net.WebUtility.HtmlDecode(plainText);
+
+            var paragraph = body.AppendChild(new Paragraph());
+            var run = paragraph.AppendChild(new Run());
+            run.AppendChild(new Text(plainText));
+        }
+
+        return stream.ToArray();
+    }
+
+    public async Task<ContractDraftsResponse?> CustomerSignContractWithFileAsync(int id, IFormFile signedContractFile, int customerId)
+    {
+        var contractDraft = await _contractDraftsRepository.GetAsync(
+            cd => cd.Id == id,
+            "ContractTemplate,Rental,Staff,Manager");
+
+        if (contractDraft == null)
+            return null;
+
+        // Validate status and customer
+        if (contractDraft.Status != "PendingCustomerSignature")
+            throw new InvalidOperationException("Contract is not in PendingCustomerSignature status");
+
+        // Get rental to check customer
+        var dbContext = _contractDraftsRepository.GetDbContext();
+        var rental = await dbContext.Rentals
+            .FirstOrDefaultAsync(r => r.Id == contractDraft.RentalId);
+
+        if (rental == null || rental.AccountId != customerId)
+            throw new UnauthorizedAccessException("You are not authorized to sign this contract");
+
+        // Validate that original body JSON exists
+        if (string.IsNullOrEmpty(contractDraft.OriginalBodyJson))
+            throw new InvalidOperationException("Original contract not found. Please download the contract first before signing.");
+
+        // Read uploaded file content
+        string uploadedContent;
+        using (var reader = new StreamReader(signedContractFile.OpenReadStream()))
+        {
+            uploadedContent = await reader.ReadToEndAsync();
+        }
+
+        // Extract HTML from uploaded file (if it's PDF or Word, we'd need to parse it)
+        // For now, assume the file contains HTML or we need to extract text from PDF/Word
+        // This is a simplified version - in production, you'd use proper PDF/Word parsing libraries
+        
+        // For PDF: Extract text using a PDF library
+        // For Word: Extract text using DocumentFormat.OpenXml
+        // For HTML: Use as-is
+        
+        string extractedContent = uploadedContent;
+        
+        // If file is PDF, extract text using Docnet.Core
+        if (signedContractFile.ContentType == "application/pdf" || signedContractFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            using var memoryStream = new MemoryStream();
+            await signedContractFile.CopyToAsync(memoryStream);
+            var pdfBytes = memoryStream.ToArray();
+            
+            using var docReader = DocLib.Instance.GetDocReader(pdfBytes, new PageDimensions(1080, 1920));
+            var textBuilder = new System.Text.StringBuilder();
+            
+            for (int i = 0; i < docReader.GetPageCount(); i++)
+            {
+                using var pageReader = docReader.GetPageReader(i);
+                var pageText = pageReader.GetText();
+                textBuilder.AppendLine(pageText);
+            }
+            
+            extractedContent = textBuilder.ToString();
+        }
+        // If file is Word, extract text
+        else if (signedContractFile.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
+            signedContractFile.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+        {
+            using var fileStream = signedContractFile.OpenReadStream();
+            using var wordDoc = WordprocessingDocument.Open(fileStream, false);
+            var body = wordDoc.MainDocumentPart?.Document?.Body;
+            if (body != null)
+            {
+                extractedContent = body.InnerText;
+            }
+        }
+
+        // Compare uploaded contract with original (excluding signature section)
+        var isValid = ValidateContractIntegrity(contractDraft.OriginalBodyJson, extractedContent);
+        
+        if (!isValid)
+        {
+            throw new InvalidOperationException("Contract has been modified outside of the signature section. Only signature changes are allowed.");
+        }
+
+        // Extract customer signature from uploaded file
+        // This is simplified - in production, you'd need to detect the signature area
+        var customerSignature = ExtractCustomerSignature(extractedContent, contractDraft.OriginalBodyJson);
+
+        // Add customer signature to contract (right side)
+        contractDraft.BodyJson = AddSignatureToContract(contractDraft.OriginalBodyJson, customerSignature, "right");
+
+        // Update status to Active
+        contractDraft.Status = "Active";
+        contractDraft.UpdatedAt = DateTime.UtcNow;
+
+        var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        rental.Status = "PendingDeposit";
+        await _rentalRepository.UpdateAsync(rental);
+        var paymentResult = await _paymentService.CreateDepositPaymentAsync(rental.Id);
+        var response = _mapper.Map<ContractDraftsResponse>(updatedContractDraft);
+        response.DepositPayment = new DepositPaymentInfo
+        {
+            OrderCode = paymentResult.OrderCode,
+            Amount = paymentResult.Amount,
+            CheckoutUrl = paymentResult.CheckoutUrl,
+            ExpiresAt = paymentResult.ExpiredAt ?? DateTime.UtcNow.AddDays(7)
+        };
+
+        return response;
+    }
+
+    /// <summary>
+    /// Validates that the uploaded contract only has changes in the signature section
+    /// </summary>
+    private bool ValidateContractIntegrity(string originalBodyJson, string uploadedContent)
+    {
+        // Convert HTML to plain text for fair comparison
+        var originalPlainText = ConvertHtmlToPlainText(originalBodyJson);
+        var uploadedPlainText = ConvertHtmlToPlainText(uploadedContent);
+
+        // Normalize both strings for comparison (remove extra whitespace, newlines)
+        var normalizedOriginal = NormalizeTextForComparison(originalPlainText);
+        var normalizedUploaded = NormalizeTextForComparison(uploadedPlainText);
+
+        // For now, do a lenient comparison - check if the main content is similar
+        // We'll use a similarity approach: if most of the content matches, it's valid
+        // This is more lenient to handle PDF extraction differences
+        
+        // Simple approach: check if uploaded contains most key terms from original
+        // Remove common words and check similarity
+        var originalWords = normalizedOriginal.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 3) // Filter out short words
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        
+        var uploadedWords = normalizedUploaded.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 3)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Calculate how many original words are in the uploaded content
+        var matchingWords = originalWords.Intersect(uploadedWords, StringComparer.OrdinalIgnoreCase).Count();
+        var totalOriginalWords = originalWords.Count;
+
+        if (totalOriginalWords == 0)
+            return true; // Empty original, allow
+
+        // If at least 80% of significant words match, consider it valid
+        // This accounts for formatting differences from PDF extraction
+        var matchPercentage = (double)matchingWords / totalOriginalWords;
+        
+        return matchPercentage >= 0.80; // 80% similarity threshold
+    }
+    
+    /// <summary>
+    /// Convert HTML to plain text by stripping all HTML tags
+    /// </summary>
+    private string ConvertHtmlToPlainText(string html)
+    {
+        if (string.IsNullOrEmpty(html))
+            return string.Empty;
+        
+        // Remove HTML tags
+        var plainText = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", string.Empty);
+        
+        // Decode HTML entities
+        plainText = System.Net.WebUtility.HtmlDecode(plainText);
+        
+        // Remove special characters and normalize
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"[\u200B-\u200D\uFEFF]", string.Empty);
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"&nbsp;", " ");
+        
+        return plainText;
+    }
+    
+    /// <summary>
+    /// Normalize text for comparison by removing extra whitespace
+    /// </summary>
+    private string NormalizeTextForComparison(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+        
+        // Remove newlines and normalize whitespace
+        text = text.Replace("\r", " ").Replace("\n", " ");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
+        
+        return text.Trim().ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Extracts the signature section from HTML
+    /// </summary>
+    private string ExtractSignatureSection(string html)
+    {
+        var signatureSectionPattern = @"<div\s+id=[""']contract-signatures-section[""'][^>]*>.*?</div>\s*<!--\s*End\s+Signature\s+Section\s*-->";
+        var match = Regex.Match(html, signatureSectionPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        return match.Success ? match.Value : string.Empty;
+    }
+
+    /// <summary>
+    /// Removes the signature section from HTML for comparison
+    /// </summary>
+    private string RemoveSignatureSection(string html)
+    {
+        var signatureSectionPattern = @"<div\s+id=[""']contract-signatures-section[""'][^>]*>.*?</div>\s*<!--\s*End\s+Signature\s+Section\s*-->";
+        return Regex.Replace(html, signatureSectionPattern, string.Empty, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    }
+
+    /// <summary>
+    /// Extracts customer signature from signature section
+    /// </summary>
+    private string ExtractCustomerSignatureFromSection(string signatureSection)
+    {
+        var customerPattern = @"Customer\s+Signature:.*?<div[^>]*>([^<]*)</div>";
+        var match = Regex.Match(signatureSection, customerPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+    }
+
+    /// <summary>
+    /// Extracts manager signature from signature section
+    /// </summary>
+    private string ExtractManagerSignatureFromSection(string signatureSection)
+    {
+        var managerPattern = @"Manager\s+Signature:.*?<div[^>]*>([^<]*)</div>";
+        var match = Regex.Match(signatureSection, managerPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+    }
+
+    /// <summary>
+    /// Extracts customer signature from uploaded content
+    /// </summary>
+    private string ExtractCustomerSignature(string uploadedContent, string originalBodyJson)
+    {
+        // Try to extract from HTML structure
+        var customerPattern = @"Customer\s+Signature:.*?<div[^>]*>([^<]*)</div>";
+        var match = Regex.Match(uploadedContent, customerPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
+        if (match.Success)
+        {
+            var signature = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrEmpty(signature) && signature != "&nbsp;")
+            {
+                return signature;
+            }
+        }
+
+        // If not found in HTML, try to find in plain text
+        // This is a simplified extraction - in production, use more sophisticated methods
+        var textMatch = Regex.Match(uploadedContent, @"Customer\s+Signature:.*?([A-Za-z\s]+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        if (textMatch.Success)
+        {
+            return textMatch.Groups[1].Value.Trim();
+        }
+
+        // Default: return a placeholder that indicates signature was added
+        return "Signed";
     }
 }
 

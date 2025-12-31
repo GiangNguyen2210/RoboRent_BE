@@ -667,6 +667,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("OriginalBodyJson")
+                        .HasColumnType("text");
+
                     b.Property<int?>("RentalId")
                         .HasColumnType("integer");
 
