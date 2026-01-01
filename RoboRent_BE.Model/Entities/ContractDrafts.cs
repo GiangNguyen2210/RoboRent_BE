@@ -21,6 +21,8 @@ public partial class ContractDrafts
 
     public DateTime? UpdatedAt { get; set; }  = DateTime.UtcNow;
 
+    public string? OriginalBodyJson { get; set; } = string.Empty; // Store original contract before customer signs
+
     public int? ContractTemplatesId { get; set; }
     
     [ForeignKey("ContractTemplatesId")] public virtual ContractTemplates ContractTemplate { get; set; } =  null!;

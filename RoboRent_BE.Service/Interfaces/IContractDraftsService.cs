@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.Entities;
 
@@ -33,5 +34,12 @@ public interface IContractDraftsService
     
     // Method to update BodyJson when draft clause is updated
     Task UpdateBodyJsonFromDraftClauseAsync(int contractDraftId, int draftClauseId, string newTitle, string newBody);
+    
+    // Download contract as PDF or Word
+    Task<byte[]> DownloadContractAsPdfAsync(int id, int userId);
+    Task<byte[]> DownloadContractAsWordAsync(int id, int userId);
+    
+    // Customer sign contract with file upload and validation
+    Task<ContractDraftsResponse?> CustomerSignContractWithFileAsync(int id, IFormFile signedContractFile, int customerId);
 }
 
