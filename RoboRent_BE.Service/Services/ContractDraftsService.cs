@@ -1491,9 +1491,7 @@ public class ContractDraftsService : IContractDraftsService
                 Left = "15mm",
                 Right = "15mm"
             },
-            DisplayHeaderFooter = true,
-            HeaderTemplate = $"<div style='font-size: 10px; text-align: right; width: 100%; margin-right: 15mm;'>Contract Draft #{id}</div>",
-            FooterTemplate = "<div style='font-size: 10px; text-align: center; width: 100%;'><span class='pageNumber'></span> of <span class='totalPages'></span></div>"
+            DisplayHeaderFooter = false // No header/footer - only show BodyJson content
         };
         
         var pdfBytes = await page.PdfDataAsync(pdfOptions);
