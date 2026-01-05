@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddHostedService<RentalExpirationService>();
         services.AddTransient<IRobotAbilityService, RobotAbilityService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddTransient<IManagerDashboardService, ManagerDashboardService>();
         return services;
     }
 }
