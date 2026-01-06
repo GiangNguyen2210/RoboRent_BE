@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using RoboRent_BE.Model.DTOs.ActivityType;
 using RoboRent_BE.Model.DTOs.ActivityTypeGroup;
 using RoboRent_BE.Model.DTOS.Admin;
+using RoboRent_BE.Model.DTOs.ChecklistDelivery;
+using RoboRent_BE.Model.DTOs.ChecklistDeliveryItem;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
 using RoboRent_BE.Model.DTOS.DraftClauses;
@@ -31,6 +33,16 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<ChecklistUpdateDeliveryRequest, ChecklistDelivery>();
+
+        CreateMap<ChecklistDeliveryItemUpdateRequest, ChecklistDeliveryItem>();
+        
+        CreateMap<ChecklistDeliveryItem, ChecklistDeliveryItemResponse>();
+        
+        CreateMap<ChecklistDeliveryRequest, ChecklistDelivery>();
+
+        CreateMap<ChecklistDelivery, ChecklistDeliveryResponse>();
+        
         CreateMap<FaceVerification, FaceVerificationsResponse>();
         CreateMap<FaceProfiles, FaceProfilesResponse>();
 

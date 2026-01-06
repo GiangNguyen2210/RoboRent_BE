@@ -1491,9 +1491,7 @@ public class ContractDraftsService : IContractDraftsService
                 Left = "15mm",
                 Right = "15mm"
             },
-            DisplayHeaderFooter = true,
-            HeaderTemplate = $"<div style='font-size: 10px; text-align: right; width: 100%; margin-right: 15mm;'>Contract Draft #{id}</div>",
-            FooterTemplate = "<div style='font-size: 10px; text-align: center; width: 100%;'><span class='pageNumber'></span> of <span class='totalPages'></span></div>"
+            DisplayHeaderFooter = false // No header/footer - only show BodyJson content
         };
         
         var pdfBytes = await page.PdfDataAsync(pdfOptions);
@@ -1593,6 +1591,9 @@ public class ContractDraftsService : IContractDraftsService
         // For HTML: Use as-is
         
         string extractedContent = uploadedContent;
+        bool isHtmlFile = signedContractFile.ContentType == "text/html" || 
+                          signedContractFile.FileName.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ||
+                          signedContractFile.FileName.EndsWith(".htm", StringComparison.OrdinalIgnoreCase);
         
         // If file is PDF, extract text using Docnet.Core
         if (signedContractFile.ContentType == "application/pdf" || signedContractFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
@@ -1634,12 +1635,27 @@ public class ContractDraftsService : IContractDraftsService
             throw new InvalidOperationException("Contract has been modified outside of the signature section. Only signature changes are allowed.");
         }
 
-        // Extract customer signature from uploaded file
-        // This is simplified - in production, you'd need to detect the signature area
-        var customerSignature = ExtractCustomerSignature(extractedContent, contractDraft.OriginalBodyJson);
-
-        // Add customer signature to contract (right side)
-        contractDraft.BodyJson = AddSignatureToContract(contractDraft.OriginalBodyJson, customerSignature, "right");
+        // If uploaded file is HTML, use it directly to preserve the customer's signature
+        // Otherwise, extract the customer signature from the uploaded content
+        if (isHtmlFile)
+        {
+            // Use the uploaded HTML content directly - this preserves the customer's actual signature
+            contractDraft.BodyJson = uploadedContent;
+        }
+        else
+        {
+            // Extract customer signature from uploaded file for non-HTML files
+            var customerSignature = ExtractCustomerSignature(extractedContent, contractDraft.OriginalBodyJson);
+            
+            // Validate that a signature was actually found
+            if (string.IsNullOrWhiteSpace(customerSignature) || customerSignature == "Signed")
+            {
+                throw new InvalidOperationException("Customer signature not found in the uploaded file. Please ensure you have added your signature to the document before uploading.");
+            }
+            
+            // Add customer signature to contract (right side) - update BodyJson with signature
+            contractDraft.BodyJson = AddSignatureToContract(contractDraft.OriginalBodyJson, customerSignature, "right");
+        }
 
         // Update status to Active
         contractDraft.Status = "Active";
@@ -1782,29 +1798,75 @@ public class ContractDraftsService : IContractDraftsService
     /// </summary>
     private string ExtractCustomerSignature(string uploadedContent, string originalBodyJson)
     {
-        // Try to extract from HTML structure
-        var customerPattern = @"Customer\s+Signature:.*?<div[^>]*>([^<]*)</div>";
-        var match = Regex.Match(uploadedContent, customerPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        // Try to extract from HTML structure - improved pattern to capture signature content
+        // Pattern 1: Look for content in the customer signature div with cursive font
+        var customerPatternWithFont = @"Customer\s+Signature:.*?<div[^>]*font-family:\s*['""]?Brush\s+Script\s+MT['""]?[^>]*>([^<]+)</div>";
+        var match = Regex.Match(uploadedContent, customerPatternWithFont, RegexOptions.IgnoreCase | RegexOptions.Singleline);
         
         if (match.Success)
         {
             var signature = match.Groups[1].Value.Trim();
-            if (!string.IsNullOrEmpty(signature) && signature != "&nbsp;")
+            if (!string.IsNullOrEmpty(signature) && signature != "&nbsp;" && signature != " ")
             {
-                return signature;
+                return WebUtility.HtmlDecode(signature);
             }
         }
 
-        // If not found in HTML, try to find in plain text
-        // This is a simplified extraction - in production, use more sophisticated methods
-        var textMatch = Regex.Match(uploadedContent, @"Customer\s+Signature:.*?([A-Za-z\s]+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-        if (textMatch.Success)
+        // Pattern 2: Try broader pattern for customer signature section
+        var customerPattern = @"Customer\s+Signature:\s*</strong>\s*</div>\s*<div[^>]*>([^<]+)</div>";
+        match = Regex.Match(uploadedContent, customerPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
+        if (match.Success)
         {
-            return textMatch.Groups[1].Value.Trim();
+            var signature = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrEmpty(signature) && signature != "&nbsp;" && signature != " ")
+            {
+                return WebUtility.HtmlDecode(signature);
+            }
         }
 
-        // Default: return a placeholder that indicates signature was added
-        return "Signed";
+        // Pattern 3: Look for any non-empty text after "Customer Signature:" label
+        var anyTextPattern = @"Customer\s+Signature:[^<]*(?:<[^>]+>)*\s*([A-Za-z0-9][A-Za-z0-9\s.'-]{2,50})";
+        match = Regex.Match(uploadedContent, anyTextPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
+        if (match.Success)
+        {
+            var signature = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrEmpty(signature) && signature.Length > 2)
+            {
+                return WebUtility.HtmlDecode(signature);
+            }
+        }
+
+        // Pattern 4: For plain text (PDF/Word extraction), look for text after "Customer Signature:"
+        var lines = uploadedContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains("Customer Signature", StringComparison.OrdinalIgnoreCase))
+            {
+                // Check next few lines for a signature
+                for (int j = i + 1; j < Math.Min(i + 5, lines.Length); j++)
+                {
+                    var line = lines[j].Trim();
+                    // Skip empty lines, dates, and common labels
+                    if (string.IsNullOrWhiteSpace(line) || 
+                        Regex.IsMatch(line, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$") ||
+                        line.Contains("Manager Signature", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    
+                    // Found a potential signature line
+                    if (line.Length >= 2 && line.Length <= 100)
+                    {
+                        return line;
+                    }
+                }
+            }
+        }
+
+        // If no signature found, return empty string (caller will handle validation)
+        return string.Empty;
     }
 }
 

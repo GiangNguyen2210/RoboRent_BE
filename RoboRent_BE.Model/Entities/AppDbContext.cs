@@ -67,13 +67,24 @@ public partial class AppDbContext : IdentityDbContext<
     public virtual DbSet<Notification> Notifications { get; set; } = null!;
     public virtual DbSet<RentalChangeLog> RentalChangeLogs { get; set; } = null!;
 
+    public virtual DbSet<ChecklistDelivery> ChecklistDeliveries { get; set; } = null!;
+
+    public virtual DbSet<ChecklistDeliveryItem> ChecklistDeliveryItems { get; set; } = null!;
+    
+    public virtual DbSet<ChecklistDeliveryEvidence> ChecklistDeliveryEvidences { get; set; } = null!;
+    
+    public virtual DbSet<ChecklistDeliveryItemTemplate>  ChecklistDeliveryItemTemplates { get; set; } = null!;
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var seedTime = DateTime.UtcNow;
+        
         modelBuilder.Entity<IdentityRole>().HasData(
             new IdentityRole { Id = "1", Name = "Admin", NormalizedName = "ADMIN" },
             new IdentityRole { Id = "2", Name = "Staff", NormalizedName = "STAFF" },
             new IdentityRole { Id = "3", Name = "Customer", NormalizedName = "CUSTOMER" },
-            new IdentityRole { Id = "4", Name = "Manager", NormalizedName = "MANAGER" }
+            new IdentityRole { Id = "4", Name = "Manager", NormalizedName = "MANAGER" },
+            new IdentityRole { Id = "5", Name = "TechnicalStaff", NormalizedName = "TECHNICALSTAFF" }
         );
 
         modelBuilder.Entity<ModifyIdentityUser>().HasData(
@@ -1284,37 +1295,40 @@ public partial class AppDbContext : IdentityDbContext<
 );
         modelBuilder.Entity<RobotAbility>().HasData(
 
-    // =========================================================
-    // RoboTypeId = 1 (Reception Robot)
-    // =========================================================
+            // =========================================================
+            // RoboTypeId = 1 (Reception Robot)
+            // =========================================================
 
-    // --- Branding & UI (mostly LOCK) ---
-    new RobotAbility {
-        Id = 1, RobotTypeId = 1,
-        Key = "brandName", Label = "Brand Name",
-        Description = "Tên thương hiệu hiển thị trên màn hình robot.",
-        DataType = "string", IsRequired = true, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "text", Placeholder = "VD: RoboRent",
-        MaxLength = 100, IsActive = true
-    },
-    new RobotAbility {
-        Id = 2, RobotTypeId = 1,
-        Key = "logoUrl", Label = "Logo URL",
-        Description = "Đường dẫn logo (PNG/SVG) hiển thị trên robot.",
-        DataType = "string", IsRequired = true, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "url", Placeholder = "https://...",
-        MaxLength = 500, IsActive = true
-    },
-    new RobotAbility {
-        Id = 3, RobotTypeId = 1,
-        Key = "themeAssets", Label = "Theme Assets",
-        Description = "Cấu hình giao diện (banner/background/color).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Branding & UI (mostly LOCK) ---
+            new RobotAbility
+            {
+                Id = 1, RobotTypeId = 1,
+                Key = "brandName", Label = "Brand Name",
+                Description = "Tên thương hiệu hiển thị trên màn hình robot.",
+                DataType = "string", IsRequired = true, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "text", Placeholder = "VD: RoboRent",
+                MaxLength = 100, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 2, RobotTypeId = 1,
+                Key = "logoUrl", Label = "Logo URL",
+                Description = "Đường dẫn logo (PNG/SVG) hiển thị trên robot.",
+                DataType = "string", IsRequired = true, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "url", Placeholder = "https://...",
+                MaxLength = 500, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 3, RobotTypeId = 1,
+                Key = "themeAssets", Label = "Theme Assets",
+                Description = "Cấu hình giao diện (banner/background/color).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""bannerUrl"":{""type"":""string""},
@@ -1323,65 +1337,71 @@ public partial class AppDbContext : IdentityDbContext<
             ""secondaryColor"":{""type"":""string""}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 4, RobotTypeId = 1,
-        Key = "welcomeScreenText", Label = "Welcome Screen Text",
-        Description = "Text chào mừng hiển thị trên màn hình.",
-        DataType = "string", IsRequired = false, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true, // minor tweak allowed
-        UiControl = "textarea", Placeholder = "Chào mừng bạn đến với...",
-        MaxLength = 300, IsActive = true
-    },
-    new RobotAbility {
-        Id = 5, RobotTypeId = 1,
-        Key = "ctaQrUrl", Label = "CTA QR URL",
-        Description = "Link/QR điều hướng khách (landing page, form...).",
-        DataType = "string", IsRequired = false, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true, // minor swap allowed
-        UiControl = "url", Placeholder = "https://...",
-        MaxLength = 500, IsActive = true
-    },
-    new RobotAbility {
-        Id = 6, RobotTypeId = 1,
-        Key = "sponsorAssets", Label = "Sponsor Assets",
-        Description = "Danh sách asset tài trợ hiển thị luân phiên.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Branding & UI",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
-        IsActive = true
-    },
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 4, RobotTypeId = 1,
+                Key = "welcomeScreenText", Label = "Welcome Screen Text",
+                Description = "Text chào mừng hiển thị trên màn hình.",
+                DataType = "string", IsRequired = false, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true, // minor tweak allowed
+                UiControl = "textarea", Placeholder = "Chào mừng bạn đến với...",
+                MaxLength = 300, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 5, RobotTypeId = 1,
+                Key = "ctaQrUrl", Label = "CTA QR URL",
+                Description = "Link/QR điều hướng khách (landing page, form...).",
+                DataType = "string", IsRequired = false, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true, // minor swap allowed
+                UiControl = "url", Placeholder = "https://...",
+                MaxLength = 500, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 6, RobotTypeId = 1,
+                Key = "sponsorAssets", Label = "Sponsor Assets",
+                Description = "Danh sách asset tài trợ hiển thị luân phiên.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Branding & UI",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
+                IsActive = true
+            },
 
-    // --- Greeting / Conversation Script ---
-    new RobotAbility {
-        Id = 7, RobotTypeId = 1,
-        Key = "greetingScript", Label = "Greeting Script",
-        Description = "Kịch bản chào hỏi / giới thiệu ngắn.",
-        DataType = "string", IsRequired = false, AbilityGroup = "Greeting & Script",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "textarea", Placeholder = "Xin chào quý khách...",
-        MaxLength = 2000, IsActive = true
-    },
-    new RobotAbility {
-        Id = 8, RobotTypeId = 1,
-        Key = "languages", Label = "Languages",
-        Description = "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.",
-        DataType = "enum[]", IsRequired = true, AbilityGroup = "Greeting & Script",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "multiSelect",
-        OptionsJson = @"[""VI"",""EN"",""JP"",""KR"",""CN""]",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 9, RobotTypeId = 1,
-        Key = "voiceProfile", Label = "Voice Profile",
-        Description = "Cấu hình giọng nói (tốc độ/độ cao...).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Greeting & Script",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Greeting / Conversation Script ---
+            new RobotAbility
+            {
+                Id = 7, RobotTypeId = 1,
+                Key = "greetingScript", Label = "Greeting Script",
+                Description = "Kịch bản chào hỏi / giới thiệu ngắn.",
+                DataType = "string", IsRequired = false, AbilityGroup = "Greeting & Script",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "textarea", Placeholder = "Xin chào quý khách...",
+                MaxLength = 2000, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 8, RobotTypeId = 1,
+                Key = "languages", Label = "Languages",
+                Description = "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.",
+                DataType = "enum[]", IsRequired = true, AbilityGroup = "Greeting & Script",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "multiSelect",
+                OptionsJson = @"[""VI"",""EN"",""JP"",""KR"",""CN""]",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 9, RobotTypeId = 1,
+                Key = "voiceProfile", Label = "Voice Profile",
+                Description = "Cấu hình giọng nói (tốc độ/độ cao...).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Greeting & Script",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""voiceName"":{""type"":""string""},
@@ -1390,16 +1410,17 @@ public partial class AppDbContext : IdentityDbContext<
             ""volume"":{""type"":""number"",""minimum"":0,""maximum"":100}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 10, RobotTypeId = 1,
-        Key = "faqItems", Label = "FAQ Items",
-        Description = "Danh sách câu hỏi thường gặp (Q/A + keywords).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Greeting & Script",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 10, RobotTypeId = 1,
+                Key = "faqItems", Label = "FAQ Items",
+                Description = "Danh sách câu hỏi thường gặp (Q/A + keywords).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Greeting & Script",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1411,49 +1432,54 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""question"",""answer""]
           }
         }",
-        IsActive = true
-    },
+                IsActive = true
+            },
 
-    // --- Check-in / Lead capture (optional) ---
-    new RobotAbility {
-        Id = 11, RobotTypeId = 1,
-        Key = "checkinMode", Label = "Check-in Mode",
-        Description = "Chế độ check-in tại sự kiện.",
-        DataType = "enum", IsRequired = true, AbilityGroup = "Check-in & Lead",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "select",
-        OptionsJson = @"[""None"",""QR"",""Form""]",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 12, RobotTypeId = 1,
-        Key = "leadFormFields", Label = "Lead Form Fields",
-        Description = "Các trường thu thập thông tin khách.",
-        DataType = "enum[]", IsRequired = false, AbilityGroup = "Check-in & Lead",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "multiSelect",
-        OptionsJson = @"[""Name"",""Phone"",""Email"",""Company"",""Title""]",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 13, RobotTypeId = 1,
-        Key = "privacyNoticeText", Label = "Privacy Notice Text",
-        Description = "Thông báo quyền riêng tư khi thu thập dữ liệu.",
-        DataType = "string", IsRequired = false, AbilityGroup = "Check-in & Lead",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "textarea", Placeholder = "Thông tin của bạn sẽ được sử dụng để...",
-        MaxLength = 2000, IsActive = true
-    },
+            // --- Check-in / Lead capture (optional) ---
+            new RobotAbility
+            {
+                Id = 11, RobotTypeId = 1,
+                Key = "checkinMode", Label = "Check-in Mode",
+                Description = "Chế độ check-in tại sự kiện.",
+                DataType = "enum", IsRequired = true, AbilityGroup = "Check-in & Lead",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "select",
+                OptionsJson = @"[""None"",""QR"",""Form""]",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 12, RobotTypeId = 1,
+                Key = "leadFormFields", Label = "Lead Form Fields",
+                Description = "Các trường thu thập thông tin khách.",
+                DataType = "enum[]", IsRequired = false, AbilityGroup = "Check-in & Lead",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "multiSelect",
+                OptionsJson = @"[""Name"",""Phone"",""Email"",""Company"",""Title""]",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 13, RobotTypeId = 1,
+                Key = "privacyNoticeText", Label = "Privacy Notice Text",
+                Description = "Thông báo quyền riêng tư khi thu thập dữ liệu.",
+                DataType = "string", IsRequired = false, AbilityGroup = "Check-in & Lead",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "textarea", Placeholder = "Thông tin của bạn sẽ được sử dụng để...",
+                MaxLength = 2000, IsActive = true
+            },
 
-    // --- Navigation / POI (optional) ---
-    new RobotAbility {
-        Id = 14, RobotTypeId = 1,
-        Key = "pois", Label = "Points of Interest (POI)",
-        Description = "Danh sách điểm đến/booth để robot hướng dẫn.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Navigation",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false, // map phức tạp có thể ảnh hưởng giá
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Navigation / POI (optional) ---
+            new RobotAbility
+            {
+                Id = 14, RobotTypeId = 1,
+                Key = "pois", Label = "Points of Interest (POI)",
+                Description = "Danh sách điểm đến/booth để robot hướng dẫn.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Navigation",
+                LockAtCutoff = true, IsPriceImpacting = true,
+                IsOnSiteAdjustable = false, // map phức tạp có thể ảnh hưởng giá
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1465,16 +1491,17 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""name""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 15, RobotTypeId = 1,
-        Key = "navigationRules", Label = "Navigation Rules",
-        Description = "Quy tắc điều hướng (tốc độ, vùng cấm...).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Navigation",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 15, RobotTypeId = 1,
+                Key = "navigationRules", Label = "Navigation Rules",
+                Description = "Quy tắc điều hướng (tốc độ, vùng cấm...).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Navigation",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""maxSpeed"":{""type"":""number"",""minimum"":0.1,""maximum"":2.0},
@@ -1482,22 +1509,23 @@ public partial class AppDbContext : IdentityDbContext<
             ""preferredPaths"":{""type"":""array"",""items"":{""type"":""string""}}
           }
         }",
-        IsActive = true
-    },
+                IsActive = true
+            },
 
-    // =========================================================
-    // RoboTypeId = 2 (Performance Robot)
-    // =========================================================
+            // =========================================================
+            // RoboTypeId = 2 (Performance Robot)
+            // =========================================================
 
-    // --- Show Set (LOCK + PRICE IMPACTING) ---
-    new RobotAbility {
-        Id = 16, RobotTypeId = 2,
-        Key = "showSets", Label = "Show Sets",
-        Description = "Danh sách show set (nhạc + choreography + thời lượng + lặp).",
-        DataType = "json", IsRequired = true, AbilityGroup = "Show Set",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Show Set (LOCK + PRICE IMPACTING) ---
+            new RobotAbility
+            {
+                Id = 16, RobotTypeId = 2,
+                Key = "showSets", Label = "Show Sets",
+                Description = "Danh sách show set (nhạc + choreography + thời lượng + lặp).",
+                DataType = "json", IsRequired = true, AbilityGroup = "Show Set",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1511,38 +1539,42 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""setName"",""durationSec""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 17, RobotTypeId = 2,
-        Key = "showOrder", Label = "Show Order",
-        Description = "Thứ tự chạy các set (theo index).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Show Set",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""integer"",""minimum"":0} }",
-        IsActive = true
-    },
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 17, RobotTypeId = 2,
+                Key = "showOrder", Label = "Show Order",
+                Description = "Thứ tự chạy các set (theo index).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Show Set",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""integer"",""minimum"":0} }",
+                IsActive = true
+            },
 
-    // --- Trigger / Cue (LOCK) ---
-    new RobotAbility {
-        Id = 18, RobotTypeId = 2,
-        Key = "triggerMode", Label = "Trigger Mode",
-        Description = "Cách kích hoạt biểu diễn.",
-        DataType = "enum", IsRequired = true, AbilityGroup = "Cues & Triggers",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "select",
-        OptionsJson = @"[""Manual"",""Scheduled"",""RemoteSignal""]",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 19, RobotTypeId = 2,
-        Key = "cuePoints", Label = "Cue Points",
-        Description = "Các cue/timecode điều khiển hành động trong show.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Cues & Triggers",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false, // tích hợp cue phức tạp có thể tăng giá
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Trigger / Cue (LOCK) ---
+            new RobotAbility
+            {
+                Id = 18, RobotTypeId = 2,
+                Key = "triggerMode", Label = "Trigger Mode",
+                Description = "Cách kích hoạt biểu diễn.",
+                DataType = "enum", IsRequired = true, AbilityGroup = "Cues & Triggers",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "select",
+                OptionsJson = @"[""Manual"",""Scheduled"",""RemoteSignal""]",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 19, RobotTypeId = 2,
+                Key = "cuePoints", Label = "Cue Points",
+                Description = "Các cue/timecode điều khiển hành động trong show.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Cues & Triggers",
+                LockAtCutoff = true, IsPriceImpacting = true,
+                IsOnSiteAdjustable = false, // tích hợp cue phức tạp có thể tăng giá
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1554,18 +1586,19 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""timecodeSec"",""action""]
           }
         }",
-        IsActive = true
-    },
+                IsActive = true
+            },
 
-    // --- Stage & Safety ---
-    new RobotAbility {
-        Id = 20, RobotTypeId = 2,
-        Key = "stageZone", Label = "Stage Zone",
-        Description = "Khu vực sân khấu và khoảng cách an toàn.",
-        DataType = "json", IsRequired = true, AbilityGroup = "Stage & Safety",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Stage & Safety ---
+            new RobotAbility
+            {
+                Id = 20, RobotTypeId = 2,
+                Key = "stageZone", Label = "Stage Zone",
+                Description = "Khu vực sân khấu và khoảng cách an toàn.",
+                DataType = "json", IsRequired = true, AbilityGroup = "Stage & Safety",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""widthM"":{""type"":""number"",""minimum"":1},
@@ -1574,16 +1607,17 @@ public partial class AppDbContext : IdentityDbContext<
           },
           ""required"":[""widthM"",""depthM"",""safeDistanceM""]
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 21, RobotTypeId = 2,
-        Key = "safetyLimits", Label = "Safety Limits",
-        Description = "Giới hạn an toàn (tốc độ khớp, góc tay chân...).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Stage & Safety",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 21, RobotTypeId = 2,
+                Key = "safetyLimits", Label = "Safety Limits",
+                Description = "Giới hạn an toàn (tốc độ khớp, góc tay chân...).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Stage & Safety",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""maxJointSpeed"":{""type"":""number"",""minimum"":0.1,""maximum"":2.0},
@@ -1591,61 +1625,66 @@ public partial class AppDbContext : IdentityDbContext<
             ""emergencyStopRequired"":{""type"":""boolean""}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 22, RobotTypeId = 2,
-        Key = "rehearsalRequired", Label = "Rehearsal Required",
-        Description = "Có yêu cầu rehearsal trước giờ chạy show hay không.",
-        DataType = "bool", IsRequired = true, AbilityGroup = "Stage & Safety",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "switch",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 23, RobotTypeId = 2,
-        Key = "riskLevel", Label = "Risk Level",
-        Description = "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.",
-        DataType = "enum", IsRequired = true, AbilityGroup = "Stage & Safety",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "select",
-        OptionsJson = @"[""Low"",""Medium"",""High""]",
-        IsActive = true
-    },
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 22, RobotTypeId = 2,
+                Key = "rehearsalRequired", Label = "Rehearsal Required",
+                Description = "Có yêu cầu rehearsal trước giờ chạy show hay không.",
+                DataType = "bool", IsRequired = true, AbilityGroup = "Stage & Safety",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "switch",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 23, RobotTypeId = 2,
+                Key = "riskLevel", Label = "Risk Level",
+                Description = "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.",
+                DataType = "enum", IsRequired = true, AbilityGroup = "Stage & Safety",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "select",
+                OptionsJson = @"[""Low"",""Medium"",""High""]",
+                IsActive = true
+            },
 
-    // --- Visual Style ---
-    new RobotAbility {
-        Id = 24, RobotTypeId = 2,
-        Key = "costumeOrLedTheme", Label = "Costume/LED Theme",
-        Description = "Theme trang phục/LED cho robot (nếu có).",
-        DataType = "string", IsRequired = false, AbilityGroup = "Visual Style",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "text", Placeholder = "VD: Neon / Tết / Christmas...",
-        MaxLength = 200, IsActive = true
-    },
-    new RobotAbility {
-        Id = 25, RobotTypeId = 2,
-        Key = "introOutroLines", Label = "Intro/Outro Lines",
-        Description = "1-2 câu chào mở đầu/kết thúc show.",
-        DataType = "string", IsRequired = false, AbilityGroup = "Visual Style",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "textarea", Placeholder = "Xin chào quý khách...",
-        MaxLength = 500, IsActive = true
-    },
+            // --- Visual Style ---
+            new RobotAbility
+            {
+                Id = 24, RobotTypeId = 2,
+                Key = "costumeOrLedTheme", Label = "Costume/LED Theme",
+                Description = "Theme trang phục/LED cho robot (nếu có).",
+                DataType = "string", IsRequired = false, AbilityGroup = "Visual Style",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "text", Placeholder = "VD: Neon / Tết / Christmas...",
+                MaxLength = 200, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 25, RobotTypeId = 2,
+                Key = "introOutroLines", Label = "Intro/Outro Lines",
+                Description = "1-2 câu chào mở đầu/kết thúc show.",
+                DataType = "string", IsRequired = false, AbilityGroup = "Visual Style",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "textarea", Placeholder = "Xin chào quý khách...",
+                MaxLength = 500, IsActive = true
+            },
 
-    // =========================================================
-    // RoboTypeId = 3 (Host Robot)
-    // =========================================================
+            // =========================================================
+            // RoboTypeId = 3 (Host Robot)
+            // =========================================================
 
-    // --- Script timeline (LOCK, price impact if complex) ---
-    new RobotAbility {
-        Id = 26, RobotTypeId = 3,
-        Key = "scriptBlocks", Label = "Script Blocks",
-        Description = "Kịch bản theo timeline (blockTitle/text/language/duration).",
-        DataType = "json", IsRequired = true, AbilityGroup = "Script Timeline",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Script timeline (LOCK, price impact if complex) ---
+            new RobotAbility
+            {
+                Id = 26, RobotTypeId = 3,
+                Key = "scriptBlocks", Label = "Script Blocks",
+                Description = "Kịch bản theo timeline (blockTitle/text/language/duration).",
+                DataType = "json", IsRequired = true, AbilityGroup = "Script Timeline",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1660,16 +1699,17 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""blockTitle"",""text""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 27, RobotTypeId = 3,
-        Key = "pronunciationDict", Label = "Pronunciation Dictionary",
-        Description = "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 27, RobotTypeId = 3,
+                Key = "pronunciationDict", Label = "Pronunciation Dictionary",
+                Description = "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1680,16 +1720,17 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""term"",""phonetic""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 28, RobotTypeId = 3,
-        Key = "voiceProfile", Label = "Voice Profile",
-        Description = "Cấu hình giọng MC (rate/pitch/volume).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 28, RobotTypeId = 3,
+                Key = "voiceProfile", Label = "Voice Profile",
+                Description = "Cấu hình giọng MC (rate/pitch/volume).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""voiceName"":{""type"":""string""},
@@ -1698,32 +1739,34 @@ public partial class AppDbContext : IdentityDbContext<
             ""volume"":{""type"":""number"",""minimum"":0,""maximum"":100}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 29, RobotTypeId = 3,
-        Key = "volumeRules", Label = "Volume Rules",
-        Description = "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 29, RobotTypeId = 3,
+                Key = "volumeRules", Label = "Volume Rules",
+                Description = "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Voice & Pronunciation",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""defaultVolume"":{""type"":""integer"",""minimum"":0,""maximum"":100},
             ""quietHoursVolume"":{""type"":""integer"",""minimum"":0,""maximum"":100}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 30, RobotTypeId = 3,
-        Key = "screenAssets", Label = "On-screen Assets",
-        Description = "Asset hiển thị (QR/Image/Slide + thời lượng).",
-        DataType = "json", IsRequired = false, AbilityGroup = "On-screen Assets",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 30, RobotTypeId = 3,
+                Key = "screenAssets", Label = "On-screen Assets",
+                Description = "Asset hiển thị (QR/Image/Slide + thời lượng).",
+                DataType = "json", IsRequired = false, AbilityGroup = "On-screen Assets",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1735,41 +1778,44 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""type"",""url""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 31, RobotTypeId = 3,
-        Key = "countdownSettings", Label = "Countdown Settings",
-        Description = "Cấu hình countdown (nếu dùng).",
-        DataType = "json", IsRequired = false, AbilityGroup = "On-screen Assets",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 31, RobotTypeId = 3,
+                Key = "countdownSettings", Label = "Countdown Settings",
+                Description = "Cấu hình countdown (nếu dùng).",
+                DataType = "json", IsRequired = false, AbilityGroup = "On-screen Assets",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""enabled"":{""type"":""boolean""},
             ""targetTime"":{""type"":""string""}
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 32, RobotTypeId = 3,
-        Key = "humanMcPresent", Label = "Human MC Present",
-        Description = "Có MC người phối hợp hay không.",
-        DataType = "bool", IsRequired = true, AbilityGroup = "Co-host Mode",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "switch",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 33, RobotTypeId = 3,
-        Key = "handoffCues", Label = "Handoff Cues",
-        Description = "Cue chuyển giao giữa robot và MC người.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Co-host Mode",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 32, RobotTypeId = 3,
+                Key = "humanMcPresent", Label = "Human MC Present",
+                Description = "Có MC người phối hợp hay không.",
+                DataType = "bool", IsRequired = true, AbilityGroup = "Co-host Mode",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "switch",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 33, RobotTypeId = 3,
+                Key = "handoffCues", Label = "Handoff Cues",
+                Description = "Cue chuyển giao giữa robot và MC người.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Co-host Mode",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1780,23 +1826,24 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""cue"",""who""]
           }
         }",
-        OptionsJson = @"[""Robot"",""Human""]",
-        IsActive = true
-    },
+                OptionsJson = @"[""Robot"",""Human""]",
+                IsActive = true
+            },
 
-    // =========================================================
-    // RoboTypeId = 4 (Promotion Robot)
-    // =========================================================
+            // =========================================================
+            // RoboTypeId = 4 (Promotion Robot)
+            // =========================================================
 
-    // --- Ad Playlist (LOCK, price impact if content production) ---
-    new RobotAbility {
-        Id = 34, RobotTypeId = 4,
-        Key = "adPlaylist", Label = "Ad Playlist",
-        Description = "Playlist quảng cáo (image/video + duration + order).",
-        DataType = "json", IsRequired = true, AbilityGroup = "Ad Playlist",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Ad Playlist (LOCK, price impact if content production) ---
+            new RobotAbility
+            {
+                Id = 34, RobotTypeId = 4,
+                Key = "adPlaylist", Label = "Ad Playlist",
+                Description = "Playlist quảng cáo (image/video + duration + order).",
+                DataType = "json", IsRequired = true, AbilityGroup = "Ad Playlist",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1809,16 +1856,17 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""assetUrl"",""assetType"",""durationSec""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 35, RobotTypeId = 4,
-        Key = "scheduleRules", Label = "Schedule Rules",
-        Description = "Quy tắc chạy playlist (khung giờ, interval, peak mode).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Ad Playlist",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 35, RobotTypeId = 4,
+                Key = "scheduleRules", Label = "Schedule Rules",
+                Description = "Quy tắc chạy playlist (khung giờ, interval, peak mode).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Ad Playlist",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""start"":{""type"":""string""},
@@ -1827,93 +1875,101 @@ public partial class AppDbContext : IdentityDbContext<
             ""intervalSec"":{""type"":""integer"",""minimum"":5}
           }
         }",
-        IsActive = true
-    },
+                IsActive = true
+            },
 
-    // --- Audio & Announcement ---
-    new RobotAbility {
-        Id = 36, RobotTypeId = 4,
-        Key = "audioPlaylist", Label = "Audio Playlist",
-        Description = "Danh sách audio (nhạc nền) nếu sử dụng.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Audio & Announcement",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 37, RobotTypeId = 4,
-        Key = "announcementScript", Label = "Announcement Script",
-        Description = "Script thông báo/mời chào tại booth.",
-        DataType = "string", IsRequired = false, AbilityGroup = "Audio & Announcement",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "textarea", Placeholder = "Mời quý khách ghé booth...",
-        MaxLength = 2000, IsActive = true
-    },
-    new RobotAbility {
-        Id = 38, RobotTypeId = 4,
-        Key = "volumeRules", Label = "Volume Rules",
-        Description = "Cấu hình âm lượng phát tại booth.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Audio & Announcement",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Audio & Announcement ---
+            new RobotAbility
+            {
+                Id = 36, RobotTypeId = 4,
+                Key = "audioPlaylist", Label = "Audio Playlist",
+                Description = "Danh sách audio (nhạc nền) nếu sử dụng.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Audio & Announcement",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 37, RobotTypeId = 4,
+                Key = "announcementScript", Label = "Announcement Script",
+                Description = "Script thông báo/mời chào tại booth.",
+                DataType = "string", IsRequired = false, AbilityGroup = "Audio & Announcement",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "textarea", Placeholder = "Mời quý khách ghé booth...",
+                MaxLength = 2000, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 38, RobotTypeId = 4,
+                Key = "volumeRules", Label = "Volume Rules",
+                Description = "Cấu hình âm lượng phát tại booth.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Audio & Announcement",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""object"",
           ""properties"":{
             ""defaultVolume"":{""type"":""integer"",""minimum"":0,""maximum"":100}
           }
         }",
-        IsActive = true
-    },
+                IsActive = true
+            },
 
-    // --- CTA / Lead ---
-    new RobotAbility {
-        Id = 39, RobotTypeId = 4,
-        Key = "ctaQrUrl", Label = "CTA QR URL",
-        Description = "Link/QR cho CTA (landing page, đăng ký...).",
-        DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "url", Placeholder = "https://...",
-        MaxLength = 500, IsActive = true
-    },
-    new RobotAbility {
-        Id = 40, RobotTypeId = 4,
-        Key = "ctaText", Label = "CTA Text",
-        Description = "Text CTA hiển thị trên màn hình/booth.",
-        DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "text", Placeholder = "Quét QR để nhận ưu đãi!",
-        MaxLength = 200, IsActive = true
-    },
-    new RobotAbility {
-        Id = 41, RobotTypeId = 4,
-        Key = "voucherRule", Label = "Voucher Rule",
-        Description = "Luật voucher/ưu đãi (nếu có).",
-        DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "textarea", Placeholder = "VD: Giảm 10% cho 100 khách đầu tiên...",
-        MaxLength = 2000, IsActive = true
-    },
+            // --- CTA / Lead ---
+            new RobotAbility
+            {
+                Id = 39, RobotTypeId = 4,
+                Key = "ctaQrUrl", Label = "CTA QR URL",
+                Description = "Link/QR cho CTA (landing page, đăng ký...).",
+                DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "url", Placeholder = "https://...",
+                MaxLength = 500, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 40, RobotTypeId = 4,
+                Key = "ctaText", Label = "CTA Text",
+                Description = "Text CTA hiển thị trên màn hình/booth.",
+                DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "text", Placeholder = "Quét QR để nhận ưu đãi!",
+                MaxLength = 200, IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 41, RobotTypeId = 4,
+                Key = "voucherRule", Label = "Voucher Rule",
+                Description = "Luật voucher/ưu đãi (nếu có).",
+                DataType = "string", IsRequired = false, AbilityGroup = "CTA & Lead",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "textarea", Placeholder = "VD: Giảm 10% cho 100 khách đầu tiên...",
+                MaxLength = 2000, IsActive = true
+            },
 
-    // --- Booth Route / Movement ---
-    new RobotAbility {
-        Id = 42, RobotTypeId = 4,
-        Key = "routeMode", Label = "Route Mode",
-        Description = "Chế độ di chuyển tại booth.",
-        DataType = "enum", IsRequired = true, AbilityGroup = "Booth Route",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
-        UiControl = "select",
-        OptionsJson = @"[""Static"",""Patrol""]",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 43, RobotTypeId = 4,
-        Key = "routePoints", Label = "Route Points",
-        Description = "Các điểm dừng khi robot patrol.",
-        DataType = "json", IsRequired = false, AbilityGroup = "Booth Route",
-        LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{
+            // --- Booth Route / Movement ---
+            new RobotAbility
+            {
+                Id = 42, RobotTypeId = 4,
+                Key = "routeMode", Label = "Route Mode",
+                Description = "Chế độ di chuyển tại booth.",
+                DataType = "enum", IsRequired = true, AbilityGroup = "Booth Route",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = false,
+                UiControl = "select",
+                OptionsJson = @"[""Static"",""Patrol""]",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 43, RobotTypeId = 4,
+                Key = "routePoints", Label = "Route Points",
+                Description = "Các điểm dừng khi robot patrol.",
+                DataType = "json", IsRequired = false, AbilityGroup = "Booth Route",
+                LockAtCutoff = true, IsPriceImpacting = true, IsOnSiteAdjustable = false,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{
           ""type"":""array"",
           ""items"":{
             ""type"":""object"",
@@ -1924,29 +1980,337 @@ public partial class AppDbContext : IdentityDbContext<
             ""required"":[""name"",""stopDurationSec""]
           }
         }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 44, RobotTypeId = 4,
-        Key = "avoidZones", Label = "Avoid Zones",
-        Description = "Khu vực tránh (nếu có).",
-        DataType = "json", IsRequired = false, AbilityGroup = "Booth Route",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "jsonEditor",
-        JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
-        IsActive = true
-    },
-    new RobotAbility {
-        Id = 45, RobotTypeId = 4,
-        Key = "maxSpeed", Label = "Max Speed",
-        Description = "Tốc độ tối đa (m/s) khi di chuyển.",
-        DataType = "number", IsRequired = false, AbilityGroup = "Booth Route",
-        LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
-        UiControl = "number",
-        Min = 0.1m, Max = 2.0m,
-        IsActive = true
-    }
-);
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 44, RobotTypeId = 4,
+                Key = "avoidZones", Label = "Avoid Zones",
+                Description = "Khu vực tránh (nếu có).",
+                DataType = "json", IsRequired = false, AbilityGroup = "Booth Route",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "jsonEditor",
+                JsonSchema = @"{ ""type"":""array"", ""items"":{""type"":""string""} }",
+                IsActive = true
+            },
+            new RobotAbility
+            {
+                Id = 45, RobotTypeId = 4,
+                Key = "maxSpeed", Label = "Max Speed",
+                Description = "Tốc độ tối đa (m/s) khi di chuyển.",
+                DataType = "number", IsRequired = false, AbilityGroup = "Booth Route",
+                LockAtCutoff = true, IsPriceImpacting = false, IsOnSiteAdjustable = true,
+                UiControl = "number",
+                Min = 0.1m, Max = 2.0m,
+                IsActive = true
+            }
+            );
+
+        modelBuilder.Entity<ChecklistDeliveryItemTemplate>().HasData(
+
+            // =========================================================
+            // 0) COMMON templates (apply to all robot types)
+            // RoboTypeId = null
+            // =========================================================
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 1, RoboTypeId = null,
+                Code = "DOCS_RENTAL_BRIEF", Group = ChecklistItemGroup.Documents,
+                Title = "Tài liệu & thông tin bàn giao",
+                Description =
+                    "Kiểm tra có đầy đủ thông tin người phụ trách kỹ thuật, hotline, và hướng dẫn sử dụng nhanh (nếu có).",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 2, RoboTypeId = null,
+                Code = "SAFETY_SERIAL_QR_MATCH", Group = ChecklistItemGroup.SafetySeal,
+                Title = "Serial/QR đúng với hệ thống",
+                Description = "Quét QR/đối chiếu serial trên robot với mã trong hệ thống trước khi giao.",
+                SortOrder = 10, IsCritical = true,
+                RequiresMeasuredValue = true, MeasuredValueLabel = "Serial/QR",
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 3, RoboTypeId = null,
+                Code = "APPEARANCE_OVERALL_PHOTO", Group = ChecklistItemGroup.Appearance,
+                Title = "Ảnh tổng quan robot trước bàn giao",
+                Description = "Chụp ảnh toàn thân robot (ít nhất 2 góc) để làm bằng chứng tình trạng ban đầu.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = false, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 4, RoboTypeId = null,
+                Code = "APPEARANCE_SCRATCH_DENT", Group = ChecklistItemGroup.Appearance,
+                Title = "Trầy xước/móp/nứt vỏ",
+                Description = "Quan sát thân vỏ, khớp nối, mặt trước/sau; ghi nhận trầy xước hoặc móp/nứt nếu có.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 5, RoboTypeId = null,
+                Code = "POWER_BATTERY_LEVEL", Group = ChecklistItemGroup.Power,
+                Title = "Mức pin trước khi giao",
+                Description = "Bật robot và kiểm tra % pin (khuyến nghị ≥ 70% trước khi vận chuyển/giao).",
+                SortOrder = 10, IsCritical = true,
+                RequiresMeasuredValue = true, MeasuredValueLabel = "Battery (%)",
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 6, RoboTypeId = null,
+                Code = "POWER_CHARGER_CABLES", Group = ChecklistItemGroup.Accessories,
+                Title = "Sạc/adapter/dây nguồn đầy đủ",
+                Description = "Đảm bảo có đủ sạc/adapter và dây nguồn đúng chuẩn, không đứt gãy.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 7, RoboTypeId = null,
+                Code = "MOBILITY_BASIC_TEST", Group = ChecklistItemGroup.Mobility,
+                Title = "Test di chuyển cơ bản",
+                Description = "Kiểm tra robot có thể đứng vững/di chuyển cơ bản theo khả năng (không cần chạy show).",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Video,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 8, RoboTypeId = null,
+                Code = "AUDIO_SPEAKER_TEST", Group = ChecklistItemGroup.Audio,
+                Title = "Test loa (âm thanh)",
+                Description = "Phát đoạn âm thanh mẫu; kiểm tra rè, nhỏ bất thường hoặc mất kênh.",
+                SortOrder = 10, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 9, RoboTypeId = null,
+                Code = "DISPLAY_SCREEN_OK", Group = ChecklistItemGroup.Display,
+                Title = "Màn hình hiển thị bình thường",
+                Description = "Kiểm tra không sọc, không loang màu, cảm ứng/điều khiển hiển thị hoạt động.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 10, RoboTypeId = null,
+                Code = "ACCESSORIES_REMOTE_CONTROLLER", Group = ChecklistItemGroup.Accessories,
+                Title = "Remote/thiết bị điều khiển (nếu có)",
+                Description = "Kiểm tra có đủ remote/controller và pin remote (nếu dùng).",
+                SortOrder = 30, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 11, RoboTypeId = null,
+                Code = "SAFETY_CASE_PACKING", Group = ChecklistItemGroup.SafetySeal,
+                Title = "Đóng gói/thùng/case vận chuyển đúng chuẩn",
+                Description = "Robot được cố định an toàn trong case/thùng; có chèn chống sốc.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            // =========================================================
+            // 1) Reception Robot (RoboTypeId = 1)
+            // =========================================================
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 101, RoboTypeId = 1,
+                Code = "RECEPTION_BRANDING_ASSETS_READY", Group = ChecklistItemGroup.Display,
+                Title = "Branding assets đã nạp sẵn",
+                Description = "Kiểm tra đã có logo/banner/hình nền và giao diện màu sắc đúng theo yêu cầu khách.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 102, RoboTypeId = 1,
+                Code = "RECEPTION_QR_CTA_WORKING", Group = ChecklistItemGroup.Display,
+                Title = "QR/CTA hiển thị đúng & quét được",
+                Description = "Mở màn hình QR/CTA; thử quét QR bằng điện thoại để đảm bảo điều hướng đúng link.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 103, RoboTypeId = 1,
+                Code = "RECEPTION_FAQ_SCRIPT_LOADED", Group = ChecklistItemGroup.General,
+                Title = "Kịch bản chào hỏi/FAQ đã cấu hình",
+                Description = "Kiểm tra danh sách câu chào và FAQ theo yêu cầu sự kiện (ngôn ngữ, giọng đọc).",
+                SortOrder = 10, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            // =========================================================
+            // 2) Performance Robot (RoboTypeId = 2)
+            // =========================================================
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 201, RoboTypeId = 2,
+                Code = "PERFORMANCE_SHOWSET_LOADED", Group = ChecklistItemGroup.General,
+                Title = "Show set/playlist biểu diễn đã nạp",
+                Description = "Kiểm tra danh sách tiết mục (nhạc, thời lượng, thứ tự) đã tải đúng phiên bản.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 202, RoboTypeId = 2,
+                Code = "PERFORMANCE_TRIGGER_METHOD_READY", Group = ChecklistItemGroup.General,
+                Title = "Cơ chế kích hoạt biểu diễn sẵn sàng",
+                Description = "Xác nhận phương thức kích hoạt (manual/remote/schedule) hoạt động đúng.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Video,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 203, RoboTypeId = 2,
+                Code = "PERFORMANCE_SAFETY_LIMITS_SET", Group = ChecklistItemGroup.SafetySeal,
+                Title = "Thiết lập giới hạn an toàn sân khấu",
+                Description = "Xác nhận đã set vùng an toàn/khoảng cách/giới hạn tốc độ phù hợp kịch bản.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            // =========================================================
+            // 3) Host Robot (RoboTypeId = 3)
+            // =========================================================
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 301, RoboTypeId = 3,
+                Code = "HOST_SCRIPT_BLOCKS_READY", Group = ChecklistItemGroup.General,
+                Title = "Kịch bản MC (blocks) đã nạp",
+                Description = "Kiểm tra các khối nội dung lời dẫn theo timeline; đúng ngôn ngữ và thời lượng ước tính.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 302, RoboTypeId = 3,
+                Code = "HOST_VOICE_SETTINGS_OK", Group = ChecklistItemGroup.Audio,
+                Title = "Thiết lập giọng nói phù hợp không gian",
+                Description = "Kiểm tra tốc độ/cao độ/âm lượng; đảm bảo nghe rõ và không gây chói.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 303, RoboTypeId = 3,
+                Code = "HOST_MIC_TEST_IF_ANY", Group = ChecklistItemGroup.Audio,
+                Title = "Test micro (nếu robot dùng mic)",
+                Description = "Kiểm tra mic thu âm/khử ồn theo cấu hình; ghi nhận nếu micro yếu hoặc nhiễu.",
+                SortOrder = 10, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 304, RoboTypeId = 3,
+                Code = "HOST_COUNTDOWN_OR_SLIDE_READY", Group = ChecklistItemGroup.Display,
+                Title = "Countdown/slide hỗ trợ hiển thị sẵn sàng",
+                Description = "Kiểm tra nội dung countdown/slide/QR hiển thị đúng theo mốc chương trình.",
+                SortOrder = 30, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+
+            // =========================================================
+            // 4) Promotion Robot (RoboTypeId = 4)
+            // =========================================================
+
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 401, RoboTypeId = 4,
+                Code = "PROMO_MEDIA_PLAYLIST_READY", Group = ChecklistItemGroup.Display,
+                Title = "Playlist quảng cáo (image/video) đã nạp",
+                Description = "Kiểm tra thứ tự, thời lượng và khả năng play mượt của playlist nội dung booth.",
+                SortOrder = 10, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Video,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 402, RoboTypeId = 4,
+                Code = "PROMO_CTA_QR_COUPON_READY", Group = ChecklistItemGroup.Display,
+                Title = "QR/CTA/voucher hiển thị đúng",
+                Description = "Kiểm tra QR/CTA/voucher đúng nội dung ưu đãi và quét ra đúng link/landing page.",
+                SortOrder = 20, IsCritical = true,
+                EvidenceRequirement = EvidenceRequirement.Photo,
+                FailRequiresNote = true, FailRequiresEvidence = true,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            },
+            new ChecklistDeliveryItemTemplate
+            {
+                Id = 403, RoboTypeId = 4,
+                Code = "PROMO_PATROL_ROUTE_CONFIG", Group = ChecklistItemGroup.Mobility,
+                Title = "Lộ trình tuần tra/điểm dừng (nếu di chuyển)",
+                Description = "Xác nhận lộ trình, điểm dừng, khu vực tránh và tốc độ tối đa phù hợp booth.",
+                SortOrder = 20, IsCritical = false,
+                EvidenceRequirement = EvidenceRequirement.None,
+                FailRequiresNote = true, FailRequiresEvidence = false,
+                IsActive = true, CreatedAt = seedTime, UpdatedAt = seedTime
+            }
+        );
 
         modelBuilder.Entity<RobotAbility>()
             .Property(x => x.Min).HasPrecision(18, 2);
