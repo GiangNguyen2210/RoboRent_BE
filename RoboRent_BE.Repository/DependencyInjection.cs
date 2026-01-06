@@ -42,6 +42,12 @@ public static class DependencyInjection
         services.AddTransient<IRentalChangeLogRepository, RentalChangeLogRepository>();
 
         services.AddTransient<IRobotAbilityRepository, RobotAbilityRepository>();
+
+        services.AddTransient<IChecklistDeliveryEvidenceRepository, ChecklistDeliveryEvidenceRepository>();
+        services.AddTransient<IChecklistDeliveryItemRepository, ChecklistDeliveryItemRepository>();
+        services.AddTransient<IChecklistDeliveryRepository, ChecklistDeliveryRepository>();
+
+        services.AddTransient<IChecklistDeliveryItemTemplateRepository, ChecklistDeliveryItemTemplateRepository>();
         return services;
     }
 }
