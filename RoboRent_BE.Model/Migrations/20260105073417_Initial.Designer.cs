@@ -12,11 +12,7 @@ using RoboRent_BE.Model.Entities;
 namespace RoboRent_BE.Model.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:RoboRent_BE.Model/Migrations/20251231052617_Initial.Designer.cs
-    [Migration("20251231052617_Initial")]
-========
-    [Migration("20251223161150_Initial")]
->>>>>>>> be/dangkhoa:RoboRent_BE.Model/Migrations/20251223161150_Initial.Designer.cs
+    [Migration("20260105073417_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -78,6 +74,12 @@ namespace RoboRent_BE.Model.Migrations
                             Id = "4",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
+                        },
+                        new
+                        {
+                            Id = "5",
+                            Name = "TechnicalStaff",
+                            NormalizedName = "TECHNICALSTAFF"
                         });
                 });
 
@@ -651,6 +653,716 @@ namespace RoboRent_BE.Model.Migrations
                     b.ToTable("ChatRooms");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDelivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActualDeliveryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CheckedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ChecklistNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CustomerAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CustomerAcceptedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CustomerNote")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomerSignatureUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FailItems")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MetaJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("OverallNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("OverallResult")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PassItems")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TotalItems")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActualDeliveryId");
+
+                    b.HasIndex("CheckedByStaffId");
+
+                    b.HasIndex("CustomerAcceptedById");
+
+                    b.ToTable("ChecklistDeliveries");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryEvidence", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ChecklistDeliveryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ChecklistDeliveryItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MetaJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UploadedByStaffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistDeliveryId");
+
+                    b.HasIndex("ChecklistDeliveryItemId");
+
+                    b.HasIndex("UploadedByStaffId");
+
+                    b.ToTable("ChecklistDeliveryEvidences");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("ChecklistDeliveryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("EvidenceRequiredOnFail")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Expected")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("MustPassToDispatch")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("Result")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("ValueBool")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ValueJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<decimal?>("ValueNumber")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ValueText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistDeliveryId");
+
+                    b.ToTable("ChecklistDeliveryItems");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryItemTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ActivityTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EvidenceRequirement")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("FailRequiresEvidence")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("FailRequiresNote")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Group")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsCritical")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MeasuredValueLabel")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<bool>("RequiresMeasuredValue")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("RoboTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RobotTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoboTypeId");
+
+                    b.ToTable("ChecklistDeliveryItemTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "DOCS_RENTAL_BRIEF",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra có đầy đủ thông tin người phụ trách kỹ thuật, hotline, và hướng dẫn sử dụng nhanh (nếu có).",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 9,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 10,
+                            Title = "Tài liệu & thông tin bàn giao",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "SAFETY_SERIAL_QR_MATCH",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Quét QR/đối chiếu serial trên robot với mã trong hệ thống trước khi giao.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 8,
+                            IsActive = true,
+                            IsCritical = true,
+                            MeasuredValueLabel = "Serial/QR",
+                            RequiresMeasuredValue = true,
+                            SortOrder = 10,
+                            Title = "Serial/QR đúng với hệ thống",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "APPEARANCE_OVERALL_PHOTO",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Chụp ảnh toàn thân robot (ít nhất 2 góc) để làm bằng chứng tình trạng ban đầu.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = false,
+                            Group = 1,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 10,
+                            Title = "Ảnh tổng quan robot trước bàn giao",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "APPEARANCE_SCRATCH_DENT",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Quan sát thân vỏ, khớp nối, mặt trước/sau; ghi nhận trầy xước hoặc móp/nứt nếu có.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 1,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 20,
+                            Title = "Trầy xước/móp/nứt vỏ",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "POWER_BATTERY_LEVEL",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Bật robot và kiểm tra % pin (khuyến nghị ≥ 70% trước khi vận chuyển/giao).",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 2,
+                            IsActive = true,
+                            IsCritical = true,
+                            MeasuredValueLabel = "Battery (%)",
+                            RequiresMeasuredValue = true,
+                            SortOrder = 10,
+                            Title = "Mức pin trước khi giao",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Code = "POWER_CHARGER_CABLES",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Đảm bảo có đủ sạc/adapter và dây nguồn đúng chuẩn, không đứt gãy.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 7,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 20,
+                            Title = "Sạc/adapter/dây nguồn đầy đủ",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Code = "MOBILITY_BASIC_TEST",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra robot có thể đứng vững/di chuyển cơ bản theo khả năng (không cần chạy show).",
+                            EvidenceRequirement = 2,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 3,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 10,
+                            Title = "Test di chuyển cơ bản",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Code = "AUDIO_SPEAKER_TEST",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Phát đoạn âm thanh mẫu; kiểm tra rè, nhỏ bất thường hoặc mất kênh.",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 4,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 10,
+                            Title = "Test loa (âm thanh)",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Code = "DISPLAY_SCREEN_OK",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra không sọc, không loang màu, cảm ứng/điều khiển hiển thị hoạt động.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 10,
+                            Title = "Màn hình hiển thị bình thường",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Code = "ACCESSORIES_REMOTE_CONTROLLER",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra có đủ remote/controller và pin remote (nếu dùng).",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 7,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 30,
+                            Title = "Remote/thiết bị điều khiển (nếu có)",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Code = "SAFETY_CASE_PACKING",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Robot được cố định an toàn trong case/thùng; có chèn chống sốc.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 8,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            SortOrder = 20,
+                            Title = "Đóng gói/thùng/case vận chuyển đúng chuẩn",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 101,
+                            Code = "RECEPTION_BRANDING_ASSETS_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra đã có logo/banner/hình nền và giao diện màu sắc đúng theo yêu cầu khách.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 1,
+                            SortOrder = 10,
+                            Title = "Branding assets đã nạp sẵn",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 102,
+                            Code = "RECEPTION_QR_CTA_WORKING",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Mở màn hình QR/CTA; thử quét QR bằng điện thoại để đảm bảo điều hướng đúng link.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 1,
+                            SortOrder = 20,
+                            Title = "QR/CTA hiển thị đúng & quét được",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 103,
+                            Code = "RECEPTION_FAQ_SCRIPT_LOADED",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra danh sách câu chào và FAQ theo yêu cầu sự kiện (ngôn ngữ, giọng đọc).",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 0,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 1,
+                            SortOrder = 10,
+                            Title = "Kịch bản chào hỏi/FAQ đã cấu hình",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 201,
+                            Code = "PERFORMANCE_SHOWSET_LOADED",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra danh sách tiết mục (nhạc, thời lượng, thứ tự) đã tải đúng phiên bản.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 0,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 2,
+                            SortOrder = 10,
+                            Title = "Show set/playlist biểu diễn đã nạp",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 202,
+                            Code = "PERFORMANCE_TRIGGER_METHOD_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Xác nhận phương thức kích hoạt (manual/remote/schedule) hoạt động đúng.",
+                            EvidenceRequirement = 2,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 0,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 2,
+                            SortOrder = 20,
+                            Title = "Cơ chế kích hoạt biểu diễn sẵn sàng",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 203,
+                            Code = "PERFORMANCE_SAFETY_LIMITS_SET",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Xác nhận đã set vùng an toàn/khoảng cách/giới hạn tốc độ phù hợp kịch bản.",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 8,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 2,
+                            SortOrder = 10,
+                            Title = "Thiết lập giới hạn an toàn sân khấu",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 301,
+                            Code = "HOST_SCRIPT_BLOCKS_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra các khối nội dung lời dẫn theo timeline; đúng ngôn ngữ và thời lượng ước tính.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 0,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 3,
+                            SortOrder = 10,
+                            Title = "Kịch bản MC (blocks) đã nạp",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 302,
+                            Code = "HOST_VOICE_SETTINGS_OK",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra tốc độ/cao độ/âm lượng; đảm bảo nghe rõ và không gây chói.",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 4,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 3,
+                            SortOrder = 20,
+                            Title = "Thiết lập giọng nói phù hợp không gian",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 303,
+                            Code = "HOST_MIC_TEST_IF_ANY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra mic thu âm/khử ồn theo cấu hình; ghi nhận nếu micro yếu hoặc nhiễu.",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 4,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 3,
+                            SortOrder = 10,
+                            Title = "Test micro (nếu robot dùng mic)",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 304,
+                            Code = "HOST_COUNTDOWN_OR_SLIDE_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra nội dung countdown/slide/QR hiển thị đúng theo mốc chương trình.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 3,
+                            SortOrder = 30,
+                            Title = "Countdown/slide hỗ trợ hiển thị sẵn sàng",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 401,
+                            Code = "PROMO_MEDIA_PLAYLIST_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra thứ tự, thời lượng và khả năng play mượt của playlist nội dung booth.",
+                            EvidenceRequirement = 2,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 4,
+                            SortOrder = 10,
+                            Title = "Playlist quảng cáo (image/video) đã nạp",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 402,
+                            Code = "PROMO_CTA_QR_COUPON_READY",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Kiểm tra QR/CTA/voucher đúng nội dung ưu đãi và quét ra đúng link/landing page.",
+                            EvidenceRequirement = 1,
+                            FailRequiresEvidence = true,
+                            FailRequiresNote = true,
+                            Group = 5,
+                            IsActive = true,
+                            IsCritical = true,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 4,
+                            SortOrder = 20,
+                            Title = "QR/CTA/voucher hiển thị đúng",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        },
+                        new
+                        {
+                            Id = 403,
+                            Code = "PROMO_PATROL_ROUTE_CONFIG",
+                            CreatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994),
+                            Description = "Xác nhận lộ trình, điểm dừng, khu vực tránh và tốc độ tối đa phù hợp booth.",
+                            EvidenceRequirement = 0,
+                            FailRequiresEvidence = false,
+                            FailRequiresNote = true,
+                            Group = 3,
+                            IsActive = true,
+                            IsCritical = false,
+                            RequiresMeasuredValue = false,
+                            RoboTypeId = 4,
+                            SortOrder = 20,
+                            Title = "Lộ trình tuần tra/điểm dừng (nếu di chuyển)",
+                            UpdatedAt = new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994)
+                        });
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractDrafts", b =>
                 {
                     b.Property<int>("Id")
@@ -673,6 +1385,9 @@ namespace RoboRent_BE.Model.Migrations
 
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("OriginalBodyJson")
+                        .HasColumnType("text");
 
                     b.Property<int?>("RentalId")
                         .HasColumnType("integer");
@@ -1214,6 +1929,54 @@ namespace RoboRent_BE.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRealTime")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RecipientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientId");
+
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -1277,23 +2040,23 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<double?>("Complete")
-                        .HasColumnType("double precision");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CustomerReason")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CustomizationFee")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("DamageDeposit")
+                        .HasColumnType("numeric");
+
                     b.Property<int?>("DeliveryDistance")
                         .HasColumnType("integer");
 
                     b.Property<decimal?>("DeliveryFee")
                         .HasColumnType("numeric");
-
-                    b.Property<double?>("Deposit")
-                        .HasColumnType("double precision");
 
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1307,14 +2070,17 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("RentalFee")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("RentalId")
                         .HasColumnType("integer");
 
-                    b.Property<double?>("Service")
-                        .HasColumnType("double precision");
-
                     b.Property<string>("StaffDescription")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("StaffFee")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Status")
                         .HasColumnType("text");
@@ -1375,6 +2141,9 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool?>("IsUpdated")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("text");
 
@@ -1407,6 +2176,41 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("Rentals");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ChangedByAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RentalId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalId");
+
+                    b.ToTable("RentalChangeLogs");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>
@@ -1450,10 +2254,13 @@ namespace RoboRent_BE.Model.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAd")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsUpdated")
                         .HasColumnType("boolean");
 
                     b.Property<int>("RentalId")
@@ -1465,7 +2272,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAd")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("isLocked")
@@ -2535,11 +3342,11 @@ namespace RoboRent_BE.Model.Migrations
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbility", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AbilityGroup")
                         .HasMaxLength(50)
@@ -2616,7 +3423,7 @@ namespace RoboRent_BE.Model.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1L,
+                            Id = 1,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Tên thương hiệu hiển thị trên màn hình robot.",
@@ -2634,7 +3441,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 2L,
+                            Id = 2,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Đường dẫn logo (PNG/SVG) hiển thị trên robot.",
@@ -2652,7 +3459,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 3L,
+                            Id = 3,
                             AbilityGroup = "Branding & UI",
                             DataType = "json",
                             Description = "Cấu hình giao diện (banner/background/color).",
@@ -2669,7 +3476,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 4L,
+                            Id = 4,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Text chào mừng hiển thị trên màn hình.",
@@ -2687,7 +3494,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 5L,
+                            Id = 5,
                             AbilityGroup = "Branding & UI",
                             DataType = "string",
                             Description = "Link/QR điều hướng khách (landing page, form...).",
@@ -2705,7 +3512,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 6L,
+                            Id = 6,
                             AbilityGroup = "Branding & UI",
                             DataType = "json",
                             Description = "Danh sách asset tài trợ hiển thị luân phiên.",
@@ -2722,7 +3529,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 7L,
+                            Id = 7,
                             AbilityGroup = "Greeting & Script",
                             DataType = "string",
                             Description = "Kịch bản chào hỏi / giới thiệu ngắn.",
@@ -2740,7 +3547,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 8L,
+                            Id = 8,
                             AbilityGroup = "Greeting & Script",
                             DataType = "enum[]",
                             Description = "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.",
@@ -2757,7 +3564,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 9L,
+                            Id = 9,
                             AbilityGroup = "Greeting & Script",
                             DataType = "json",
                             Description = "Cấu hình giọng nói (tốc độ/độ cao...).",
@@ -2774,7 +3581,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 10L,
+                            Id = 10,
                             AbilityGroup = "Greeting & Script",
                             DataType = "json",
                             Description = "Danh sách câu hỏi thường gặp (Q/A + keywords).",
@@ -2791,7 +3598,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 11L,
+                            Id = 11,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "enum",
                             Description = "Chế độ check-in tại sự kiện.",
@@ -2808,7 +3615,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 12L,
+                            Id = 12,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "enum[]",
                             Description = "Các trường thu thập thông tin khách.",
@@ -2825,7 +3632,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 13L,
+                            Id = 13,
                             AbilityGroup = "Check-in & Lead",
                             DataType = "string",
                             Description = "Thông báo quyền riêng tư khi thu thập dữ liệu.",
@@ -2843,7 +3650,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 14L,
+                            Id = 14,
                             AbilityGroup = "Navigation",
                             DataType = "json",
                             Description = "Danh sách điểm đến/booth để robot hướng dẫn.",
@@ -2860,7 +3667,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 15L,
+                            Id = 15,
                             AbilityGroup = "Navigation",
                             DataType = "json",
                             Description = "Quy tắc điều hướng (tốc độ, vùng cấm...).",
@@ -2877,7 +3684,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 16L,
+                            Id = 16,
                             AbilityGroup = "Show Set",
                             DataType = "json",
                             Description = "Danh sách show set (nhạc + choreography + thời lượng + lặp).",
@@ -2894,7 +3701,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 17L,
+                            Id = 17,
                             AbilityGroup = "Show Set",
                             DataType = "json",
                             Description = "Thứ tự chạy các set (theo index).",
@@ -2911,7 +3718,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 18L,
+                            Id = 18,
                             AbilityGroup = "Cues & Triggers",
                             DataType = "enum",
                             Description = "Cách kích hoạt biểu diễn.",
@@ -2928,7 +3735,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 19L,
+                            Id = 19,
                             AbilityGroup = "Cues & Triggers",
                             DataType = "json",
                             Description = "Các cue/timecode điều khiển hành động trong show.",
@@ -2945,7 +3752,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 20L,
+                            Id = 20,
                             AbilityGroup = "Stage & Safety",
                             DataType = "json",
                             Description = "Khu vực sân khấu và khoảng cách an toàn.",
@@ -2962,7 +3769,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 21L,
+                            Id = 21,
                             AbilityGroup = "Stage & Safety",
                             DataType = "json",
                             Description = "Giới hạn an toàn (tốc độ khớp, góc tay chân...).",
@@ -2979,7 +3786,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 22L,
+                            Id = 22,
                             AbilityGroup = "Stage & Safety",
                             DataType = "bool",
                             Description = "Có yêu cầu rehearsal trước giờ chạy show hay không.",
@@ -2995,7 +3802,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 23L,
+                            Id = 23,
                             AbilityGroup = "Stage & Safety",
                             DataType = "enum",
                             Description = "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.",
@@ -3012,7 +3819,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 24L,
+                            Id = 24,
                             AbilityGroup = "Visual Style",
                             DataType = "string",
                             Description = "Theme trang phục/LED cho robot (nếu có).",
@@ -3030,7 +3837,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 25L,
+                            Id = 25,
                             AbilityGroup = "Visual Style",
                             DataType = "string",
                             Description = "1-2 câu chào mở đầu/kết thúc show.",
@@ -3048,7 +3855,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 26L,
+                            Id = 26,
                             AbilityGroup = "Script Timeline",
                             DataType = "json",
                             Description = "Kịch bản theo timeline (blockTitle/text/language/duration).",
@@ -3065,7 +3872,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 27L,
+                            Id = 27,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.",
@@ -3082,7 +3889,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 28L,
+                            Id = 28,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Cấu hình giọng MC (rate/pitch/volume).",
@@ -3099,7 +3906,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 29L,
+                            Id = 29,
                             AbilityGroup = "Voice & Pronunciation",
                             DataType = "json",
                             Description = "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).",
@@ -3116,7 +3923,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 30L,
+                            Id = 30,
                             AbilityGroup = "On-screen Assets",
                             DataType = "json",
                             Description = "Asset hiển thị (QR/Image/Slide + thời lượng).",
@@ -3133,7 +3940,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 31L,
+                            Id = 31,
                             AbilityGroup = "On-screen Assets",
                             DataType = "json",
                             Description = "Cấu hình countdown (nếu dùng).",
@@ -3150,7 +3957,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 32L,
+                            Id = 32,
                             AbilityGroup = "Co-host Mode",
                             DataType = "bool",
                             Description = "Có MC người phối hợp hay không.",
@@ -3166,7 +3973,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 33L,
+                            Id = 33,
                             AbilityGroup = "Co-host Mode",
                             DataType = "json",
                             Description = "Cue chuyển giao giữa robot và MC người.",
@@ -3184,7 +3991,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 34L,
+                            Id = 34,
                             AbilityGroup = "Ad Playlist",
                             DataType = "json",
                             Description = "Playlist quảng cáo (image/video + duration + order).",
@@ -3201,7 +4008,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 35L,
+                            Id = 35,
                             AbilityGroup = "Ad Playlist",
                             DataType = "json",
                             Description = "Quy tắc chạy playlist (khung giờ, interval, peak mode).",
@@ -3218,7 +4025,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 36L,
+                            Id = 36,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "json",
                             Description = "Danh sách audio (nhạc nền) nếu sử dụng.",
@@ -3235,7 +4042,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 37L,
+                            Id = 37,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "string",
                             Description = "Script thông báo/mời chào tại booth.",
@@ -3253,7 +4060,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 38L,
+                            Id = 38,
                             AbilityGroup = "Audio & Announcement",
                             DataType = "json",
                             Description = "Cấu hình âm lượng phát tại booth.",
@@ -3270,7 +4077,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 39L,
+                            Id = 39,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Link/QR cho CTA (landing page, đăng ký...).",
@@ -3288,7 +4095,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 40L,
+                            Id = 40,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Text CTA hiển thị trên màn hình/booth.",
@@ -3306,7 +4113,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 41L,
+                            Id = 41,
                             AbilityGroup = "CTA & Lead",
                             DataType = "string",
                             Description = "Luật voucher/ưu đãi (nếu có).",
@@ -3324,7 +4131,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 42L,
+                            Id = 42,
                             AbilityGroup = "Booth Route",
                             DataType = "enum",
                             Description = "Chế độ di chuyển tại booth.",
@@ -3341,7 +4148,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 43L,
+                            Id = 43,
                             AbilityGroup = "Booth Route",
                             DataType = "json",
                             Description = "Các điểm dừng khi robot patrol.",
@@ -3358,7 +4165,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 44L,
+                            Id = 44,
                             AbilityGroup = "Booth Route",
                             DataType = "json",
                             Description = "Khu vực tránh (nếu có).",
@@ -3375,7 +4182,7 @@ namespace RoboRent_BE.Model.Migrations
                         },
                         new
                         {
-                            Id = 45L,
+                            Id = 45,
                             AbilityGroup = "Booth Route",
                             DataType = "number",
                             Description = "Tốc độ tối đa (m/s) khi di chuyển.",
@@ -3391,6 +4198,41 @@ namespace RoboRent_BE.Model.Migrations
                             RobotTypeId = 4,
                             UiControl = "number"
                         });
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbilityValue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("RentalDetailId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RobotAbilityId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ValueJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ValueText")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("isUpdated")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalDetailId");
+
+                    b.HasIndex("RobotAbilityId");
+
+                    b.ToTable("RobotAbilityValues");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotInGroup", b =>
@@ -4182,6 +5024,72 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDelivery", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ActualDelivery", "ActualDelivery")
+                        .WithMany()
+                        .HasForeignKey("ActualDeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "CheckedByStaff")
+                        .WithMany()
+                        .HasForeignKey("CheckedByStaffId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "CustomerAccepted")
+                        .WithMany()
+                        .HasForeignKey("CustomerAcceptedById");
+
+                    b.Navigation("ActualDelivery");
+
+                    b.Navigation("CheckedByStaff");
+
+                    b.Navigation("CustomerAccepted");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryEvidence", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ChecklistDelivery", "ChecklistDelivery")
+                        .WithMany("Evidences")
+                        .HasForeignKey("ChecklistDeliveryId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.ChecklistDeliveryItem", "ChecklistDeliveryItem")
+                        .WithMany("Evidences")
+                        .HasForeignKey("ChecklistDeliveryItemId");
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "UploadedByStaff")
+                        .WithMany()
+                        .HasForeignKey("UploadedByStaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChecklistDelivery");
+
+                    b.Navigation("ChecklistDeliveryItem");
+
+                    b.Navigation("UploadedByStaff");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryItem", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.ChecklistDelivery", "ChecklistDelivery")
+                        .WithMany("Items")
+                        .HasForeignKey("ChecklistDeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChecklistDelivery");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryItemTemplate", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.RoboType", "RoboType")
+                        .WithMany()
+                        .HasForeignKey("RoboTypeId");
+
+                    b.Navigation("RoboType");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.ContractDrafts", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.ContractTemplates", "ContractTemplate")
@@ -4359,6 +5267,23 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Rental");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.Notification", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Account", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId");
+
+                    b.Navigation("Recipient");
+
+                    b.Navigation("Rental");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.PaymentRecord", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.PriceQuote", "PriceQuote")
@@ -4420,6 +5345,17 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalChangeLog", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
+                        .WithMany()
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rental");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalContract", b =>
                 {
                     b.HasOne("RoboRent_BE.Model.Entities.Rental", "Rental")
@@ -4466,6 +5402,25 @@ namespace RoboRent_BE.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("RoboType");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotAbilityValue", b =>
+                {
+                    b.HasOne("RoboRent_BE.Model.Entities.RentalDetail", "RentalDetail")
+                        .WithMany("RobotAbilityValues")
+                        .HasForeignKey("RentalDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoboRent_BE.Model.Entities.RobotAbility", "RobotAbility")
+                        .WithMany()
+                        .HasForeignKey("RobotAbilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentalDetail");
+
+                    b.Navigation("RobotAbility");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RobotInGroup", b =>
@@ -4551,9 +5506,26 @@ namespace RoboRent_BE.Model.Migrations
                     b.Navigation("Messages");
                 });
 
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDelivery", b =>
+                {
+                    b.Navigation("Evidences");
+
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.ChecklistDeliveryItem", b =>
+                {
+                    b.Navigation("Evidences");
+                });
+
             modelBuilder.Entity("RoboRent_BE.Model.Entities.EventActivity", b =>
                 {
                     b.Navigation("ActivityTypes");
+                });
+
+            modelBuilder.Entity("RoboRent_BE.Model.Entities.RentalDetail", b =>
+                {
+                    b.Navigation("RobotAbilityValues");
                 });
 
             modelBuilder.Entity("RoboRent_BE.Model.Entities.RoboType", b =>

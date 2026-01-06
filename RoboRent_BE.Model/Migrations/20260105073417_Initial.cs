@@ -250,10 +250,44 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChecklistDeliveryItemTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RoboTypeId = table.Column<int>(type: "integer", nullable: true),
+                    Code = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    Group = table.Column<int>(type: "integer", nullable: false),
+                    Title = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    IsCritical = table.Column<bool>(type: "boolean", nullable: false),
+                    RequiresMeasuredValue = table.Column<bool>(type: "boolean", nullable: false),
+                    MeasuredValueLabel = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: true),
+                    EvidenceRequirement = table.Column<int>(type: "integer", nullable: false),
+                    FailRequiresNote = table.Column<bool>(type: "boolean", nullable: false),
+                    FailRequiresEvidence = table.Column<bool>(type: "boolean", nullable: false),
+                    RobotTypeId = table.Column<int>(type: "integer", nullable: true),
+                    ActivityTypeId = table.Column<int>(type: "integer", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChecklistDeliveryItemTemplates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveryItemTemplates_RoboTypes_RoboTypeId",
+                        column: x => x.RoboTypeId,
+                        principalTable: "RoboTypes",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RobotAbilities",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RobotTypeId = table.Column<int>(type: "integer", nullable: false),
                     Key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -409,6 +443,7 @@ namespace RoboRent_BE.Model.Migrations
                     ReceivedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EventDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
+                    IsUpdated = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
                     AccountId = table.Column<int>(type: "integer", nullable: false),
                     EventActivityId = table.Column<int>(type: "integer", nullable: true),
@@ -587,6 +622,7 @@ namespace RoboRent_BE.Model.Migrations
                     Status = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    OriginalBodyJson = table.Column<string>(type: "text", nullable: true),
                     ContractTemplatesId = table.Column<int>(type: "integer", nullable: true),
                     RentalId = table.Column<int>(type: "integer", nullable: true),
                     StaffId = table.Column<int>(type: "integer", nullable: true),
@@ -686,23 +722,57 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RecipientId = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    RentalId = table.Column<int>(type: "integer", nullable: true),
+                    RelatedEntityId = table.Column<int>(type: "integer", nullable: true),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    IsRealTime = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_Accounts_RecipientId",
+                        column: x => x.RecipientId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Notifications_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PriceQuotes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
-                    Deposit = table.Column<double>(type: "double precision", nullable: true),
-                    Complete = table.Column<double>(type: "double precision", nullable: true),
-                    Service = table.Column<double>(type: "double precision", nullable: true),
+                    RentalFee = table.Column<decimal>(type: "numeric", nullable: false),
+                    StaffFee = table.Column<decimal>(type: "numeric", nullable: false),
+                    DamageDeposit = table.Column<decimal>(type: "numeric", nullable: false),
+                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
+                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
+                    CustomizationFee = table.Column<decimal>(type: "numeric", nullable: false),
                     StaffDescription = table.Column<string>(type: "text", nullable: true),
                     ManagerFeedback = table.Column<string>(type: "text", nullable: true),
                     CustomerReason = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
-                    DeliveryFee = table.Column<decimal>(type: "numeric", nullable: true),
-                    DeliveryDistance = table.Column<int>(type: "integer", nullable: true),
                     ManagerId = table.Column<int>(type: "integer", nullable: true),
                     SubmittedToManagerAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ManagerApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -717,6 +787,30 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PriceQuotes_Rentals_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "Rentals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalChangeLogs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RentalId = table.Column<int>(type: "integer", nullable: false),
+                    FieldName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OldValue = table.Column<string>(type: "text", nullable: true),
+                    NewValue = table.Column<string>(type: "text", nullable: true),
+                    ChangedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ChangedByAccountId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalChangeLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalChangeLogs_Rentals_RentalId",
                         column: x => x.RentalId,
                         principalTable: "Rentals",
                         principalColumn: "Id",
@@ -756,9 +850,10 @@ namespace RoboRent_BE.Model.Migrations
                     Status = table.Column<string>(type: "text", nullable: true),
                     RentalId = table.Column<int>(type: "integer", nullable: false),
                     RoboTypeId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    isLocked = table.Column<bool>(type: "boolean", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    isLocked = table.Column<bool>(type: "boolean", nullable: true),
+                    IsUpdated = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -975,6 +1070,82 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RobotAbilityValues",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RentalDetailId = table.Column<int>(type: "integer", nullable: false),
+                    RobotAbilityId = table.Column<int>(type: "integer", nullable: false),
+                    ValueText = table.Column<string>(type: "text", nullable: true),
+                    ValueJson = table.Column<string>(type: "jsonb", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    isUpdated = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RobotAbilityValues", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RobotAbilityValues_RentalDetails_RentalDetailId",
+                        column: x => x.RentalDetailId,
+                        principalTable: "RentalDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RobotAbilityValues_RobotAbilities_RobotAbilityId",
+                        column: x => x.RobotAbilityId,
+                        principalTable: "RobotAbilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChecklistDeliveries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ActualDeliveryId = table.Column<int>(type: "integer", nullable: false),
+                    ChecklistNo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Type = table.Column<int>(type: "integer", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: true),
+                    CheckedByStaffId = table.Column<int>(type: "integer", nullable: true),
+                    CheckedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CustomerAcceptedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CustomerAcceptedById = table.Column<int>(type: "integer", nullable: true),
+                    CustomerSignatureUrl = table.Column<string>(type: "text", nullable: true),
+                    CustomerNote = table.Column<string>(type: "text", nullable: true),
+                    OverallResult = table.Column<int>(type: "integer", nullable: true),
+                    OverallNote = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    TotalItems = table.Column<int>(type: "integer", nullable: true),
+                    PassItems = table.Column<int>(type: "integer", nullable: true),
+                    FailItems = table.Column<int>(type: "integer", nullable: true),
+                    MetaJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChecklistDeliveries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveries_Accounts_CheckedByStaffId",
+                        column: x => x.CheckedByStaffId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveries_Accounts_CustomerAcceptedById",
+                        column: x => x.CustomerAcceptedById,
+                        principalTable: "Accounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveries_ActualDeliveries_ActualDeliveryId",
+                        column: x => x.ActualDeliveryId,
+                        principalTable: "ActualDeliveries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ContractReports",
                 columns: table => new
                 {
@@ -1023,6 +1194,82 @@ namespace RoboRent_BE.Model.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ChecklistDeliveryItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ChecklistDeliveryId = table.Column<int>(type: "integer", nullable: false),
+                    Key = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    Label = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Severity = table.Column<int>(type: "integer", nullable: false),
+                    IsRequired = table.Column<bool>(type: "boolean", nullable: false),
+                    EvidenceRequiredOnFail = table.Column<bool>(type: "boolean", nullable: false),
+                    MustPassToDispatch = table.Column<bool>(type: "boolean", nullable: false),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    Expected = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ValueType = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    ValueBool = table.Column<bool>(type: "boolean", nullable: true),
+                    ValueNumber = table.Column<decimal>(type: "numeric", nullable: true),
+                    ValueText = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    ValueJson = table.Column<string>(type: "jsonb", nullable: true),
+                    Result = table.Column<int>(type: "integer", nullable: false),
+                    Note = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChecklistDeliveryItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveryItems_ChecklistDeliveries_ChecklistDeliver~",
+                        column: x => x.ChecklistDeliveryId,
+                        principalTable: "ChecklistDeliveries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChecklistDeliveryEvidences",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ChecklistDeliveryId = table.Column<int>(type: "integer", nullable: true),
+                    ChecklistDeliveryItemId = table.Column<int>(type: "integer", nullable: true),
+                    Scope = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Url = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FileSizeBytes = table.Column<long>(type: "bigint", nullable: true),
+                    CapturedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UploadedByStaffId = table.Column<int>(type: "integer", nullable: false),
+                    MetaJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChecklistDeliveryEvidences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveryEvidences_Accounts_UploadedByStaffId",
+                        column: x => x.UploadedByStaffId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveryEvidences_ChecklistDeliveries_ChecklistDel~",
+                        column: x => x.ChecklistDeliveryId,
+                        principalTable: "ChecklistDeliveries",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChecklistDeliveryEvidences_ChecklistDeliveryItems_Checklist~",
+                        column: x => x.ChecklistDeliveryItemId,
+                        principalTable: "ChecklistDeliveryItems",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.InsertData(
                 table: "ActivityTypes",
                 columns: new[] { "Id", "BillingIncrementMinutes", "Code", "Currency", "DamageDeposit", "Description", "EventActivityId", "HourlyRate", "IncludesOperator", "IsActive", "IsDeleted", "MinimumMinutes", "Name", "OperatorCount", "Price", "ShortDescription", "TechnicalStaffFeePerHour" },
@@ -1041,7 +1288,8 @@ namespace RoboRent_BE.Model.Migrations
                     { "1", null, "Admin", "ADMIN" },
                     { "2", null, "Staff", "STAFF" },
                     { "3", null, "Customer", "CUSTOMER" },
-                    { "4", null, "Manager", "MANAGER" }
+                    { "4", null, "Manager", "MANAGER" },
+                    { "5", null, "TechnicalStaff", "TECHNICALSTAFF" }
                 });
 
             migrationBuilder.InsertData(
@@ -1052,6 +1300,24 @@ namespace RoboRent_BE.Model.Migrations
                     { "47ebcce9-fd0c-4173-91f4-a25385622d21", 0, "06625a65-14d1-4822-aaf1-2643d61d246b", "giangntse183662@fpt.edu.vn", true, true, null, "GIANGNTSE183662@FPT.EDU.VN", "GIANGNTSE183662@FPT.EDU.VN", null, null, false, "FRUURT5J22RQ24DHPTJOV27KBO6YSUUG", "Active", false, "giangntse183662@fpt.edu.vn" },
                     { "5373bf8f-51b2-4c2d-b832-be15aedd63bc", 0, "0b266393-f928-4c62-8d31-b7f4e8b884f4", "xuant0343@gmail.com", true, true, null, "XUANT0343@GMAIL.COM", "XUANT0343@GMAIL.COM", null, null, false, "TO6KVHYLEHG2KLGZPJVPI6NSP5FJBT5V", "Active", false, "xuant0343@gmail.com" },
                     { "fa56f53b-f406-42c4-afdc-f12a1a210b4b", 0, "e57cf66c-36b0-47b3-a7bc-26bb276298a4", "giangnguyen102004@gmail.com", true, true, null, "GIANGNGUYEN102004@GMAIL.COM", "GIANGNGUYEN102004@GMAIL.COM", null, null, false, "VPYTFD22TZD5DQECWLL62UFQVBZM6T4C", "Active", false, "giangnguyen102004@gmail.com" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "ChecklistDeliveryItemTemplates",
+                columns: new[] { "Id", "ActivityTypeId", "Code", "CreatedAt", "Description", "EvidenceRequirement", "FailRequiresEvidence", "FailRequiresNote", "Group", "IsActive", "IsCritical", "MeasuredValueLabel", "RequiresMeasuredValue", "RoboTypeId", "RobotTypeId", "SortOrder", "Title", "UpdatedAt" },
+                values: new object[,]
+                {
+                    { 1, null, "DOCS_RENTAL_BRIEF", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra có đầy đủ thông tin người phụ trách kỹ thuật, hotline, và hướng dẫn sử dụng nhanh (nếu có).", 0, false, true, 9, true, true, null, false, null, null, 10, "Tài liệu & thông tin bàn giao", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 2, null, "SAFETY_SERIAL_QR_MATCH", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Quét QR/đối chiếu serial trên robot với mã trong hệ thống trước khi giao.", 1, true, true, 8, true, true, "Serial/QR", true, null, null, 10, "Serial/QR đúng với hệ thống", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 3, null, "APPEARANCE_OVERALL_PHOTO", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Chụp ảnh toàn thân robot (ít nhất 2 góc) để làm bằng chứng tình trạng ban đầu.", 1, true, false, 1, true, true, null, false, null, null, 10, "Ảnh tổng quan robot trước bàn giao", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 4, null, "APPEARANCE_SCRATCH_DENT", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Quan sát thân vỏ, khớp nối, mặt trước/sau; ghi nhận trầy xước hoặc móp/nứt nếu có.", 1, true, true, 1, true, true, null, false, null, null, 20, "Trầy xước/móp/nứt vỏ", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 5, null, "POWER_BATTERY_LEVEL", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Bật robot và kiểm tra % pin (khuyến nghị ≥ 70% trước khi vận chuyển/giao).", 1, true, true, 2, true, true, "Battery (%)", true, null, null, 10, "Mức pin trước khi giao", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 6, null, "POWER_CHARGER_CABLES", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Đảm bảo có đủ sạc/adapter và dây nguồn đúng chuẩn, không đứt gãy.", 1, true, true, 7, true, true, null, false, null, null, 20, "Sạc/adapter/dây nguồn đầy đủ", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 7, null, "MOBILITY_BASIC_TEST", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra robot có thể đứng vững/di chuyển cơ bản theo khả năng (không cần chạy show).", 2, true, true, 3, true, true, null, false, null, null, 10, "Test di chuyển cơ bản", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 8, null, "AUDIO_SPEAKER_TEST", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Phát đoạn âm thanh mẫu; kiểm tra rè, nhỏ bất thường hoặc mất kênh.", 0, false, true, 4, true, false, null, false, null, null, 10, "Test loa (âm thanh)", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 9, null, "DISPLAY_SCREEN_OK", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra không sọc, không loang màu, cảm ứng/điều khiển hiển thị hoạt động.", 1, true, true, 5, true, true, null, false, null, null, 10, "Màn hình hiển thị bình thường", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 10, null, "ACCESSORIES_REMOTE_CONTROLLER", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra có đủ remote/controller và pin remote (nếu dùng).", 1, true, true, 7, true, false, null, false, null, null, 30, "Remote/thiết bị điều khiển (nếu có)", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 11, null, "SAFETY_CASE_PACKING", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Robot được cố định an toàn trong case/thùng; có chèn chống sốc.", 1, true, true, 8, true, true, null, false, null, null, 20, "Đóng gói/thùng/case vận chuyển đúng chuẩn", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) }
                 });
 
             migrationBuilder.InsertData(
@@ -1115,55 +1381,75 @@ namespace RoboRent_BE.Model.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "ChecklistDeliveryItemTemplates",
+                columns: new[] { "Id", "ActivityTypeId", "Code", "CreatedAt", "Description", "EvidenceRequirement", "FailRequiresEvidence", "FailRequiresNote", "Group", "IsActive", "IsCritical", "MeasuredValueLabel", "RequiresMeasuredValue", "RoboTypeId", "RobotTypeId", "SortOrder", "Title", "UpdatedAt" },
+                values: new object[,]
+                {
+                    { 101, null, "RECEPTION_BRANDING_ASSETS_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra đã có logo/banner/hình nền và giao diện màu sắc đúng theo yêu cầu khách.", 1, true, true, 5, true, true, null, false, 1, null, 10, "Branding assets đã nạp sẵn", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 102, null, "RECEPTION_QR_CTA_WORKING", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Mở màn hình QR/CTA; thử quét QR bằng điện thoại để đảm bảo điều hướng đúng link.", 1, true, true, 5, true, true, null, false, 1, null, 20, "QR/CTA hiển thị đúng & quét được", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 103, null, "RECEPTION_FAQ_SCRIPT_LOADED", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra danh sách câu chào và FAQ theo yêu cầu sự kiện (ngôn ngữ, giọng đọc).", 0, false, true, 0, true, false, null, false, 1, null, 10, "Kịch bản chào hỏi/FAQ đã cấu hình", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 201, null, "PERFORMANCE_SHOWSET_LOADED", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra danh sách tiết mục (nhạc, thời lượng, thứ tự) đã tải đúng phiên bản.", 1, true, true, 0, true, true, null, false, 2, null, 10, "Show set/playlist biểu diễn đã nạp", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 202, null, "PERFORMANCE_TRIGGER_METHOD_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Xác nhận phương thức kích hoạt (manual/remote/schedule) hoạt động đúng.", 2, true, true, 0, true, true, null, false, 2, null, 20, "Cơ chế kích hoạt biểu diễn sẵn sàng", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 203, null, "PERFORMANCE_SAFETY_LIMITS_SET", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Xác nhận đã set vùng an toàn/khoảng cách/giới hạn tốc độ phù hợp kịch bản.", 0, false, true, 8, true, true, null, false, 2, null, 10, "Thiết lập giới hạn an toàn sân khấu", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 301, null, "HOST_SCRIPT_BLOCKS_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra các khối nội dung lời dẫn theo timeline; đúng ngôn ngữ và thời lượng ước tính.", 1, true, true, 0, true, true, null, false, 3, null, 10, "Kịch bản MC (blocks) đã nạp", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 302, null, "HOST_VOICE_SETTINGS_OK", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra tốc độ/cao độ/âm lượng; đảm bảo nghe rõ và không gây chói.", 0, false, true, 4, true, true, null, false, 3, null, 20, "Thiết lập giọng nói phù hợp không gian", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 303, null, "HOST_MIC_TEST_IF_ANY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra mic thu âm/khử ồn theo cấu hình; ghi nhận nếu micro yếu hoặc nhiễu.", 0, false, true, 4, true, false, null, false, 3, null, 10, "Test micro (nếu robot dùng mic)", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 304, null, "HOST_COUNTDOWN_OR_SLIDE_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra nội dung countdown/slide/QR hiển thị đúng theo mốc chương trình.", 1, true, true, 5, true, false, null, false, 3, null, 30, "Countdown/slide hỗ trợ hiển thị sẵn sàng", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 401, null, "PROMO_MEDIA_PLAYLIST_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra thứ tự, thời lượng và khả năng play mượt của playlist nội dung booth.", 2, true, true, 5, true, true, null, false, 4, null, 10, "Playlist quảng cáo (image/video) đã nạp", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 402, null, "PROMO_CTA_QR_COUPON_READY", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Kiểm tra QR/CTA/voucher đúng nội dung ưu đãi và quét ra đúng link/landing page.", 1, true, true, 5, true, true, null, false, 4, null, 20, "QR/CTA/voucher hiển thị đúng", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) },
+                    { 403, null, "PROMO_PATROL_ROUTE_CONFIG", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994), "Xác nhận lộ trình, điểm dừng, khu vực tránh và tốc độ tối đa phù hợp booth.", 0, false, true, 3, true, false, null, false, 4, null, 20, "Lộ trình tuần tra/điểm dừng (nếu di chuyển)", new DateTime(2026, 1, 5, 7, 34, 15, 98, DateTimeKind.Utc).AddTicks(4994) }
+                });
+
+            migrationBuilder.InsertData(
                 table: "RobotAbilities",
                 columns: new[] { "Id", "AbilityGroup", "DataType", "Description", "IsActive", "IsOnSiteAdjustable", "IsPriceImpacting", "IsRequired", "JsonSchema", "Key", "Label", "LockAtCutoff", "Max", "MaxLength", "Min", "OptionsJson", "Placeholder", "Regex", "RobotTypeId", "UiControl" },
                 values: new object[,]
                 {
-                    { 1L, "Branding & UI", "string", "Tên thương hiệu hiển thị trên màn hình robot.", true, false, false, true, null, "brandName", "Brand Name", true, null, 100, null, null, "VD: RoboRent", null, 1, "text" },
-                    { 2L, "Branding & UI", "string", "Đường dẫn logo (PNG/SVG) hiển thị trên robot.", true, false, false, true, null, "logoUrl", "Logo URL", true, null, 500, null, null, "https://...", null, 1, "url" },
-                    { 3L, "Branding & UI", "json", "Cấu hình giao diện (banner/background/color).", true, false, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"bannerUrl\":{\"type\":\"string\"},\r\n            \"backgroundUrl\":{\"type\":\"string\"},\r\n            \"primaryColor\":{\"type\":\"string\"},\r\n            \"secondaryColor\":{\"type\":\"string\"}\r\n          }\r\n        }", "themeAssets", "Theme Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 4L, "Branding & UI", "string", "Text chào mừng hiển thị trên màn hình.", true, true, false, false, null, "welcomeScreenText", "Welcome Screen Text", true, null, 300, null, null, "Chào mừng bạn đến với...", null, 1, "textarea" },
-                    { 5L, "Branding & UI", "string", "Link/QR điều hướng khách (landing page, form...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 1, "url" },
-                    { 6L, "Branding & UI", "json", "Danh sách asset tài trợ hiển thị luân phiên.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "sponsorAssets", "Sponsor Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 7L, "Greeting & Script", "string", "Kịch bản chào hỏi / giới thiệu ngắn.", true, false, false, false, null, "greetingScript", "Greeting Script", true, null, 2000, null, null, "Xin chào quý khách...", null, 1, "textarea" },
-                    { 8L, "Greeting & Script", "enum[]", "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.", true, false, false, true, null, "languages", "Languages", true, null, null, null, "[\"VI\",\"EN\",\"JP\",\"KR\",\"CN\"]", null, null, 1, "multiSelect" },
-                    { 9L, "Greeting & Script", "json", "Cấu hình giọng nói (tốc độ/độ cao...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 10L, "Greeting & Script", "json", "Danh sách câu hỏi thường gặp (Q/A + keywords).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"question\":{\"type\":\"string\"},\r\n              \"answer\":{\"type\":\"string\"},\r\n              \"keywords\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"question\",\"answer\"]\r\n          }\r\n        }", "faqItems", "FAQ Items", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 11L, "Check-in & Lead", "enum", "Chế độ check-in tại sự kiện.", true, false, false, true, null, "checkinMode", "Check-in Mode", true, null, null, null, "[\"None\",\"QR\",\"Form\"]", null, null, 1, "select" },
-                    { 12L, "Check-in & Lead", "enum[]", "Các trường thu thập thông tin khách.", true, false, false, false, null, "leadFormFields", "Lead Form Fields", true, null, null, null, "[\"Name\",\"Phone\",\"Email\",\"Company\",\"Title\"]", null, null, 1, "multiSelect" },
-                    { 13L, "Check-in & Lead", "string", "Thông báo quyền riêng tư khi thu thập dữ liệu.", true, false, false, false, null, "privacyNoticeText", "Privacy Notice Text", true, null, 2000, null, null, "Thông tin của bạn sẽ được sử dụng để...", null, 1, "textarea" },
-                    { 14L, "Navigation", "json", "Danh sách điểm đến/booth để robot hướng dẫn.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"description\":{\"type\":\"string\"},\r\n              \"locationHint\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"name\"]\r\n          }\r\n        }", "pois", "Points of Interest (POI)", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 15L, "Navigation", "json", "Quy tắc điều hướng (tốc độ, vùng cấm...).", true, true, true, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"noGoZones\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\r\n            \"preferredPaths\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n          }\r\n        }", "navigationRules", "Navigation Rules", true, null, null, null, null, null, null, 1, "jsonEditor" },
-                    { 16L, "Show Set", "json", "Danh sách show set (nhạc + choreography + thời lượng + lặp).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"setName\":{\"type\":\"string\"},\r\n              \"musicTrackUrl\":{\"type\":\"string\"},\r\n              \"choreographyId\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":10},\r\n              \"repeatCount\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"setName\",\"durationSec\"]\r\n          }\r\n        }", "showSets", "Show Sets", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 17L, "Show Set", "json", "Thứ tự chạy các set (theo index).", true, false, true, false, "{ \"type\":\"array\", \"items\":{\"type\":\"integer\",\"minimum\":0} }", "showOrder", "Show Order", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 18L, "Cues & Triggers", "enum", "Cách kích hoạt biểu diễn.", true, false, false, true, null, "triggerMode", "Trigger Mode", true, null, null, null, "[\"Manual\",\"Scheduled\",\"RemoteSignal\"]", null, null, 2, "select" },
-                    { 19L, "Cues & Triggers", "json", "Các cue/timecode điều khiển hành động trong show.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"timecodeSec\":{\"type\":\"integer\",\"minimum\":0},\r\n              \"action\":{\"type\":\"string\"},\r\n              \"note\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"timecodeSec\",\"action\"]\r\n          }\r\n        }", "cuePoints", "Cue Points", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 20L, "Stage & Safety", "json", "Khu vực sân khấu và khoảng cách an toàn.", true, false, false, true, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"widthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"depthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"safeDistanceM\":{\"type\":\"number\",\"minimum\":0.5}\r\n          },\r\n          \"required\":[\"widthM\",\"depthM\",\"safeDistanceM\"]\r\n        }", "stageZone", "Stage Zone", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 21L, "Stage & Safety", "json", "Giới hạn an toàn (tốc độ khớp, góc tay chân...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxJointSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"maxLimbAngle\":{\"type\":\"number\",\"minimum\":10,\"maximum\":180},\r\n            \"emergencyStopRequired\":{\"type\":\"boolean\"}\r\n          }\r\n        }", "safetyLimits", "Safety Limits", true, null, null, null, null, null, null, 2, "jsonEditor" },
-                    { 22L, "Stage & Safety", "bool", "Có yêu cầu rehearsal trước giờ chạy show hay không.", true, false, true, true, null, "rehearsalRequired", "Rehearsal Required", true, null, null, null, null, null, null, 2, "switch" },
-                    { 23L, "Stage & Safety", "enum", "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.", true, false, false, true, null, "riskLevel", "Risk Level", true, null, null, null, "[\"Low\",\"Medium\",\"High\"]", null, null, 2, "select" },
-                    { 24L, "Visual Style", "string", "Theme trang phục/LED cho robot (nếu có).", true, false, true, false, null, "costumeOrLedTheme", "Costume/LED Theme", true, null, 200, null, null, "VD: Neon / Tết / Christmas...", null, 2, "text" },
-                    { 25L, "Visual Style", "string", "1-2 câu chào mở đầu/kết thúc show.", true, true, false, false, null, "introOutroLines", "Intro/Outro Lines", true, null, 500, null, null, "Xin chào quý khách...", null, 2, "textarea" },
-                    { 26L, "Script Timeline", "json", "Kịch bản theo timeline (blockTitle/text/language/duration).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"blockTitle\":{\"type\":\"string\"},\r\n              \"timecode\":{\"type\":\"string\"},\r\n              \"text\":{\"type\":\"string\"},\r\n              \"language\":{\"type\":\"string\"},\r\n              \"estimatedDurationSec\":{\"type\":\"integer\",\"minimum\":5},\r\n              \"interactionPrompts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"blockTitle\",\"text\"]\r\n          }\r\n        }", "scriptBlocks", "Script Blocks", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 27L, "Voice & Pronunciation", "json", "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"term\":{\"type\":\"string\"},\r\n              \"phonetic\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"term\",\"phonetic\"]\r\n          }\r\n        }", "pronunciationDict", "Pronunciation Dictionary", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 28L, "Voice & Pronunciation", "json", "Cấu hình giọng MC (rate/pitch/volume).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 29L, "Voice & Pronunciation", "json", "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\r\n            \"quietHoursVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 30L, "On-screen Assets", "json", "Asset hiển thị (QR/Image/Slide + thời lượng).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"type\":{\"type\":\"string\"},\r\n              \"url\":{\"type\":\"string\"},\r\n              \"displayDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"type\",\"url\"]\r\n          }\r\n        }", "screenAssets", "On-screen Assets", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 31L, "On-screen Assets", "json", "Cấu hình countdown (nếu dùng).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"enabled\":{\"type\":\"boolean\"},\r\n            \"targetTime\":{\"type\":\"string\"}\r\n          }\r\n        }", "countdownSettings", "Countdown Settings", true, null, null, null, null, null, null, 3, "jsonEditor" },
-                    { 32L, "Co-host Mode", "bool", "Có MC người phối hợp hay không.", true, false, false, true, null, "humanMcPresent", "Human MC Present", true, null, null, null, null, null, null, 3, "switch" },
-                    { 33L, "Co-host Mode", "json", "Cue chuyển giao giữa robot và MC người.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"cue\":{\"type\":\"string\"},\r\n              \"who\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"cue\",\"who\"]\r\n          }\r\n        }", "handoffCues", "Handoff Cues", true, null, null, null, "[\"Robot\",\"Human\"]", null, null, 3, "jsonEditor" },
-                    { 34L, "Ad Playlist", "json", "Playlist quảng cáo (image/video + duration + order).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"assetUrl\":{\"type\":\"string\"},\r\n              \"assetType\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":1},\r\n              \"order\":{\"type\":\"integer\",\"minimum\":0}\r\n            },\r\n            \"required\":[\"assetUrl\",\"assetType\",\"durationSec\"]\r\n          }\r\n        }", "adPlaylist", "Ad Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 35L, "Ad Playlist", "json", "Quy tắc chạy playlist (khung giờ, interval, peak mode).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"start\":{\"type\":\"string\"},\r\n            \"end\":{\"type\":\"string\"},\r\n            \"peakMode\":{\"type\":\"boolean\"},\r\n            \"intervalSec\":{\"type\":\"integer\",\"minimum\":5}\r\n          }\r\n        }", "scheduleRules", "Schedule Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 36L, "Audio & Announcement", "json", "Danh sách audio (nhạc nền) nếu sử dụng.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "audioPlaylist", "Audio Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 37L, "Audio & Announcement", "string", "Script thông báo/mời chào tại booth.", true, false, false, false, null, "announcementScript", "Announcement Script", true, null, 2000, null, null, "Mời quý khách ghé booth...", null, 4, "textarea" },
-                    { 38L, "Audio & Announcement", "json", "Cấu hình âm lượng phát tại booth.", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 39L, "CTA & Lead", "string", "Link/QR cho CTA (landing page, đăng ký...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 4, "url" },
-                    { 40L, "CTA & Lead", "string", "Text CTA hiển thị trên màn hình/booth.", true, true, false, false, null, "ctaText", "CTA Text", true, null, 200, null, null, "Quét QR để nhận ưu đãi!", null, 4, "text" },
-                    { 41L, "CTA & Lead", "string", "Luật voucher/ưu đãi (nếu có).", true, false, true, false, null, "voucherRule", "Voucher Rule", true, null, 2000, null, null, "VD: Giảm 10% cho 100 khách đầu tiên...", null, 4, "textarea" },
-                    { 42L, "Booth Route", "enum", "Chế độ di chuyển tại booth.", true, false, false, true, null, "routeMode", "Route Mode", true, null, null, null, "[\"Static\",\"Patrol\"]", null, null, 4, "select" },
-                    { 43L, "Booth Route", "json", "Các điểm dừng khi robot patrol.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"stopDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"name\",\"stopDurationSec\"]\r\n          }\r\n        }", "routePoints", "Route Points", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 44L, "Booth Route", "json", "Khu vực tránh (nếu có).", true, true, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "avoidZones", "Avoid Zones", true, null, null, null, null, null, null, 4, "jsonEditor" },
-                    { 45L, "Booth Route", "number", "Tốc độ tối đa (m/s) khi di chuyển.", true, true, false, false, null, "maxSpeed", "Max Speed", true, 2.0m, null, 0.1m, null, null, null, 4, "number" }
+                    { 1, "Branding & UI", "string", "Tên thương hiệu hiển thị trên màn hình robot.", true, false, false, true, null, "brandName", "Brand Name", true, null, 100, null, null, "VD: RoboRent", null, 1, "text" },
+                    { 2, "Branding & UI", "string", "Đường dẫn logo (PNG/SVG) hiển thị trên robot.", true, false, false, true, null, "logoUrl", "Logo URL", true, null, 500, null, null, "https://...", null, 1, "url" },
+                    { 3, "Branding & UI", "json", "Cấu hình giao diện (banner/background/color).", true, false, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"bannerUrl\":{\"type\":\"string\"},\r\n            \"backgroundUrl\":{\"type\":\"string\"},\r\n            \"primaryColor\":{\"type\":\"string\"},\r\n            \"secondaryColor\":{\"type\":\"string\"}\r\n          }\r\n        }", "themeAssets", "Theme Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 4, "Branding & UI", "string", "Text chào mừng hiển thị trên màn hình.", true, true, false, false, null, "welcomeScreenText", "Welcome Screen Text", true, null, 300, null, null, "Chào mừng bạn đến với...", null, 1, "textarea" },
+                    { 5, "Branding & UI", "string", "Link/QR điều hướng khách (landing page, form...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 1, "url" },
+                    { 6, "Branding & UI", "json", "Danh sách asset tài trợ hiển thị luân phiên.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "sponsorAssets", "Sponsor Assets", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 7, "Greeting & Script", "string", "Kịch bản chào hỏi / giới thiệu ngắn.", true, false, false, false, null, "greetingScript", "Greeting Script", true, null, 2000, null, null, "Xin chào quý khách...", null, 1, "textarea" },
+                    { 8, "Greeting & Script", "enum[]", "Ngôn ngữ sử dụng khi chào hỏi / hướng dẫn.", true, false, false, true, null, "languages", "Languages", true, null, null, null, "[\"VI\",\"EN\",\"JP\",\"KR\",\"CN\"]", null, null, 1, "multiSelect" },
+                    { 9, "Greeting & Script", "json", "Cấu hình giọng nói (tốc độ/độ cao...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 10, "Greeting & Script", "json", "Danh sách câu hỏi thường gặp (Q/A + keywords).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"question\":{\"type\":\"string\"},\r\n              \"answer\":{\"type\":\"string\"},\r\n              \"keywords\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"question\",\"answer\"]\r\n          }\r\n        }", "faqItems", "FAQ Items", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 11, "Check-in & Lead", "enum", "Chế độ check-in tại sự kiện.", true, false, false, true, null, "checkinMode", "Check-in Mode", true, null, null, null, "[\"None\",\"QR\",\"Form\"]", null, null, 1, "select" },
+                    { 12, "Check-in & Lead", "enum[]", "Các trường thu thập thông tin khách.", true, false, false, false, null, "leadFormFields", "Lead Form Fields", true, null, null, null, "[\"Name\",\"Phone\",\"Email\",\"Company\",\"Title\"]", null, null, 1, "multiSelect" },
+                    { 13, "Check-in & Lead", "string", "Thông báo quyền riêng tư khi thu thập dữ liệu.", true, false, false, false, null, "privacyNoticeText", "Privacy Notice Text", true, null, 2000, null, null, "Thông tin của bạn sẽ được sử dụng để...", null, 1, "textarea" },
+                    { 14, "Navigation", "json", "Danh sách điểm đến/booth để robot hướng dẫn.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"description\":{\"type\":\"string\"},\r\n              \"locationHint\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"name\"]\r\n          }\r\n        }", "pois", "Points of Interest (POI)", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 15, "Navigation", "json", "Quy tắc điều hướng (tốc độ, vùng cấm...).", true, true, true, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"noGoZones\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\r\n            \"preferredPaths\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n          }\r\n        }", "navigationRules", "Navigation Rules", true, null, null, null, null, null, null, 1, "jsonEditor" },
+                    { 16, "Show Set", "json", "Danh sách show set (nhạc + choreography + thời lượng + lặp).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"setName\":{\"type\":\"string\"},\r\n              \"musicTrackUrl\":{\"type\":\"string\"},\r\n              \"choreographyId\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":10},\r\n              \"repeatCount\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"setName\",\"durationSec\"]\r\n          }\r\n        }", "showSets", "Show Sets", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 17, "Show Set", "json", "Thứ tự chạy các set (theo index).", true, false, true, false, "{ \"type\":\"array\", \"items\":{\"type\":\"integer\",\"minimum\":0} }", "showOrder", "Show Order", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 18, "Cues & Triggers", "enum", "Cách kích hoạt biểu diễn.", true, false, false, true, null, "triggerMode", "Trigger Mode", true, null, null, null, "[\"Manual\",\"Scheduled\",\"RemoteSignal\"]", null, null, 2, "select" },
+                    { 19, "Cues & Triggers", "json", "Các cue/timecode điều khiển hành động trong show.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"timecodeSec\":{\"type\":\"integer\",\"minimum\":0},\r\n              \"action\":{\"type\":\"string\"},\r\n              \"note\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"timecodeSec\",\"action\"]\r\n          }\r\n        }", "cuePoints", "Cue Points", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 20, "Stage & Safety", "json", "Khu vực sân khấu và khoảng cách an toàn.", true, false, false, true, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"widthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"depthM\":{\"type\":\"number\",\"minimum\":1},\r\n            \"safeDistanceM\":{\"type\":\"number\",\"minimum\":0.5}\r\n          },\r\n          \"required\":[\"widthM\",\"depthM\",\"safeDistanceM\"]\r\n        }", "stageZone", "Stage Zone", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 21, "Stage & Safety", "json", "Giới hạn an toàn (tốc độ khớp, góc tay chân...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"maxJointSpeed\":{\"type\":\"number\",\"minimum\":0.1,\"maximum\":2.0},\r\n            \"maxLimbAngle\":{\"type\":\"number\",\"minimum\":10,\"maximum\":180},\r\n            \"emergencyStopRequired\":{\"type\":\"boolean\"}\r\n          }\r\n        }", "safetyLimits", "Safety Limits", true, null, null, null, null, null, null, 2, "jsonEditor" },
+                    { 22, "Stage & Safety", "bool", "Có yêu cầu rehearsal trước giờ chạy show hay không.", true, false, true, true, null, "rehearsalRequired", "Rehearsal Required", true, null, null, null, null, null, null, 2, "switch" },
+                    { 23, "Stage & Safety", "enum", "Mức độ rủi ro (do staff set) để phục vụ quản trị an toàn.", true, false, false, true, null, "riskLevel", "Risk Level", true, null, null, null, "[\"Low\",\"Medium\",\"High\"]", null, null, 2, "select" },
+                    { 24, "Visual Style", "string", "Theme trang phục/LED cho robot (nếu có).", true, false, true, false, null, "costumeOrLedTheme", "Costume/LED Theme", true, null, 200, null, null, "VD: Neon / Tết / Christmas...", null, 2, "text" },
+                    { 25, "Visual Style", "string", "1-2 câu chào mở đầu/kết thúc show.", true, true, false, false, null, "introOutroLines", "Intro/Outro Lines", true, null, 500, null, null, "Xin chào quý khách...", null, 2, "textarea" },
+                    { 26, "Script Timeline", "json", "Kịch bản theo timeline (blockTitle/text/language/duration).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"blockTitle\":{\"type\":\"string\"},\r\n              \"timecode\":{\"type\":\"string\"},\r\n              \"text\":{\"type\":\"string\"},\r\n              \"language\":{\"type\":\"string\"},\r\n              \"estimatedDurationSec\":{\"type\":\"integer\",\"minimum\":5},\r\n              \"interactionPrompts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}\r\n            },\r\n            \"required\":[\"blockTitle\",\"text\"]\r\n          }\r\n        }", "scriptBlocks", "Script Blocks", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 27, "Voice & Pronunciation", "json", "Từ điển phát âm (term/phonetic) cho tên riêng, thương hiệu.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"term\":{\"type\":\"string\"},\r\n              \"phonetic\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"term\",\"phonetic\"]\r\n          }\r\n        }", "pronunciationDict", "Pronunciation Dictionary", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 28, "Voice & Pronunciation", "json", "Cấu hình giọng MC (rate/pitch/volume).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"voiceName\":{\"type\":\"string\"},\r\n            \"rate\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.0},\r\n            \"pitch\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10},\r\n            \"volume\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "voiceProfile", "Voice Profile", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 29, "Voice & Pronunciation", "json", "Quy tắc âm lượng theo ngữ cảnh (quiet hours...).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\r\n            \"quietHoursVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 30, "On-screen Assets", "json", "Asset hiển thị (QR/Image/Slide + thời lượng).", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"type\":{\"type\":\"string\"},\r\n              \"url\":{\"type\":\"string\"},\r\n              \"displayDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"type\",\"url\"]\r\n          }\r\n        }", "screenAssets", "On-screen Assets", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 31, "On-screen Assets", "json", "Cấu hình countdown (nếu dùng).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"enabled\":{\"type\":\"boolean\"},\r\n            \"targetTime\":{\"type\":\"string\"}\r\n          }\r\n        }", "countdownSettings", "Countdown Settings", true, null, null, null, null, null, null, 3, "jsonEditor" },
+                    { 32, "Co-host Mode", "bool", "Có MC người phối hợp hay không.", true, false, false, true, null, "humanMcPresent", "Human MC Present", true, null, null, null, null, null, null, 3, "switch" },
+                    { 33, "Co-host Mode", "json", "Cue chuyển giao giữa robot và MC người.", true, false, false, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"cue\":{\"type\":\"string\"},\r\n              \"who\":{\"type\":\"string\"}\r\n            },\r\n            \"required\":[\"cue\",\"who\"]\r\n          }\r\n        }", "handoffCues", "Handoff Cues", true, null, null, null, "[\"Robot\",\"Human\"]", null, null, 3, "jsonEditor" },
+                    { 34, "Ad Playlist", "json", "Playlist quảng cáo (image/video + duration + order).", true, false, true, true, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"assetUrl\":{\"type\":\"string\"},\r\n              \"assetType\":{\"type\":\"string\"},\r\n              \"durationSec\":{\"type\":\"integer\",\"minimum\":1},\r\n              \"order\":{\"type\":\"integer\",\"minimum\":0}\r\n            },\r\n            \"required\":[\"assetUrl\",\"assetType\",\"durationSec\"]\r\n          }\r\n        }", "adPlaylist", "Ad Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 35, "Ad Playlist", "json", "Quy tắc chạy playlist (khung giờ, interval, peak mode).", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"start\":{\"type\":\"string\"},\r\n            \"end\":{\"type\":\"string\"},\r\n            \"peakMode\":{\"type\":\"boolean\"},\r\n            \"intervalSec\":{\"type\":\"integer\",\"minimum\":5}\r\n          }\r\n        }", "scheduleRules", "Schedule Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 36, "Audio & Announcement", "json", "Danh sách audio (nhạc nền) nếu sử dụng.", true, false, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "audioPlaylist", "Audio Playlist", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 37, "Audio & Announcement", "string", "Script thông báo/mời chào tại booth.", true, false, false, false, null, "announcementScript", "Announcement Script", true, null, 2000, null, null, "Mời quý khách ghé booth...", null, 4, "textarea" },
+                    { 38, "Audio & Announcement", "json", "Cấu hình âm lượng phát tại booth.", true, true, false, false, "{\r\n          \"type\":\"object\",\r\n          \"properties\":{\r\n            \"defaultVolume\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100}\r\n          }\r\n        }", "volumeRules", "Volume Rules", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 39, "CTA & Lead", "string", "Link/QR cho CTA (landing page, đăng ký...).", true, true, false, false, null, "ctaQrUrl", "CTA QR URL", true, null, 500, null, null, "https://...", null, 4, "url" },
+                    { 40, "CTA & Lead", "string", "Text CTA hiển thị trên màn hình/booth.", true, true, false, false, null, "ctaText", "CTA Text", true, null, 200, null, null, "Quét QR để nhận ưu đãi!", null, 4, "text" },
+                    { 41, "CTA & Lead", "string", "Luật voucher/ưu đãi (nếu có).", true, false, true, false, null, "voucherRule", "Voucher Rule", true, null, 2000, null, null, "VD: Giảm 10% cho 100 khách đầu tiên...", null, 4, "textarea" },
+                    { 42, "Booth Route", "enum", "Chế độ di chuyển tại booth.", true, false, false, true, null, "routeMode", "Route Mode", true, null, null, null, "[\"Static\",\"Patrol\"]", null, null, 4, "select" },
+                    { 43, "Booth Route", "json", "Các điểm dừng khi robot patrol.", true, false, true, false, "{\r\n          \"type\":\"array\",\r\n          \"items\":{\r\n            \"type\":\"object\",\r\n            \"properties\":{\r\n              \"name\":{\"type\":\"string\"},\r\n              \"stopDurationSec\":{\"type\":\"integer\",\"minimum\":1}\r\n            },\r\n            \"required\":[\"name\",\"stopDurationSec\"]\r\n          }\r\n        }", "routePoints", "Route Points", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 44, "Booth Route", "json", "Khu vực tránh (nếu có).", true, true, false, false, "{ \"type\":\"array\", \"items\":{\"type\":\"string\"} }", "avoidZones", "Avoid Zones", true, null, null, null, null, null, null, 4, "jsonEditor" },
+                    { 45, "Booth Route", "number", "Tốc độ tối đa (m/s) khi di chuyển.", true, true, false, false, null, "maxSpeed", "Max Speed", true, 2.0m, null, 0.1m, null, null, null, 4, "number" }
                 });
 
             migrationBuilder.InsertData(
@@ -1447,6 +1733,46 @@ namespace RoboRent_BE.Model.Migrations
                 column: "StaffId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveries_ActualDeliveryId",
+                table: "ChecklistDeliveries",
+                column: "ActualDeliveryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveries_CheckedByStaffId",
+                table: "ChecklistDeliveries",
+                column: "CheckedByStaffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveries_CustomerAcceptedById",
+                table: "ChecklistDeliveries",
+                column: "CustomerAcceptedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveryEvidences_ChecklistDeliveryId",
+                table: "ChecklistDeliveryEvidences",
+                column: "ChecklistDeliveryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveryEvidences_ChecklistDeliveryItemId",
+                table: "ChecklistDeliveryEvidences",
+                column: "ChecklistDeliveryItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveryEvidences_UploadedByStaffId",
+                table: "ChecklistDeliveryEvidences",
+                column: "UploadedByStaffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveryItems_ChecklistDeliveryId",
+                table: "ChecklistDeliveryItems",
+                column: "ChecklistDeliveryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChecklistDeliveryItemTemplates_RoboTypeId",
+                table: "ChecklistDeliveryItemTemplates",
+                column: "RoboTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ContractDrafts_ContractTemplatesId",
                 table: "ContractDrafts",
                 column: "ContractTemplatesId");
@@ -1572,6 +1898,16 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RentalId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notifications_RecipientId",
+                table: "Notifications",
+                column: "RecipientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_RentalId",
+                table: "Notifications",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaymentRecords_PriceQuoteId",
                 table: "PaymentRecords",
                 column: "PriceQuoteId");
@@ -1589,6 +1925,11 @@ namespace RoboRent_BE.Model.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PriceQuotes_RentalId",
                 table: "PriceQuotes",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalChangeLogs_RentalId",
+                table: "RentalChangeLogs",
                 column: "RentalId");
 
             migrationBuilder.CreateIndex(
@@ -1632,6 +1973,16 @@ namespace RoboRent_BE.Model.Migrations
                 column: "RobotTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RobotAbilityValues_RentalDetailId",
+                table: "RobotAbilityValues",
+                column: "RentalDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RobotAbilityValues_RobotAbilityId",
+                table: "RobotAbilityValues",
+                column: "RobotAbilityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RobotInGroups_RobotId",
                 table: "RobotInGroups",
                 column: "RobotId");
@@ -1661,9 +2012,6 @@ namespace RoboRent_BE.Model.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ActualDeliveries");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1682,6 +2030,12 @@ namespace RoboRent_BE.Model.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
+                name: "ChecklistDeliveryEvidences");
+
+            migrationBuilder.DropTable(
+                name: "ChecklistDeliveryItemTemplates");
+
+            migrationBuilder.DropTable(
                 name: "ContractReports");
 
             migrationBuilder.DropTable(
@@ -1694,13 +2048,16 @@ namespace RoboRent_BE.Model.Migrations
                 name: "FaceVerifications");
 
             migrationBuilder.DropTable(
+                name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "RentalChangeLogs");
+
+            migrationBuilder.DropTable(
                 name: "RentalContracts");
 
             migrationBuilder.DropTable(
-                name: "RentalDetails");
-
-            migrationBuilder.DropTable(
-                name: "RobotAbilities");
+                name: "RobotAbilityValues");
 
             migrationBuilder.DropTable(
                 name: "RobotInGroups");
@@ -1712,13 +2069,13 @@ namespace RoboRent_BE.Model.Migrations
                 name: "TypesOfRobos");
 
             migrationBuilder.DropTable(
-                name: "GroupSchedules");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "ChatRooms");
+
+            migrationBuilder.DropTable(
+                name: "ChecklistDeliveryItems");
 
             migrationBuilder.DropTable(
                 name: "DraftClauses");
@@ -1730,10 +2087,16 @@ namespace RoboRent_BE.Model.Migrations
                 name: "FaceProfiles");
 
             migrationBuilder.DropTable(
+                name: "RentalDetails");
+
+            migrationBuilder.DropTable(
+                name: "RobotAbilities");
+
+            migrationBuilder.DropTable(
                 name: "Robots");
 
             migrationBuilder.DropTable(
-                name: "ActivityTypeGroups");
+                name: "ChecklistDeliveries");
 
             migrationBuilder.DropTable(
                 name: "ContractDrafts");
@@ -1748,7 +2111,16 @@ namespace RoboRent_BE.Model.Migrations
                 name: "RoboTypes");
 
             migrationBuilder.DropTable(
+                name: "ActualDeliveries");
+
+            migrationBuilder.DropTable(
                 name: "ContractTemplates");
+
+            migrationBuilder.DropTable(
+                name: "GroupSchedules");
+
+            migrationBuilder.DropTable(
+                name: "ActivityTypeGroups");
 
             migrationBuilder.DropTable(
                 name: "Rentals");
