@@ -378,6 +378,37 @@ public class ContractDraftsService : IContractDraftsService
                         @"<div style=""flex: 1; text-align: right",
                         managerSignatureDiv + @"<div style=""flex: 1; text-align: right");
                 }
+                
+                // IMPORTANT: Ensure customer signature box exists when manager signs
+                // This ensures both borders are always present
+                if (!bodyJson.Contains("customer-signature-box"))
+                {
+                    // Add customer signature box if it doesn't exist
+                    var customerBoxHtml = $@"<div id=""customer-signature-box"" style=""{signatureBoxStyle}"">
+            {emptyBoxPlaceholder}
+        </div>";
+                    var customerSignatureDiv = $@"<div style=""flex: 1; text-align: right; padding-left: 20px;"">
+        <div style=""margin-bottom: 10px;"">
+            <strong>Customer Signature:</strong>
+        </div>
+        {customerBoxHtml}
+        <div style=""margin-top: 10px; font-size: 12px;"">
+            &nbsp;
+        </div>
+    </div>";
+                    
+                    // Try to insert customer signature section before the closing div of signature section
+                    var signatureSectionEnd = bodyJson.IndexOf("<!-- End Signature Section -->", StringComparison.OrdinalIgnoreCase);
+                    if (signatureSectionEnd >= 0)
+                    {
+                        // Check if customer signature already exists in some form
+                        if (!bodyJson.Contains("Customer Signature:"))
+                        {
+                            // Insert customer signature before the end comment
+                            bodyJson = bodyJson.Insert(signatureSectionEnd, customerSignatureDiv);
+                        }
+                    }
+                }
             }
             else
             {
@@ -1434,6 +1465,7 @@ public class ContractDraftsService : IContractDraftsService
 
     /// <summary>
     /// Extracts signature data from uploaded PDF file - handles both text and image signatures
+    /// Uses coordinate-based detection to find text in the customer signature box area
     /// </summary>
     private ExtractedSignatureData ExtractSignatureFromPdf(byte[] pdfBytes)
     {
@@ -1443,7 +1475,158 @@ public class ContractDraftsService : IContractDraftsService
         {
             using var document = PdfDocument.Open(pdfBytes);
             
-            // Extract ALL text from PDF
+            // First, find the "Customer Signature" label to determine the signature box area
+            var customerLabelPosition = FindCustomerSignatureLabelPosition(document);
+            
+            if (customerLabelPosition.HasValue)
+            {
+                var (labelX, labelY, labelPageIndex, pageWidth, pageHeight) = customerLabelPosition.Value;
+                
+                // Define customer signature box area (right side, below the label)
+                // Customer signature box is typically on the right half of the page, near the bottom
+                var boxLeftX = pageWidth * 0.45; // Slightly left of center to catch right-side text
+                var boxRightX = pageWidth;
+                var boxTopY = labelY + 50; // Area below the label (PDF Y increases downward)
+                var boxBottomY = labelY + 200; // Allow space for the signature box
+                
+                // Extract text with coordinates from the relevant page
+                var customerSignatureTexts = new List<(string Text, double Y)>();
+                int currentPageIndex = 0;
+                
+                foreach (var page in document.GetPages())
+                {
+                    // Only process the page where we found the label (or last page if label not found)
+                    if (customerLabelPosition.HasValue && currentPageIndex != labelPageIndex && labelPageIndex >= 0)
+                    {
+                        currentPageIndex++;
+                        continue;
+                    }
+                    
+                    // Get all letters with their positions
+                    var letters = page.Letters.ToList();
+                    
+                    if (letters.Count == 0)
+                    {
+                        currentPageIndex++;
+                        continue;
+                    }
+                    
+                    // Group letters into words by proximity
+                    var words = new List<(string Text, double X, double Y)>();
+                    var currentWord = new List<Letter>();
+                    
+                    foreach (var letter in letters.OrderBy(l => l.StartBaseLine.Y).ThenBy(l => l.StartBaseLine.X))
+                    {
+                        var letterX = letter.StartBaseLine.X;
+                        var letterY = letter.StartBaseLine.Y;
+                        
+                        // Check if this letter is in the customer signature box area
+                        // Note: In PDF coordinates, Y=0 is at bottom, so we check if Y is between boxBottomY and boxTopY
+                        bool inBoxArea = letterX >= boxLeftX && letterX <= boxRightX;
+                        
+                        // For Y coordinate: if label was found, use relative positioning; otherwise use bottom area
+                        if (labelPageIndex >= 0)
+                        {
+                            // Use relative positioning from label
+                            inBoxArea = inBoxArea && letterY >= boxTopY && letterY <= boxBottomY;
+                        }
+                        else
+                        {
+                            // Fallback: use bottom 30% of page, right half
+                            var bottomAreaStart = pageHeight * 0.7;
+                            inBoxArea = inBoxArea && letterY >= bottomAreaStart;
+                        }
+                        
+                        if (inBoxArea)
+                        {
+                            // Check if this letter is part of the current word or a new word
+                            if (currentWord.Count == 0 || 
+                                Math.Abs(letterX - currentWord.Last().StartBaseLine.X) < letter.Width * 2.5)
+                            {
+                                currentWord.Add(letter);
+                            }
+                            else
+                            {
+                                // Finish current word and start new one
+                                if (currentWord.Count > 0)
+                                {
+                                    var wordText = string.Join("", currentWord.Select(l => l.Value));
+                                    var wordY = currentWord.Average(l => l.StartBaseLine.Y);
+                                    words.Add((wordText, currentWord.Min(l => l.StartBaseLine.X), wordY));
+                                }
+                                currentWord = new List<Letter> { letter };
+                            }
+                        }
+                        else if (currentWord.Count > 0)
+                        {
+                            // Letter is outside box, finish current word
+                            var wordText = string.Join("", currentWord.Select(l => l.Value));
+                            var wordY = currentWord.Average(l => l.StartBaseLine.Y);
+                            words.Add((wordText, currentWord.Min(l => l.StartBaseLine.X), wordY));
+                            currentWord.Clear();
+                        }
+                    }
+                    
+                    // Add the last word if any
+                    if (currentWord.Count > 0)
+                    {
+                        var wordText = string.Join("", currentWord.Select(l => l.Value));
+                        var wordY = currentWord.Average(l => l.StartBaseLine.Y);
+                        words.Add((wordText, currentWord.Min(l => l.StartBaseLine.X), wordY));
+                    }
+                    
+                    // Filter out common labels and dates, collect signature text
+                    foreach (var word in words)
+                    {
+                        var cleanText = word.Text.Trim();
+                        
+                        // Skip if it's the label itself or common labels
+                        if (cleanText.Contains("Customer", StringComparison.OrdinalIgnoreCase) ||
+                            cleanText.Contains("Signature", StringComparison.OrdinalIgnoreCase) ||
+                            cleanText.Contains("Manager", StringComparison.OrdinalIgnoreCase) ||
+                            cleanText.Contains("End", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        
+                        // Skip date patterns
+                        if (Regex.IsMatch(cleanText, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
+                            continue;
+                        
+                        // Skip single characters that are likely punctuation or formatting
+                        if (cleanText.Length == 1 && !char.IsLetterOrDigit(cleanText[0]))
+                            continue;
+                        
+                        // This is likely the customer signature text
+                        if (!string.IsNullOrWhiteSpace(cleanText) && cleanText.Length >= 1)
+                        {
+                            customerSignatureTexts.Add((cleanText, word.Y));
+                        }
+                    }
+                    
+                    currentPageIndex++;
+                }
+                
+                // If we found text in the customer signature box area, use it
+                if (customerSignatureTexts.Any())
+                {
+                    // Combine all text found in the box area (in case signature spans multiple words)
+                    // Order by Y position (bottom to top, since PDF Y=0 is at bottom)
+                    var signatureText = string.Join(" ", customerSignatureTexts
+                        .OrderBy(t => t.Y) // Order by Y position (bottom to top)
+                        .Select(t => t.Text)
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                        .Distinct());
+                    
+                    if (!string.IsNullOrWhiteSpace(signatureText))
+                    {
+                        result.Type = SignatureType.Text;
+                        result.TextSignature = signatureText.Trim();
+                        result.FontFamily = "'Brush Script MT', cursive"; // Same style as manager
+                        return result;
+                    }
+                }
+            }
+            
+            // Fallback: Try traditional text extraction method (for backwards compatibility)
             var fullText = new System.Text.StringBuilder();
             foreach (var page in document.GetPages())
             {
@@ -1451,61 +1634,28 @@ public class ContractDraftsService : IContractDraftsService
             }
             var pdfText = fullText.ToString();
             
-            // Find text after "Customer Signature:" - accept ANY text as signature
             var customerSigIndex = pdfText.IndexOf("Customer Signature", StringComparison.OrdinalIgnoreCase);
             if (customerSigIndex >= 0)
             {
-                // Get text after "Customer Signature" - take a larger chunk to search
-                var searchWindow = pdfText.Substring(customerSigIndex, Math.Min(500, pdfText.Length - customerSigIndex));
-                
-                // Try multiple patterns to find the signature text
-                // Pattern 1: Text on same line after "Customer Signature:" or "Customer Signature"
-                var pattern1 = Regex.Match(searchWindow, @"Customer\s+Signature:?\s*([A-Za-z][A-Za-z0-9\s.'-]{1,100})", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-                if (pattern1.Success)
-                {
-                    var sigText = pattern1.Groups[1].Value.Trim();
-                    if (!string.IsNullOrWhiteSpace(sigText) && 
-                        !sigText.Equals("Signature", StringComparison.OrdinalIgnoreCase) &&
-                        !Regex.IsMatch(sigText, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
-                    {
-                        result.Type = SignatureType.Text;
-                        result.TextSignature = sigText;
-                        result.FontFamily = "'Brush Script MT', cursive"; // Same style as manager
-                        return result;
-                    }
-                }
-                
-                // Pattern 2: Get text after "Customer Signature" and look in next few lines
                 var afterLabel = pdfText.Substring(customerSigIndex + "Customer Signature".Length);
                 afterLabel = afterLabel.TrimStart(':', ' ', '\t', '\r', '\n');
-                
-                // Split into lines and find the signature
                 var lines = afterLabel.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 
                 foreach (var line in lines)
                 {
                     var cleanLine = line.Trim();
-                    
-                    // Skip empty lines
                     if (string.IsNullOrWhiteSpace(cleanLine))
                         continue;
-                    
-                    // Skip date patterns (like 01/08/2026)
                     if (Regex.IsMatch(cleanLine, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
                         continue;
-                    
-                    // Stop if we hit "Manager" or "End Signature Section" (wrong section)
                     if (cleanLine.Contains("Manager", StringComparison.OrdinalIgnoreCase) ||
                         cleanLine.Contains("End Signature", StringComparison.OrdinalIgnoreCase))
                         break;
-                    
-                    // Accept ANY text as signature - no validation needed!
-                    // Even "opdqpod" or "{}{" is valid as long as there's text
                     if (cleanLine.Length >= 1)
                     {
                         result.Type = SignatureType.Text;
                         result.TextSignature = cleanLine;
-                        result.FontFamily = "'Brush Script MT', cursive"; // Same style as manager
+                        result.FontFamily = "'Brush Script MT', cursive";
                         return result;
                     }
                 }
@@ -1525,8 +1675,6 @@ public class ContractDraftsService : IContractDraftsService
                     foreach (var image in images)
                     {
                         var imageX = image.Bounds.Left;
-                        
-                        // Only consider images on the right half of the page (customer side)
                         if (imageX >= midPageX - 100)
                         {
                             if (image.TryGetPng(out var imageBytes))
@@ -1546,7 +1694,6 @@ public class ContractDraftsService : IContractDraftsService
                 }
             }
             
-            // Use the last image found on customer side (likely the signature)
             if (signatureImages.Any())
             {
                 var signatureImage = signatureImages.Last();
@@ -1563,6 +1710,109 @@ public class ContractDraftsService : IContractDraftsService
         }
         
         return result;
+    }
+    
+    /// <summary>
+    /// Finds the position of "Customer Signature" label in the PDF to determine signature box coordinates
+    /// Uses a simpler approach: looks for text in the right half of the page near the bottom
+    /// </summary>
+    private (double X, double Y, int PageIndex, double PageWidth, double PageHeight)? FindCustomerSignatureLabelPosition(PdfDocument document)
+    {
+        try
+        {
+            int pageIndex = 0;
+            foreach (var page in document.GetPages())
+            {
+                var pageWidth = page.Width;
+                var pageHeight = page.Height;
+                var letters = page.Letters.ToList();
+                
+                if (letters.Count == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+                
+                // Group letters into words
+                var words = new List<(string Text, double X, double Y)>();
+                var currentWord = new List<Letter>();
+                
+                foreach (var letter in letters.OrderBy(l => l.StartBaseLine.Y).ThenBy(l => l.StartBaseLine.X))
+                {
+                    var letterX = letter.StartBaseLine.X;
+                    var letterY = letter.StartBaseLine.Y;
+                    
+                    // Check if this letter should be part of the current word
+                    if (currentWord.Count == 0 || 
+                        Math.Abs(letterX - currentWord.Last().StartBaseLine.X) < letter.Width * 2)
+                    {
+                        currentWord.Add(letter);
+                    }
+                    else
+                    {
+                        // Finish current word
+                        if (currentWord.Count > 0)
+                        {
+                            var wordText = string.Join("", currentWord.Select(l => l.Value));
+                            var wordX = currentWord.Min(l => l.StartBaseLine.X);
+                            var wordY = currentWord.Average(l => l.StartBaseLine.Y);
+                            words.Add((wordText, wordX, wordY));
+                        }
+                        currentWord = new List<Letter> { letter };
+                    }
+                }
+                
+                // Add the last word
+                if (currentWord.Count > 0)
+                {
+                    var wordText = string.Join("", currentWord.Select(l => l.Value));
+                    var wordX = currentWord.Min(l => l.StartBaseLine.X);
+                    var wordY = currentWord.Average(l => l.StartBaseLine.Y);
+                    words.Add((wordText, wordX, wordY));
+                }
+                
+                // Look for "Customer Signature" label - typically in the bottom third of the page, right half
+                var bottomThirdStart = pageHeight * 0.66; // Bottom third starts at 66% of page height
+                var rightHalfStart = pageWidth * 0.5; // Right half starts at 50% of page width
+                
+                for (int i = 0; i < words.Count - 1; i++)
+                {
+                    var word1 = words[i];
+                    var word2 = words[i + 1];
+                    
+                    // Check if words are close together horizontally and vertically
+                    var horizontalDistance = Math.Abs(word2.X - (word1.X + word1.Text.Length * 10)); // Approximate width
+                    var verticalDistance = Math.Abs(word2.Y - word1.Y);
+                    
+                    if (horizontalDistance < 50 && verticalDistance < 20)
+                    {
+                        var combined = (word1.Text + " " + word2.Text).Trim();
+                        if (combined.Contains("Customer", StringComparison.OrdinalIgnoreCase) &&
+                            combined.Contains("Signature", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Check if it's in the right area (right half, bottom third)
+                            var labelX = Math.Max(word1.X, word2.X);
+                            var labelY = Math.Max(word1.Y, word2.Y);
+                            
+                            if (labelX >= rightHalfStart - 100 && labelY >= bottomThirdStart - 100)
+                            {
+                                return (labelX, labelY, pageIndex, pageWidth, pageHeight);
+                            }
+                        }
+                    }
+                }
+                
+                // If we didn't find the exact label, return a default position for right side, bottom area
+                // This is a fallback for when the label text isn't found but we still want to search the signature area
+                return (pageWidth * 0.75, pageHeight * 0.8, pageIndex, pageWidth, pageHeight);
+            }
+        }
+        catch
+        {
+            // If coordinate-based search fails, return null to use fallback method
+        }
+        
+        return null;
     }
 
     /// <summary>
