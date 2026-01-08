@@ -20,6 +20,7 @@
       <PackageReference Include="PuppeteerSharp" Version="20.0.0" />
       <PackageReference Include="Docnet.Core" Version="2.6.0" />
       <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.0" />
+      <PackageReference Include="PdfPig" Version="0.1.8" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Defaults/ContractTemplateDefaultBody.html" />

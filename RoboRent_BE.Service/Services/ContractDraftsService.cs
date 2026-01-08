@@ -20,6 +20,9 @@ using Docnet.Core.Models;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using UglyToad.PdfPig;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.XObjects;
 
 namespace RoboRent_BE.Service.Services;
 
@@ -303,13 +306,18 @@ public class ContractDraftsService : IContractDraftsService
         var signatureSectionId = "contract-signatures-section";
         var hasSignatureSection = bodyJson.Contains(signatureSectionId);
 
+        // Signature box styles - rectangle box for clear signing area
+        var signatureBoxStyle = @"border: 2px solid #000; min-height: 60px; padding: 10px; display: flex; align-items: center; justify-content: center;";
+        var signedBoxStyle = @"font-family: 'Brush Script MT', cursive; font-size: 28px; border: 2px solid #000; min-height: 60px; padding: 10px; display: flex; align-items: center; justify-content: center;";
+        var emptyBoxPlaceholder = @"<span style=""color: #999; font-size: 14px; font-style: italic;""></span>";
+
         if (hasSignatureSection)
         {
             // Update existing signature section
             if (side == "left")
             {
-                // Add/update manager signature (left side)
-                var signatureValue = $@"<div style=""font-family: 'Brush Script MT', cursive; font-size: 30px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+                // Add/update manager signature (left side) with rectangle box
+                var signatureBoxHtml = $@"<div id=""manager-signature-box"" style=""{signedBoxStyle}"">
             {signature}
         </div>";
                 
@@ -320,38 +328,36 @@ public class ContractDraftsService : IContractDraftsService
                 // Check if manager signature section exists
                 if (bodyJson.Contains("Manager Signature:"))
                 {
-                    // Find and replace just the signature value and date divs, not the entire structure
-                    // First, find the position of "Manager Signature:"
-                    var managerSigIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
-                    
-                    if (managerSigIndex >= 0)
+                    // Replace the manager signature box using regex
+                    var pattern = @"<div id=""manager-signature-box""[^>]*>.*?</div>";
+                    if (Regex.IsMatch(bodyJson, pattern, RegexOptions.Singleline))
                     {
-                        // Find the closing </strong></div> after "Manager Signature:"
-                        var afterStrongClose = bodyJson.IndexOf("</strong>", managerSigIndex);
-                        if (afterStrongClose >= 0)
+                        bodyJson = Regex.Replace(bodyJson, pattern, signatureBoxHtml, RegexOptions.Singleline);
+                    }
+                    else
+                    {
+                        // Fallback: Find and replace the old structure
+                        var managerSigIndex = bodyJson.IndexOf("Manager Signature:", StringComparison.OrdinalIgnoreCase);
+                        if (managerSigIndex >= 0)
                         {
-                            var afterFirstDiv = bodyJson.IndexOf("</div>", afterStrongClose);
-                            if (afterFirstDiv >= 0)
+                            var afterStrongClose = bodyJson.IndexOf("</strong>", managerSigIndex);
+                            if (afterStrongClose >= 0)
                             {
-                                // Now we're positioned right after the "Manager Signature:" label
-                                // Find the next two </div> closing tags (signature div and date div)
-                                var signatureDivStart = afterFirstDiv + 6; // Skip past </div>
-                                
-                                // Find the signature div (the one with cursive font)
-                                var signatureDivEnd = bodyJson.IndexOf("</div>", signatureDivStart);
-                                if (signatureDivEnd >= 0)
+                                var afterFirstDiv = bodyJson.IndexOf("</div>", afterStrongClose);
+                                if (afterFirstDiv >= 0)
                                 {
-                                    // Find the date div
-                                    var dateDivStart = signatureDivEnd + 6;
-                                    var dateDivEnd = bodyJson.IndexOf("</div>", dateDivStart);
-                                    
-                                    if (dateDivEnd >= 0)
+                                    var signatureDivStart = afterFirstDiv + 6;
+                                    var signatureDivEnd = bodyJson.IndexOf("</div>", signatureDivStart);
+                                    if (signatureDivEnd >= 0)
                                     {
-                                        // Replace both the signature and date divs
-                                        var beforeSignature = bodyJson.Substring(0, signatureDivStart);
-                                        var afterDate = bodyJson.Substring(dateDivEnd + 6);
-                                        
-                                        bodyJson = beforeSignature + "\n        " + signatureValue + "\n        " + dateValue + afterDate;
+                                        var dateDivStart = signatureDivEnd + 6;
+                                        var dateDivEnd = bodyJson.IndexOf("</div>", dateDivStart);
+                                        if (dateDivEnd >= 0)
+                                        {
+                                            var beforeSignature = bodyJson.Substring(0, signatureDivStart);
+                                            var afterDate = bodyJson.Substring(dateDivEnd + 6);
+                                            bodyJson = beforeSignature + "\n        " + signatureBoxHtml + "\n        " + dateValue + afterDate;
+                                        }
                                     }
                                 }
                             }
@@ -360,12 +366,11 @@ public class ContractDraftsService : IContractDraftsService
                 }
                 else
                 {
-                    // Insert manager signature before customer signature - this shouldn't happen normally
                     var managerSignatureDiv = $@"<div style=""flex: 1; text-align: left; padding-right: 20px;"">
         <div style=""margin-bottom: 10px;"">
             <strong>Manager Signature:</strong>
         </div>
-        {signatureValue}
+        {signatureBoxHtml}
         {dateValue}
     </div>";
                     
@@ -376,14 +381,16 @@ public class ContractDraftsService : IContractDraftsService
             }
             else
             {
-                // Add/update customer signature (right side)
+                // Add/update customer signature (right side) with rectangle box
+                var signatureBoxHtml = $@"<div id=""customer-signature-box"" style=""{signedBoxStyle}"">
+            {signature}
+        </div>";
+
                 var customerSignatureDiv = $@"<div style=""flex: 1; text-align: right; padding-left: 20px;"">
         <div style=""margin-bottom: 10px;"">
             <strong>Customer Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
-            {signature}
-        </div>
+        {signatureBoxHtml}
         <div style=""margin-top: 10px; font-size: 12px;"">
             {DateTime.UtcNow.ToString("MM/dd/yyyy")}
         </div>
@@ -394,11 +401,10 @@ public class ContractDraftsService : IContractDraftsService
                 {
                     // Replace existing customer signature using regex
                     var pattern = @"<div style=""flex: 1; text-align: right[^>]*>.*?Customer Signature:.*?</div>\s*</div>\s*</div>";
-                    bodyJson = System.Text.RegularExpressions.Regex.Replace(bodyJson, pattern, customerSignatureDiv, System.Text.RegularExpressions.RegexOptions.Singleline);
+                    bodyJson = Regex.Replace(bodyJson, pattern, customerSignatureDiv, RegexOptions.Singleline);
                 }
                 else
                 {
-                    // Insert customer signature after manager signature
                     bodyJson = bodyJson.Replace(
                         @"</div>\s*</div>\s*<!-- End Signature Section -->",
                         customerSignatureDiv + @"</div></div><!-- End Signature Section -->");
@@ -409,18 +415,18 @@ public class ContractDraftsService : IContractDraftsService
         }
         else
         {
-            // Create new signature section with both sides
+            // Create new signature section with both sides - using rectangle boxes
             string signatureHtml;
             if (side == "left")
             {
-                // Manager signs first
+                // Manager signs first - manager has signature, customer has empty box
                 signatureHtml = $@"
 <div id=""{signatureSectionId}"" style=""display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 2px solid #000;"">
     <div style=""flex: 1; text-align: left; padding-right: 20px;"">
         <div style=""margin-bottom: 10px;"">
             <strong>Manager Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+        <div id=""manager-signature-box"" style=""{signedBoxStyle}"">
             {signature}
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
@@ -431,8 +437,8 @@ public class ContractDraftsService : IContractDraftsService
         <div style=""margin-bottom: 10px;"">
             <strong>Customer Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
-            &nbsp;
+        <div id=""customer-signature-box"" style=""{signatureBoxStyle}"">
+            {emptyBoxPlaceholder}
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
             &nbsp;
@@ -450,8 +456,8 @@ public class ContractDraftsService : IContractDraftsService
         <div style=""margin-bottom: 10px;"">
             <strong>Manager Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
-            &nbsp;
+        <div id=""manager-signature-box"" style=""{signatureBoxStyle}"">
+            {emptyBoxPlaceholder}
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
             &nbsp;
@@ -461,7 +467,7 @@ public class ContractDraftsService : IContractDraftsService
         <div style=""margin-bottom: 10px;"">
             <strong>Customer Signature:</strong>
         </div>
-        <div style=""font-family: 'Brush Script MT', cursive; font-size: 24px; min-height: 60px; border-bottom: 1px solid #000; padding-bottom: 5px;"">
+        <div id=""customer-signature-box"" style=""{signedBoxStyle}"">
             {signature}
         </div>
         <div style=""margin-top: 10px; font-size: 12px;"">
@@ -1406,6 +1412,399 @@ public class ContractDraftsService : IContractDraftsService
         public DateTime ExpiresAt { get; set; }
     }
 
+    /// <summary>
+    /// Represents extracted signature data from uploaded file
+    /// </summary>
+    private class ExtractedSignatureData
+    {
+        public SignatureType Type { get; set; }
+        public string? TextSignature { get; set; }
+        public string? FontFamily { get; set; }
+        public byte[]? ImageData { get; set; }
+        public string? ImageBase64 { get; set; }
+        public string? ImageMimeType { get; set; }
+    }
+
+    private enum SignatureType
+    {
+        None,
+        Text,
+        Image
+    }
+
+    /// <summary>
+    /// Extracts signature data from uploaded PDF file - handles both text and image signatures
+    /// </summary>
+    private ExtractedSignatureData ExtractSignatureFromPdf(byte[] pdfBytes)
+    {
+        var result = new ExtractedSignatureData { Type = SignatureType.None };
+        
+        try
+        {
+            using var document = PdfDocument.Open(pdfBytes);
+            
+            // Extract ALL text from PDF
+            var fullText = new System.Text.StringBuilder();
+            foreach (var page in document.GetPages())
+            {
+                fullText.AppendLine(page.Text);
+            }
+            var pdfText = fullText.ToString();
+            
+            // Find text after "Customer Signature:" - accept ANY text as signature
+            var customerSigIndex = pdfText.IndexOf("Customer Signature", StringComparison.OrdinalIgnoreCase);
+            if (customerSigIndex >= 0)
+            {
+                // Get text after "Customer Signature" - take a larger chunk to search
+                var searchWindow = pdfText.Substring(customerSigIndex, Math.Min(500, pdfText.Length - customerSigIndex));
+                
+                // Try multiple patterns to find the signature text
+                // Pattern 1: Text on same line after "Customer Signature:" or "Customer Signature"
+                var pattern1 = Regex.Match(searchWindow, @"Customer\s+Signature:?\s*([A-Za-z][A-Za-z0-9\s.'-]{1,100})", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                if (pattern1.Success)
+                {
+                    var sigText = pattern1.Groups[1].Value.Trim();
+                    if (!string.IsNullOrWhiteSpace(sigText) && 
+                        !sigText.Equals("Signature", StringComparison.OrdinalIgnoreCase) &&
+                        !Regex.IsMatch(sigText, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
+                    {
+                        result.Type = SignatureType.Text;
+                        result.TextSignature = sigText;
+                        result.FontFamily = "'Brush Script MT', cursive"; // Same style as manager
+                        return result;
+                    }
+                }
+                
+                // Pattern 2: Get text after "Customer Signature" and look in next few lines
+                var afterLabel = pdfText.Substring(customerSigIndex + "Customer Signature".Length);
+                afterLabel = afterLabel.TrimStart(':', ' ', '\t', '\r', '\n');
+                
+                // Split into lines and find the signature
+                var lines = afterLabel.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                foreach (var line in lines)
+                {
+                    var cleanLine = line.Trim();
+                    
+                    // Skip empty lines
+                    if (string.IsNullOrWhiteSpace(cleanLine))
+                        continue;
+                    
+                    // Skip date patterns (like 01/08/2026)
+                    if (Regex.IsMatch(cleanLine, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
+                        continue;
+                    
+                    // Stop if we hit "Manager" or "End Signature Section" (wrong section)
+                    if (cleanLine.Contains("Manager", StringComparison.OrdinalIgnoreCase) ||
+                        cleanLine.Contains("End Signature", StringComparison.OrdinalIgnoreCase))
+                        break;
+                    
+                    // Accept ANY text as signature - no validation needed!
+                    // Even "opdqpod" or "{}{" is valid as long as there's text
+                    if (cleanLine.Length >= 1)
+                    {
+                        result.Type = SignatureType.Text;
+                        result.TextSignature = cleanLine;
+                        result.FontFamily = "'Brush Script MT', cursive"; // Same style as manager
+                        return result;
+                    }
+                }
+            }
+            
+            // Fallback: Try to find images on the customer side (right half of page)
+            var signatureImages = new List<(byte[] Data, string MimeType)>();
+            
+            foreach (var page in document.GetPages())
+            {
+                var pageWidth = page.Width;
+                var midPageX = pageWidth / 2;
+                
+                try
+                {
+                    var images = page.GetImages().ToList();
+                    foreach (var image in images)
+                    {
+                        var imageX = image.Bounds.Left;
+                        
+                        // Only consider images on the right half of the page (customer side)
+                        if (imageX >= midPageX - 100)
+                        {
+                            if (image.TryGetPng(out var imageBytes))
+                            {
+                                signatureImages.Add((imageBytes, "image/png"));
+                            }
+                            else if (image.RawBytes.Count > 0)
+                            {
+                                signatureImages.Add((image.RawBytes.ToArray(), "image/jpeg"));
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Image extraction failed
+                }
+            }
+            
+            // Use the last image found on customer side (likely the signature)
+            if (signatureImages.Any())
+            {
+                var signatureImage = signatureImages.Last();
+                result.Type = SignatureType.Image;
+                result.ImageData = signatureImage.Data;
+                result.ImageMimeType = signatureImage.MimeType;
+                result.ImageBase64 = Convert.ToBase64String(signatureImage.Data);
+                return result;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting signature from PDF: {ex.Message}");
+        }
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Maps PDF font names to CSS font families
+    /// </summary>
+    private string DetectSignatureFontFamily(string? pdfFontName)
+    {
+        if (string.IsNullOrEmpty(pdfFontName))
+            return "'Brush Script MT', cursive"; // Default signature font
+        
+        var fontLower = pdfFontName.ToLowerInvariant();
+        
+        // Script/cursive fonts
+        if (fontLower.Contains("brush") || fontLower.Contains("script") || fontLower.Contains("cursive"))
+            return "'Brush Script MT', cursive";
+        
+        if (fontLower.Contains("segoe") && fontLower.Contains("script"))
+            return "'Segoe Script', cursive";
+        
+        if (fontLower.Contains("lucida") && fontLower.Contains("handwriting"))
+            return "'Lucida Handwriting', cursive";
+        
+        if (fontLower.Contains("comic"))
+            return "'Comic Sans MS', cursive";
+        
+        if (fontLower.Contains("monotype") && fontLower.Contains("corsiva"))
+            return "'Monotype Corsiva', cursive";
+        
+        if (fontLower.Contains("palace") || fontLower.Contains("script"))
+            return "'Palace Script MT', cursive";
+        
+        if (fontLower.Contains("freestyle"))
+            return "'Freestyle Script', cursive";
+        
+        if (fontLower.Contains("bradley"))
+            return "'Bradley Hand ITC', cursive";
+        
+        if (fontLower.Contains("mistral"))
+            return "'Mistral', cursive";
+        
+        // Handwritten style fonts
+        if (fontLower.Contains("hand") || fontLower.Contains("write"))
+            return "'Segoe Script', cursive";
+        
+        // Default to cursive for signature styling
+        return "'Brush Script MT', cursive";
+    }
+
+    /// <summary>
+    /// Extracts signature data from uploaded Word document
+    /// </summary>
+    private ExtractedSignatureData ExtractSignatureFromWord(Stream fileStream)
+    {
+        var result = new ExtractedSignatureData { Type = SignatureType.None };
+        
+        try
+        {
+            using var wordDoc = WordprocessingDocument.Open(fileStream, false);
+            var mainPart = wordDoc.MainDocumentPart;
+            if (mainPart == null)
+                return result;
+            
+            var body = mainPart.Document?.Body;
+            if (body == null)
+                return result;
+            
+            // Look for images in the document (signature images)
+            var imageParts = mainPart.ImageParts.ToList();
+            if (imageParts.Any())
+            {
+                // Get the last image (likely the signature)
+                var lastImage = imageParts.Last();
+                using var imageStream = lastImage.GetStream();
+                using var ms = new MemoryStream();
+                imageStream.CopyTo(ms);
+                var imageBytes = ms.ToArray();
+                
+                if (imageBytes.Length > 100) // Minimum size for a valid signature image
+                {
+                    result.Type = SignatureType.Image;
+                    result.ImageData = imageBytes;
+                    result.ImageMimeType = lastImage.ContentType;
+                    result.ImageBase64 = Convert.ToBase64String(imageBytes);
+                    return result;
+                }
+            }
+            
+            // If no image, extract text and look for signature
+            var fullText = body.InnerText;
+            var customerSignature = ExtractCustomerSignatureFromText(fullText);
+            
+            if (!string.IsNullOrWhiteSpace(customerSignature))
+            {
+                result.Type = SignatureType.Text;
+                result.TextSignature = customerSignature;
+                result.FontFamily = "'Brush Script MT', cursive"; // Default for Word extractions
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting signature from Word: {ex.Message}");
+        }
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Extracts customer signature text from plain text content
+    /// </summary>
+    private string ExtractCustomerSignatureFromText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+        
+        // Find "Customer Signature" and extract text after it
+        var customerSigIndex = text.IndexOf("Customer Signature", StringComparison.OrdinalIgnoreCase);
+        if (customerSigIndex < 0)
+            return string.Empty;
+        
+        // Get text after the label
+        var afterLabel = text.Substring(customerSigIndex + "Customer Signature".Length);
+        
+        // Remove common separators and whitespace
+        afterLabel = afterLabel.TrimStart(':', ' ', '\t', '\r', '\n');
+        
+        // Find where to stop (Manager Signature, End, or date pattern)
+        var stopPatterns = new[] { "Manager Signature", "End Signature", "<!-- End" };
+        var endIndex = afterLabel.Length;
+        
+        foreach (var pattern in stopPatterns)
+        {
+            var idx = afterLabel.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
+            if (idx > 0 && idx < endIndex)
+                endIndex = idx;
+        }
+        
+        // Also stop at date patterns
+        var dateMatch = Regex.Match(afterLabel, @"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}");
+        if (dateMatch.Success && dateMatch.Index < endIndex)
+            endIndex = dateMatch.Index;
+        
+        var signatureText = afterLabel.Substring(0, endIndex).Trim();
+        
+        // Clean up and validate
+        signatureText = Regex.Replace(signatureText, @"\s+", " ").Trim();
+        
+        // Must be reasonable length for a signature
+        if (signatureText.Length >= 2 && signatureText.Length <= 100)
+            return signatureText;
+        
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Adds customer signature to contract body JSON - supports both text and image signatures
+    /// Uses the rectangle box structure with id="customer-signature-box"
+    /// </summary>
+    private string AddCustomerSignatureToContract(string bodyJson, ExtractedSignatureData signatureData)
+    {
+        if (string.IsNullOrEmpty(bodyJson) || signatureData.Type == SignatureType.None)
+            return bodyJson;
+        
+        string signatureContent;
+        
+        if (signatureData.Type == SignatureType.Image && !string.IsNullOrEmpty(signatureData.ImageBase64))
+        {
+            // Image signature - embed as base64 img tag
+            var mimeType = signatureData.ImageMimeType ?? "image/png";
+            signatureContent = $@"<img src=""data:{mimeType};base64,{signatureData.ImageBase64}"" alt=""Customer Signature"" style=""max-height: 50px; max-width: 200px;"" />";
+        }
+        else if (signatureData.Type == SignatureType.Text && !string.IsNullOrEmpty(signatureData.TextSignature))
+        {
+            // Text signature - HTML encode for safety
+            signatureContent = WebUtility.HtmlEncode(signatureData.TextSignature);
+        }
+        else
+        {
+            return bodyJson;
+        }
+        
+        // New box style for signed signature
+        var signedBoxStyle = @"font-family: 'Brush Script MT', cursive; font-size: 28px; border: 2px solid #000; min-height: 60px; padding: 10px; display: flex; align-items: center; justify-content: center;";
+        
+        // Try to find and replace the customer-signature-box div (new rectangle box structure)
+        var boxPattern = @"<div id=""customer-signature-box""[^>]*>[\s\S]*?</div>";
+        var boxMatch = Regex.Match(bodyJson, boxPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
+        if (boxMatch.Success)
+        {
+            // Replace the entire customer signature box with the signed version
+            var newBox = $@"<div id=""customer-signature-box"" style=""{signedBoxStyle}"">
+            {signatureContent}
+        </div>";
+            
+            bodyJson = bodyJson.Substring(0, boxMatch.Index) + newBox + bodyJson.Substring(boxMatch.Index + boxMatch.Length);
+            
+            // Also update the date
+            var datePattern = @"(customer-signature-box[\s\S]*?<div style=""margin-top: 10px; font-size: 12px;"">)\s*(&nbsp;|[\s]*)\s*(</div>)";
+            var dateMatch = Regex.Match(bodyJson, datePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (dateMatch.Success)
+            {
+                var newDate = $"{dateMatch.Groups[1].Value}\n            {DateTime.UtcNow.ToString("MM/dd/yyyy")}\n        {dateMatch.Groups[3].Value}";
+                bodyJson = bodyJson.Substring(0, dateMatch.Index) + newDate + bodyJson.Substring(dateMatch.Index + dateMatch.Length);
+            }
+            
+            return bodyJson;
+        }
+        
+        // Fallback: Try old pattern for backwards compatibility
+        var customerSignaturePattern = @"(<div[^>]*>[\s\S]*?<strong>Customer Signature:</strong>[\s\S]*?</div>[\s\S]*?<div[^>]*font-family:[^>]*>)([\s\S]*?)(</div>[\s\S]*?<div[^>]*margin-top:[^>]*>[\s\S]*?</div>[\s\S]*?</div>)";
+        
+        var match = Regex.Match(bodyJson, customerSignaturePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
+        if (match.Success)
+        {
+            var replacement = $"{match.Groups[1].Value}\n            {signatureContent}\n        {match.Groups[3].Value}";
+            bodyJson = bodyJson.Substring(0, match.Index) + replacement + bodyJson.Substring(match.Index + match.Length);
+        }
+        else
+        {
+            // Try simpler pattern
+            var simplePattern = @"(Customer Signature:[\s\S]*?<div[^>]*cursive[^>]*>)\s*([\s\S]*?)\s*(</div>)";
+            var simpleMatch = Regex.Match(bodyJson, simplePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            
+            if (simpleMatch.Success)
+            {
+                var replacement = $"{simpleMatch.Groups[1].Value}\n            {signatureContent}\n        {simpleMatch.Groups[3].Value}";
+                bodyJson = bodyJson.Substring(0, simpleMatch.Index) + replacement + bodyJson.Substring(simpleMatch.Index + simpleMatch.Length);
+            }
+            else
+            {
+                // Final fallback: Use AddSignatureToContract
+                if (signatureData.Type == SignatureType.Text && !string.IsNullOrEmpty(signatureData.TextSignature))
+                {
+                    bodyJson = AddSignatureToContract(bodyJson, signatureData.TextSignature, "right");
+                }
+            }
+        }
+        
+        return bodyJson;
+    }
+
     public async Task<byte[]> DownloadContractAsPdfAsync(int id, int userId)
     {
         var contractDraft = await _contractDraftsRepository.GetAsync(
@@ -1575,86 +1974,217 @@ public class ContractDraftsService : IContractDraftsService
         if (string.IsNullOrEmpty(contractDraft.OriginalBodyJson))
             throw new InvalidOperationException("Original contract not found. Please download the contract first before signing.");
 
-        // Read uploaded file content
-        string uploadedContent;
-        using (var reader = new StreamReader(signedContractFile.OpenReadStream()))
-        {
-            uploadedContent = await reader.ReadToEndAsync();
-        }
-
-        // Extract HTML from uploaded file (if it's PDF or Word, we'd need to parse it)
-        // For now, assume the file contains HTML or we need to extract text from PDF/Word
-        // This is a simplified version - in production, you'd use proper PDF/Word parsing libraries
-        
-        // For PDF: Extract text using a PDF library
-        // For Word: Extract text using DocumentFormat.OpenXml
-        // For HTML: Use as-is
-        
-        string extractedContent = uploadedContent;
+        // Determine file type
+        bool isPdfFile = signedContractFile.ContentType == "application/pdf" || 
+                         signedContractFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+        bool isWordFile = signedContractFile.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
+                          signedContractFile.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase);
         bool isHtmlFile = signedContractFile.ContentType == "text/html" || 
                           signedContractFile.FileName.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ||
                           signedContractFile.FileName.EndsWith(".htm", StringComparison.OrdinalIgnoreCase);
-        
-        // If file is PDF, extract text using Docnet.Core
-        if (signedContractFile.ContentType == "application/pdf" || signedContractFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+
+        ExtractedSignatureData signatureData = new ExtractedSignatureData { Type = SignatureType.None };
+        string extractedContent = string.Empty;
+
+        // Process file based on type
+        if (isPdfFile)
         {
+            // Read PDF bytes
             using var memoryStream = new MemoryStream();
             await signedContractFile.CopyToAsync(memoryStream);
             var pdfBytes = memoryStream.ToArray();
             
-            using var docReader = DocLib.Instance.GetDocReader(pdfBytes, new PageDimensions(1080, 1920));
-            var textBuilder = new System.Text.StringBuilder();
+            // Extract signature using PdfPig (supports both text and images)
+            signatureData = ExtractSignatureFromPdf(pdfBytes);
             
-            for (int i = 0; i < docReader.GetPageCount(); i++)
+            // Also extract text content for validation using Docnet
+            try
             {
-                using var pageReader = docReader.GetPageReader(i);
-                var pageText = pageReader.GetText();
-                textBuilder.AppendLine(pageText);
+                using var docReader = DocLib.Instance.GetDocReader(pdfBytes, new PageDimensions(1080, 1920));
+                var textBuilder = new System.Text.StringBuilder();
+                
+                for (int i = 0; i < docReader.GetPageCount(); i++)
+                {
+                    using var pageReader = docReader.GetPageReader(i);
+                    var pageText = pageReader.GetText();
+                    textBuilder.AppendLine(pageText);
+                }
+                
+                extractedContent = textBuilder.ToString();
+                
+                // Fallback: If PdfPig didn't find signature, try extracting from Docnet text
+                if (signatureData.Type == SignatureType.None && !string.IsNullOrEmpty(extractedContent))
+                {
+                    var customerSigIndex = extractedContent.IndexOf("Customer Signature", StringComparison.OrdinalIgnoreCase);
+                    if (customerSigIndex >= 0)
+                    {
+                        var searchWindow = extractedContent.Substring(customerSigIndex, Math.Min(500, extractedContent.Length - customerSigIndex));
+                        var pattern = Regex.Match(searchWindow, @"Customer\s+Signature:?\s*([A-Za-z][A-Za-z0-9\s.'-]{1,100})", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                        if (pattern.Success)
+                        {
+                            var sigText = pattern.Groups[1].Value.Trim();
+                            if (!string.IsNullOrWhiteSpace(sigText) && 
+                                !sigText.Equals("Signature", StringComparison.OrdinalIgnoreCase) &&
+                                !Regex.IsMatch(sigText, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"))
+                            {
+                                signatureData = new ExtractedSignatureData
+                                {
+                                    Type = SignatureType.Text,
+                                    TextSignature = sigText,
+                                    FontFamily = "'Brush Script MT', cursive"
+                                };
+                            }
+                        }
+                        
+                        // If pattern didn't match, try line-by-line approach
+                        if (signatureData.Type == SignatureType.None)
+                        {
+                            var afterLabel = extractedContent.Substring(customerSigIndex + "Customer Signature".Length);
+                            afterLabel = afterLabel.TrimStart(':', ' ', '\t', '\r', '\n');
+                            var lines = afterLabel.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var line in lines)
+                            {
+                                var cleanLine = line.Trim();
+                                if (string.IsNullOrWhiteSpace(cleanLine) ||
+                                    Regex.IsMatch(cleanLine, @"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$") ||
+                                    cleanLine.Contains("Manager", StringComparison.OrdinalIgnoreCase) ||
+                                    cleanLine.Contains("End Signature", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (cleanLine.Contains("Manager", StringComparison.OrdinalIgnoreCase) ||
+                                        cleanLine.Contains("End Signature", StringComparison.OrdinalIgnoreCase))
+                                        break;
+                                    continue;
+                                }
+                                if (cleanLine.Length >= 1)
+                                {
+                                    signatureData = new ExtractedSignatureData
+                                    {
+                                        Type = SignatureType.Text,
+                                        TextSignature = cleanLine,
+                                        FontFamily = "'Brush Script MT', cursive"
+                                    };
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            
-            extractedContent = textBuilder.ToString();
+            catch
+            {
+                // If Docnet fails, use PdfPig for text extraction
+                try
+                {
+                    using var document = PdfDocument.Open(pdfBytes);
+                    var textBuilder = new System.Text.StringBuilder();
+                    foreach (var page in document.GetPages())
+                    {
+                        textBuilder.AppendLine(page.Text);
+                    }
+                    extractedContent = textBuilder.ToString();
+                }
+                catch
+                {
+                    // If both fail, proceed without content validation
+                    extractedContent = "PDF_CONTENT_EXTRACTION_FAILED";
+                }
+            }
         }
-        // If file is Word, extract text
-        else if (signedContractFile.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
-            signedContractFile.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+        else if (isWordFile)
         {
+            // Extract signature from Word document
             using var fileStream = signedContractFile.OpenReadStream();
-            using var wordDoc = WordprocessingDocument.Open(fileStream, false);
-            var body = wordDoc.MainDocumentPart?.Document?.Body;
-            if (body != null)
+            
+            // Need to copy to memory stream since we need to read multiple times
+            using var ms = new MemoryStream();
+            await fileStream.CopyToAsync(ms);
+            ms.Position = 0;
+            
+            signatureData = ExtractSignatureFromWord(ms);
+            
+            // Also extract text for validation
+            ms.Position = 0;
+            try
             {
-                extractedContent = body.InnerText;
+                using var wordDoc = WordprocessingDocument.Open(ms, false);
+                var body = wordDoc.MainDocumentPart?.Document?.Body;
+                if (body != null)
+                {
+                    extractedContent = body.InnerText;
+                }
+            }
+            catch
+            {
+                extractedContent = "WORD_CONTENT_EXTRACTION_FAILED";
             }
         }
-
-        // Compare uploaded contract with original (excluding signature section)
-        var isValid = ValidateContractIntegrity(contractDraft.OriginalBodyJson, extractedContent);
-        
-        if (!isValid)
+        else if (isHtmlFile)
         {
-            throw new InvalidOperationException("Contract has been modified outside of the signature section. Only signature changes are allowed.");
-        }
-
-        // If uploaded file is HTML, use it directly to preserve the customer's signature
-        // Otherwise, extract the customer signature from the uploaded content
-        if (isHtmlFile)
-        {
-            // Use the uploaded HTML content directly - this preserves the customer's actual signature
-            contractDraft.BodyJson = uploadedContent;
+            // Read HTML content
+            using var reader = new StreamReader(signedContractFile.OpenReadStream());
+            var htmlContent = await reader.ReadToEndAsync();
+            extractedContent = htmlContent;
+            
+            // Try to extract signature from HTML
+            var customerSignatureText = ExtractCustomerSignature(htmlContent, contractDraft.OriginalBodyJson);
+            if (!string.IsNullOrWhiteSpace(customerSignatureText))
+            {
+                signatureData = new ExtractedSignatureData
+                {
+                    Type = SignatureType.Text,
+                    TextSignature = customerSignatureText,
+                    FontFamily = "'Brush Script MT', cursive"
+                };
+            }
+            
+            // Check for base64 images in the customer signature area
+            var imagePattern = @"Customer Signature:[\s\S]*?<img[^>]*src=[""']data:([^;]+);base64,([^""']+)[""'][^>]*>";
+            var imgMatch = Regex.Match(htmlContent, imagePattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (imgMatch.Success)
+            {
+                signatureData = new ExtractedSignatureData
+                {
+                    Type = SignatureType.Image,
+                    ImageMimeType = imgMatch.Groups[1].Value,
+                    ImageBase64 = imgMatch.Groups[2].Value,
+                    ImageData = Convert.FromBase64String(imgMatch.Groups[2].Value)
+                };
+            }
         }
         else
         {
-            // Extract customer signature from uploaded file for non-HTML files
-            var customerSignature = ExtractCustomerSignature(extractedContent, contractDraft.OriginalBodyJson);
+            throw new InvalidOperationException("Unsupported file format. Please upload a PDF, Word document (.docx), or HTML file.");
+        }
+
+        // Validate contract integrity (skip if content extraction failed)
+        if (!extractedContent.Contains("EXTRACTION_FAILED"))
+        {
+            var isValid = ValidateContractIntegrity(contractDraft.OriginalBodyJson, extractedContent);
             
-            // Validate that a signature was actually found
-            if (string.IsNullOrWhiteSpace(customerSignature) || customerSignature == "Signed")
+            if (!isValid)
             {
-                throw new InvalidOperationException("Customer signature not found in the uploaded file. Please ensure you have added your signature to the document before uploading.");
+                throw new InvalidOperationException("Contract has been modified outside of the signature section. Only signature changes are allowed.");
             }
-            
-            // Add customer signature to contract (right side) - update BodyJson with signature
-            contractDraft.BodyJson = AddSignatureToContract(contractDraft.OriginalBodyJson, customerSignature, "right");
+        }
+
+        // Validate that a signature was found
+        if (signatureData.Type == SignatureType.None)
+        {
+            throw new InvalidOperationException("Customer signature not found in the uploaded file. Please ensure you have added your signature to the document before uploading. You can sign using text (typed signature) or by inserting/drawing a signature image.");
+        }
+
+        // Update body JSON with the customer signature
+        if (isHtmlFile && signatureData.Type == SignatureType.None)
+        {
+            // For HTML files without extracted signature, use the content directly
+            using var reader = new StreamReader(signedContractFile.OpenReadStream());
+            signedContractFile.OpenReadStream().Position = 0;
+            contractDraft.BodyJson = await reader.ReadToEndAsync();
+        }
+        else
+        {
+            // Apply the extracted signature to the original body JSON
+            contractDraft.BodyJson = AddCustomerSignatureToContract(contractDraft.OriginalBodyJson, signatureData);
         }
 
         // Update status to Active
