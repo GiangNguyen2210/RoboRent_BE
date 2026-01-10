@@ -336,9 +336,9 @@ public class ContractDraftsService : IContractDraftsService
         </div>";
 
                 // Customer signature box (right) - empty PDF form field placeholder
-                // This must be a proper PDF signature field area (will be converted to form field in PDF generation)
+                // This must be a visible input element - PuppeteerSharp will render it visually, then iText will add actual PDF form field
                 var customerBoxHtml = $@"<div id=""customer-signature-box"" data-field-name=""CustomerSignatureField"" style=""{emptySignatureBoxStyle}"">
-            {emptyBoxPlaceholder}
+            <input type=""text"" name=""CustomerSignatureField"" id=""CustomerSignatureField"" placeholder=""Sign here"" style=""width: 100%; height: 100%; min-height: 40px; border: none; outline: none; font-family: 'Brush Script MT', cursive; font-size: 24px; text-align: center; background-color: transparent; box-sizing: border-box; padding: 0;"" />
         </div>";
 
                 // Update or create manager signature section
@@ -471,11 +471,18 @@ public class ContractDraftsService : IContractDraftsService
                     if (currentBoxMatch.Success)
                     {
                         var currentBox = currentBoxMatch.Value;
-                        // Only update if style or data-field-name is missing
-                        if (!currentBox.Contains("data-field-name") || !currentBox.Contains("border: 2px solid"))
+                        // Only update if style, data-field-name, or input element is missing
+                        if (!currentBox.Contains("data-field-name") || !currentBox.Contains("border: 2px solid") || !bodyJson.Contains("name=\"CustomerSignatureField\""))
                         {
-                            var updatedCustomerBox = $@"<div id=""customer-signature-box"" data-field-name=""CustomerSignatureField"" style=""{emptySignatureBoxStyle}"">";
-                            bodyJson = bodyJson.Replace(currentBox, updatedCustomerBox);
+                            var updatedCustomerBox = $@"<div id=""customer-signature-box"" data-field-name=""CustomerSignatureField"" style=""{emptySignatureBoxStyle}"">
+            <input type=""text"" name=""CustomerSignatureField"" id=""CustomerSignatureField"" placeholder=""Sign here"" style=""width: 100%; height: 100%; min-height: 40px; border: none; outline: none; font-family: 'Brush Script MT', cursive; font-size: 24px; text-align: center; background-color: transparent; box-sizing: border-box; padding: 0;"" />
+        </div>";
+                            // Replace the entire box including content
+                            var fullBoxPattern = @"<div id=""customer-signature-box""[^>]*>[\s\S]*?</div>";
+                            if (Regex.IsMatch(bodyJson, fullBoxPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline))
+                            {
+                                bodyJson = Regex.Replace(bodyJson, fullBoxPattern, updatedCustomerBox, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                            }
                         }
                     }
                 }
@@ -520,7 +527,13 @@ public class ContractDraftsService : IContractDraftsService
             string signatureHtml;
             if (side == "left")
             {
-                // Manager signs first - manager has signature, customer has empty box
+                // Manager signs first - manager has signature, customer has empty box with input field
+                // Customer signature box (right) - empty PDF form field placeholder
+                // This must be a visible input element - PuppeteerSharp will render it visually, then iText will add actual PDF form field
+                var customerBoxHtml = $@"<div id=""customer-signature-box"" data-field-name=""CustomerSignatureField"" style=""{emptySignatureBoxStyle}"">
+            <input type=""text"" name=""CustomerSignatureField"" id=""CustomerSignatureField"" placeholder=""Sign here"" style=""width: 100%; height: 100%; min-height: 40px; border: none; outline: none; font-family: 'Brush Script MT', cursive; font-size: 24px; text-align: center; background-color: transparent; box-sizing: border-box; padding: 0;"" />
+        </div>";
+                
                 signatureHtml = $@"
 <div id=""{signatureSectionId}"" style=""display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 2px solid #000;"">
     <div style=""flex: 1; text-align: left; padding-right: 20px;"">
@@ -538,9 +551,7 @@ public class ContractDraftsService : IContractDraftsService
         <div style=""margin-bottom: 10px;"">
             <strong>Customer Signature:</strong>
         </div>
-        <div id=""customer-signature-box"" style=""{emptySignatureBoxStyle}"">
-            {emptyBoxPlaceholder}
-        </div>
+        {customerBoxHtml}
         <div style=""margin-top: 10px; font-size: 12px;"">
             &nbsp;
         </div>
@@ -1563,17 +1574,30 @@ public class ContractDraftsService : IContractDraftsService
             var form = PdfAcroForm.GetAcroForm(pdfDoc, false);
             if (form != null)
             {
+                System.Diagnostics.Debug.WriteLine($"Found AcroForm with {form.GetAllFormFields().Count} fields");
+                
+                // Log all field names for debugging
+                foreach (var fieldEntry in form.GetAllFormFields())
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Field: '{fieldEntry.Key}' = '{fieldEntry.Value?.GetValueAsString()}'");
+                }
+                
                 // Look for our specific signature field
                 var field = form.GetField("CustomerSignatureField");
                 if (field != null)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Found CustomerSignatureField");
+                    
                     // CHECK 1: Text signature (typewritten) from form field
                     var textValue = field.GetValueAsString();
-                    if (!string.IsNullOrWhiteSpace(textValue) && textValue.Length >= 2)
+                    System.Diagnostics.Debug.WriteLine($"Field value: '{textValue}'");
+                    
+                    if (!string.IsNullOrWhiteSpace(textValue) && textValue.Length >= 1)
                     {
                         result.Type = SignatureType.Text;
                         result.TextSignature = textValue.Trim();
                         result.FontFamily = DetectFontFamily(field);
+                        System.Diagnostics.Debug.WriteLine($"Extracted text signature: '{result.TextSignature}'");
                         return result;
                     }
 
@@ -1592,15 +1616,60 @@ public class ContractDraftsService : IContractDraftsService
                                 result.ImageData = imageData;
                                 result.ImageBase64 = Convert.ToBase64String(imageData);
                                 result.ImageMimeType = "image/png";
+                                System.Diagnostics.Debug.WriteLine($"Extracted image signature: {imageData.Length} bytes");
                                 return result;
                             }
                         }
                     }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("CustomerSignatureField not found in form");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("No AcroForm found in PDF");
+            }
+            
+            // CHECK ANNOTATIONS: Look for FreeText annotations that might contain the signature
+            try
+            {
+                for (int pageNum = pdfDoc.GetNumberOfPages(); pageNum >= 1; pageNum--)
+                {
+                    var page = pdfDoc.GetPage(pageNum);
+                    var annotations = page.GetAnnotations();
+                    
+                    foreach (var annot in annotations)
+                    {
+                        var annotType = annot.GetSubtype();
+                        if (annotType != null && annotType.Equals(iText.Kernel.Pdf.PdfName.FreeText))
+                        {
+                            var contents = annot.GetContents();
+                            if (contents != null && !string.IsNullOrWhiteSpace(contents.ToString()))
+                            {
+                                var annotText = contents.ToString().Trim();
+                                // Check if this annotation is near the customer signature area
+                                if (annotText.Length >= 1 && annotText.Length <= 100)
+                                {
+                                    result.Type = SignatureType.Text;
+                                    result.TextSignature = annotText;
+                                    result.FontFamily = "'Brush Script MT', cursive";
+                                    System.Diagnostics.Debug.WriteLine($"Found signature in FreeText annotation: '{annotText}'");
+                                    return result;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception annotEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Annotation check error: {annotEx.Message}");
             }
 
-            // FALLBACK: Extract signature from PDF text content if form field is not available
-            // This handles cases where users manually type signatures in PDFs without form fields
+            // FALLBACK: Extract signature from PDF text content using PdfPig
+            // This handles cases where users manually type signatures in PDFs
             try
             {
                 using var document = UglyToad.PdfPig.PdfDocument.Open(pdfBytes);
@@ -1616,8 +1685,9 @@ public class ContractDraftsService : IContractDraftsService
                 }
                 
                 var fullText = allText.ToString();
+                System.Diagnostics.Debug.WriteLine($"PdfPig extracted {fullText.Length} chars, looking for signature...");
                 
-                // Strategy 1: Look for "Customer Signature:" label and extract text after it (most reliable)
+                // Strategy 1: Look for "Customer Signature:" label and extract text after it
                 var customerSigIndex = fullText.IndexOf("Customer Signature", StringComparison.OrdinalIgnoreCase);
                 if (customerSigIndex >= 0)
                 {
@@ -1641,7 +1711,7 @@ public class ContractDraftsService : IContractDraftsService
                     foreach (var pattern in stopPatterns)
                     {
                         var idx = afterLabel.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
-                        if (idx > 10 && idx < endIndex) // At least 10 chars after label (to allow signature space)
+                        if (idx > 2 && idx < endIndex) // At least 2 chars for signature
                         {
                             endIndex = idx;
                             break;
@@ -2116,9 +2186,6 @@ public class ContractDraftsService : IContractDraftsService
             await _contractDraftsRepository.UpdateAsync(contractDraft);
         }
 
-        // Convert HTML to PDF using PuppeteerSharp (headless Chrome)
-        // This preserves all HTML/CSS formatting, tables, styles, etc.
-        
         var htmlContent = contractDraft.BodyJson;
         
         // Wrap HTML in a complete document if it's not already
@@ -2142,6 +2209,72 @@ public class ContractDraftsService : IContractDraftsService
 </html>";
         }
         
+        byte[] pdfBytes;
+        
+        // Use IronPDF for PendingCustomerSignature to create interactive form fields from HTML inputs
+        // This allows customers to type directly in the PDF signature field
+        if (contractDraft.Status == "PendingCustomerSignature" && htmlContent.Contains("customer-signature-box"))
+        {
+            pdfBytes = GeneratePdfWithFormFields(htmlContent);
+        }
+        else
+        {
+            // Use PuppeteerSharp for other statuses (non-editable PDFs)
+            pdfBytes = await GeneratePdfWithPuppeteer(htmlContent);
+        }
+        
+        return pdfBytes;
+    }
+    
+    /// <summary>
+    /// Generates PDF using IronPDF with CreatePdfFormsFromHtml enabled
+    /// This converts HTML input elements to interactive PDF form fields (AcroForm)
+    /// </summary>
+    private byte[] GeneratePdfWithFormFields(string htmlContent)
+    {
+        try
+        {
+            // Configure IronPDF renderer
+            var renderer = new IronPdf.ChromePdfRenderer();
+            
+            // CRITICAL: Enable form field creation from HTML inputs
+            renderer.RenderingOptions.CreatePdfFormsFromHtml = true;
+            
+            // Set margins
+            renderer.RenderingOptions.MarginTop = 20;
+            renderer.RenderingOptions.MarginBottom = 20;
+            renderer.RenderingOptions.MarginLeft = 15;
+            renderer.RenderingOptions.MarginRight = 15;
+            
+            // Paper size
+            renderer.RenderingOptions.PaperSize = IronPdf.Rendering.PdfPaperSize.A4;
+            
+            // Render HTML to PDF with form fields
+            var pdfDocument = renderer.RenderHtmlAsPdf(htmlContent);
+            
+            // Get PDF bytes
+            var pdfBytes = pdfDocument.BinaryData;
+            
+            System.Diagnostics.Debug.WriteLine($"IronPDF generated PDF with form fields, size: {pdfBytes.Length} bytes");
+            
+            return pdfBytes;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"IronPDF failed: {ex.Message}, falling back to PuppeteerSharp + iText");
+            
+            // Fallback to PuppeteerSharp + iText approach
+            var pdfBytes = GeneratePdfWithPuppeteer(htmlContent).GetAwaiter().GetResult();
+            return AddCustomerSignatureFormField(pdfBytes);
+        }
+    }
+    
+    /// <summary>
+    /// Generates PDF using PuppeteerSharp (headless Chrome)
+    /// Creates static PDF without interactive form fields
+    /// </summary>
+    private async Task<byte[]> GeneratePdfWithPuppeteer(string htmlContent)
+    {
         // Download Chromium if not already downloaded (first time only)
         var browserFetcher = new BrowserFetcher();
         await browserFetcher.DownloadAsync();
@@ -2159,54 +2292,6 @@ public class ContractDraftsService : IContractDraftsService
         // Set HTML content
         await page.SetContentAsync(htmlContent);
         
-        // Get bounding box of customer signature box if it exists (for form field placement)
-        iText.Kernel.Geom.Rectangle? signatureBoxRect = null;
-        if (htmlContent.Contains("customer-signature-box"))
-        {
-            try
-            {
-                var element = await page.QuerySelectorAsync("#customer-signature-box");
-                if (element != null)
-                {
-                    var boundingBox = await element.BoundingBoxAsync();
-                    if (boundingBox != null)
-                    {
-                        // Convert screen coordinates to PDF coordinates
-                        // PDF coordinates: origin at bottom-left, Puppeteer: top-left
-                        // Account for PDF margins (20mm top, 15mm sides)
-                        var marginTop = 20.0; // mm
-                        var marginLeft = 15.0; // mm
-                        var mmToPoints = 2.83465; // 1mm = 2.83465 points
-                        
-                        // A4 dimensions in points (595.276 x 841.890)
-                        var pdfWidth = 595.276;
-                        var pdfHeight = 841.890;
-                        var marginTopPoints = marginTop * mmToPoints;
-                        var marginLeftPoints = marginLeft * mmToPoints;
-                        
-                        // Get page dimensions from bounding box
-                        // Use default A4 dimensions if not available
-                        var pageWidth = 794.0; // A4 width in pixels at 96 DPI
-                        var pageHeight = 1123.0; // A4 height in pixels at 96 DPI
-                        
-                        // Convert bounding box coordinates
-                        // Puppeteer Y is from top, PDF Y is from bottom
-                        var x = (double)boundingBox.X * (pdfWidth - 2 * marginLeftPoints) / pageWidth + marginLeftPoints;
-                        var y = pdfHeight - ((double)boundingBox.Y + (double)boundingBox.Height) * (pdfHeight - 2 * marginTopPoints) / pageHeight - marginTopPoints;
-                        var width = (double)boundingBox.Width * (pdfWidth - 2 * marginLeftPoints) / pageWidth;
-                        var height = (double)boundingBox.Height * (pdfHeight - 2 * marginTopPoints) / pageHeight;
-                        
-                        signatureBoxRect = new iText.Kernel.Geom.Rectangle((float)x, (float)y, (float)width, (float)height);
-                    }
-                }
-            }
-            catch
-            {
-                // If element not found or coordinates can't be determined, proceed without form field
-                // The signature box will still be visible but won't be a fillable form field
-            }
-        }
-        
         // Generate PDF with options
         var pdfOptions = new PdfOptions
         {
@@ -2219,55 +2304,189 @@ public class ContractDraftsService : IContractDraftsService
                 Left = "15mm",
                 Right = "15mm"
             },
-            DisplayHeaderFooter = false // No header/footer - only show BodyJson content
+            DisplayHeaderFooter = false
         };
         
-        var pdfBytes = await page.PdfDataAsync(pdfOptions);
-        
-        // Add PDF form field using iText8 if customer signature box exists and we're in PendingCustomerSignature status
-        if (contractDraft.Status == "PendingCustomerSignature" && signatureBoxRect != null && htmlContent.Contains("customer-signature-box"))
+        return await page.PdfDataAsync(pdfOptions);
+    }
+
+    /// <summary>
+    /// Adds an editable PDF form field (AcroForm) for customer signature
+    /// The field is named "CustomerSignatureField" and is positioned by finding the signature box
+    /// Uses iText's TextFormFieldBuilder for reliable form field creation
+    /// </summary>
+    private byte[] AddCustomerSignatureFormField(byte[] pdfBytes)
+    {
+        try
         {
-            try
+            using var inputStream = new MemoryStream(pdfBytes);
+            using var outputStream = new MemoryStream();
+            
+            using (var reader = new PdfReader(inputStream))
+            using (var writer = new PdfWriter(outputStream))
+            using (var pdfDoc = new iText.Kernel.Pdf.PdfDocument(reader, writer))
             {
-                using var inputStream = new MemoryStream(pdfBytes);
-                using var outputStream = new MemoryStream();
+                // Get or create AcroForm
+                var form = PdfAcroForm.GetAcroForm(pdfDoc, true);
                 
-                using (var reader = new PdfReader(inputStream))
-                using (var writer = new PdfWriter(outputStream))
-                using (var pdfDoc = new iText.Kernel.Pdf.PdfDocument(reader, writer))
+                // CRITICAL: Enable appearances generation for proper field rendering
+                form.SetNeedAppearances(true);
+                form.SetGenerateAppearance(true);
+                
+                // Get the last page (signatures are typically on the last page)
+                var pageCount = pdfDoc.GetNumberOfPages();
+                var targetPage = pdfDoc.GetPage(pageCount);
+                var pageSize = targetPage.GetPageSize();
+                int targetPageNum = pageCount;
+                
+                // Find the exact position of customer signature box using PdfPig
+                iText.Kernel.Geom.Rectangle? fieldRect = null;
+                try
                 {
-                    var form = PdfAcroForm.GetAcroForm(pdfDoc, true);
+                    using var pdfPigDoc = UglyToad.PdfPig.PdfDocument.Open(pdfBytes);
                     
-                    // Get the last page (signatures are typically on the last page)
-                    var pageCount = pdfDoc.GetNumberOfPages();
-                    var targetPage = pdfDoc.GetPage(pageCount); // Use last page
-                    
-                    // Create signature field at customer signature box location
-                    // Note: Signature field creation is temporarily commented out due to API differences in iText 8
-                    // The signature box will still be visible in the PDF but won't be a fillable form field
-                    // To implement signature fields, use the correct iText 8 API method when available
-                    // For iText 8, you may need to use: PdfFormField.CreateSignature(pdfDoc, rect) or similar
-                    if (signatureBoxRect != null)
+                    // Search from last page to find signature section
+                    for (int pageNum = pdfPigDoc.NumberOfPages; pageNum >= 1; pageNum--)
                     {
-                        // Signature field creation code - needs proper iText 8 API method
-                        // var rect = signatureBoxRect;
-                        // var signField = PdfFormField.CreateSignature(pdfDoc, rect); // Use correct method when found
-                        // signField.SetFieldName("CustomerSignatureField");
-                        // form.AddField(signField, targetPage);
+                        var pdfPage = pdfPigDoc.GetPage(pageNum);
+                        var words = pdfPage.GetWords().ToList();
+                        
+                        // Strategy 1: Find "Customer" followed by "Signature" text
+                        for (int i = 0; i < words.Count - 1; i++)
+                        {
+                            var word = words[i];
+                            if (word.Text.Equals("Customer", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Check next word for "Signature"
+                                var nextWord = words[i + 1];
+                                if (nextWord.Text.StartsWith("Signature", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Found "Customer Signature:" label
+                                    // Position the field BELOW the label where the box is rendered
+                                    var labelLeft = (float)word.BoundingBox.Left;
+                                    var labelBottom = (float)Math.Min(word.BoundingBox.Bottom, nextWord.BoundingBox.Bottom);
+                                    
+                                    // The signature box is below the label with some margin
+                                    // Match the HTML styling: min-height: 60px
+                                    var fieldWidth = 200f;   // Reasonable width
+                                    var fieldHeight = 55f;   // Match HTML min-height: 60px minus padding
+                                    var fieldX = labelLeft;  // Align with label
+                                    var fieldY = labelBottom - fieldHeight - 20f; // Below label with margin
+                                    
+                                    // Ensure within page bounds
+                                    fieldX = Math.Max(40f, Math.Min(fieldX, pageSize.GetWidth() - fieldWidth - 40f));
+                                    fieldY = Math.Max(40f, fieldY);
+                                    
+                                    fieldRect = new iText.Kernel.Geom.Rectangle(fieldX, fieldY, fieldWidth, fieldHeight);
+                                    targetPageNum = pageNum;
+                                    targetPage = pdfDoc.GetPage(pageNum);
+                                    
+                                    System.Diagnostics.Debug.WriteLine($"Found Customer Signature at page {pageNum}, label at ({labelLeft}, {labelBottom})");
+                                    break;
+                                }
+                            }
+                        }
+                        if (fieldRect != null) break;
                     }
                 }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Text position detection error: {ex.Message}");
+                }
                 
-                pdfBytes = outputStream.ToArray();
+                // Fallback: Default position at right side of last page
+                if (fieldRect == null)
+                {
+                    var fieldWidth = 200f;
+                    var fieldHeight = 55f;
+                    fieldRect = new iText.Kernel.Geom.Rectangle(
+                        pageSize.GetWidth() - fieldWidth - 60f,  // Right side
+                        120f,  // Lower part of page
+                        fieldWidth,
+                        fieldHeight
+                    );
+                    System.Diagnostics.Debug.WriteLine("Using fallback position for CustomerSignatureField");
+                }
+                
+                // Create text form field using iText's builder pattern
+                try
+                {
+                    // Use TextFormFieldBuilder for proper field creation
+                    var textField = new iText.Forms.Fields.TextFormFieldBuilder(pdfDoc, "CustomerSignatureField")
+                        .SetPage(targetPage)
+                        .SetWidgetRectangle(fieldRect)
+                        .CreateText();
+                    
+                    // Configure field properties
+                    textField.SetValue(""); // Empty initial value
+                    textField.SetReadOnly(false); // CRITICAL: Editable
+                    textField.SetFontSize(18); // Signature-appropriate size
+                    
+                    // Set border appearance
+                    textField.GetFirstFormAnnotation()
+                        .SetBorderWidth(2)
+                        .SetBorderColor(iText.Kernel.Colors.ColorConstants.BLACK)
+                        .SetBackgroundColor(new iText.Kernel.Colors.DeviceRgb(250, 250, 250)); // Light background
+                    
+                    // Add field to form
+                    form.AddField(textField);
+                    
+                    System.Diagnostics.Debug.WriteLine($"Successfully created CustomerSignatureField at: {fieldRect}");
+                }
+                catch (Exception builderEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"TextFormFieldBuilder failed: {builderEx.Message}, trying manual approach");
+                    
+                    // Fallback: Manual field creation
+                    try
+                    {
+                        var widget = new iText.Kernel.Pdf.Annot.PdfWidgetAnnotation(fieldRect);
+                        widget.SetFlags(iText.Kernel.Pdf.Annot.PdfAnnotation.PRINT);
+                        
+                        // Border
+                        var borderDict = new iText.Kernel.Pdf.PdfDictionary();
+                        borderDict.Put(iText.Kernel.Pdf.PdfName.W, new iText.Kernel.Pdf.PdfNumber(2));
+                        borderDict.Put(iText.Kernel.Pdf.PdfName.S, iText.Kernel.Pdf.PdfName.S);
+                        widget.GetPdfObject().Put(iText.Kernel.Pdf.PdfName.BS, borderDict);
+                        
+                        // Colors
+                        var bc = new iText.Kernel.Pdf.PdfArray(new float[] { 0, 0, 0 });
+                        widget.GetPdfObject().Put(iText.Kernel.Pdf.PdfName.BC, bc);
+                        var bg = new iText.Kernel.Pdf.PdfArray(new float[] { 0.98f, 0.98f, 0.98f });
+                        widget.GetPdfObject().Put(iText.Kernel.Pdf.PdfName.BG, bg);
+                        
+                        // Field dictionary
+                        var fieldDict = new iText.Kernel.Pdf.PdfDictionary();
+                        fieldDict.MakeIndirect(pdfDoc);
+                        fieldDict.Put(iText.Kernel.Pdf.PdfName.FT, iText.Kernel.Pdf.PdfName.Tx);
+                        fieldDict.Put(iText.Kernel.Pdf.PdfName.T, new iText.Kernel.Pdf.PdfString("CustomerSignatureField"));
+                        fieldDict.Put(iText.Kernel.Pdf.PdfName.V, new iText.Kernel.Pdf.PdfString(""));
+                        fieldDict.Put(iText.Kernel.Pdf.PdfName.Ff, new iText.Kernel.Pdf.PdfNumber(0)); // Editable
+                        fieldDict.Put(iText.Kernel.Pdf.PdfName.DA, new iText.Kernel.Pdf.PdfString("/Helv 18 Tf 0 g"));
+                        
+                        var signatureField = new PdfFormField(fieldDict);
+                        signatureField.AddKid(widget);
+                        signatureField.SetReadOnly(false);
+                        
+                        targetPage.AddAnnotation(widget);
+                        form.AddField(signatureField);
+                        
+                        System.Diagnostics.Debug.WriteLine("Created CustomerSignatureField using manual method");
+                    }
+                    catch (Exception manualEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Manual field creation also failed: {manualEx.Message}");
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                // If form field creation fails, return PDF without form field
-                // The signature box will still be visible in the HTML/PDF
-                System.Diagnostics.Debug.WriteLine($"Warning: Could not add PDF form field: {ex.Message}");
-            }
+            
+            return outputStream.ToArray();
         }
-        
-        return pdfBytes;
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"AddCustomerSignatureFormField failed: {ex.Message}");
+            return pdfBytes; // Return original PDF if form field creation fails
+        }
     }
 
     public async Task<byte[]> DownloadContractAsWordAsync(int id, int userId)
@@ -2470,42 +2689,92 @@ public class ContractDraftsService : IContractDraftsService
             throw new InvalidOperationException("Unsupported file format. Please upload a PDF, Word document (.docx), or HTML file.");
         }
 
-        // Validate contract integrity (skip if content extraction failed)
-        if (!extractedContent.Contains("EXTRACTION_FAILED"))
-        {
-            var isValid = ValidateContractIntegrity(contractDraft.OriginalBodyJson, extractedContent);
-            
-            if (!isValid)
-            {
-                throw new InvalidOperationException("Contract has been modified outside of the signature section. Only signature changes are allowed.");
-            }
-        }
-
-        // Validate that a signature was found
+        // Validate that a signature was found in the input field (AcroForm field)
         if (signatureData.Type == SignatureType.None)
         {
-            throw new InvalidOperationException("Customer signature not found in the uploaded file. Please ensure you have added your signature to the document before uploading. You can sign using text (typed signature) or by inserting/drawing a signature image.");
+            throw new InvalidOperationException("Customer signature not found in the CustomerSignatureField input field. Please ensure you have added your signature (text or image) to the signature field before uploading.");
         }
 
-        // Update body JSON with the customer signature
-        if (isHtmlFile && signatureData.Type == SignatureType.None)
+        // Check if input field was added with text or image and save it to bodyJson
+        string updatedBodyJson;
+        try
         {
-            // For HTML files without extracted signature, use the content directly
-            using var reader = new StreamReader(signedContractFile.OpenReadStream());
-            signedContractFile.OpenReadStream().Position = 0;
-            contractDraft.BodyJson = await reader.ReadToEndAsync();
+            if (isHtmlFile && signatureData.Type == SignatureType.None)
+            {
+                // For HTML files, read content directly
+                using var reader = new StreamReader(signedContractFile.OpenReadStream());
+                signedContractFile.OpenReadStream().Position = 0;
+                updatedBodyJson = await reader.ReadToEndAsync();
+            }
+            else
+            {
+                // Apply the extracted signature (text or image) to the original body JSON
+                var originalBody = contractDraft.OriginalBodyJson ?? contractDraft.BodyJson ?? "";
+                updatedBodyJson = AddCustomerSignatureToContract(originalBody, signatureData);
+                
+                // Verify that the signature was successfully added to bodyJson
+                if (string.IsNullOrEmpty(updatedBodyJson))
+                {
+                    throw new InvalidOperationException("Failed to save customer signature to contract body. The signature could not be processed.");
+                }
+                
+                // Verify signature content was actually added to the signature box
+                // Check that the customer-signature-box exists and has been updated with content
+                var boxPattern = @"<div id=""customer-signature-box""[^>]*>([\s\S]*?)</div>";
+                var boxMatch = Regex.Match(updatedBodyJson, boxPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                if (!boxMatch.Success)
+                {
+                    throw new InvalidOperationException("Failed to save customer signature to contract body. Customer signature box not found in contract.");
+                }
+                
+                var boxContent = boxMatch.Groups[1].Value;
+                // Check if box has actual content (not just placeholder or empty)
+                var hasContent = false;
+                if (signatureData.Type == SignatureType.Text && !string.IsNullOrWhiteSpace(signatureData.TextSignature))
+                {
+                    // Check for text signature (may be HTML encoded)
+                    hasContent = boxContent.Contains(signatureData.TextSignature, StringComparison.OrdinalIgnoreCase) ||
+                                 boxContent.Contains(WebUtility.HtmlEncode(signatureData.TextSignature), StringComparison.OrdinalIgnoreCase) ||
+                                 boxContent.Contains("<span", StringComparison.OrdinalIgnoreCase); // Has signature span
+                }
+                else if (signatureData.Type == SignatureType.Image && !string.IsNullOrEmpty(signatureData.ImageBase64))
+                {
+                    // Check for image signature
+                    hasContent = boxContent.Contains("data:image", StringComparison.OrdinalIgnoreCase) ||
+                                 boxContent.Contains("<img", StringComparison.OrdinalIgnoreCase);
+                }
+                
+                if (!hasContent || string.IsNullOrWhiteSpace(boxContent) || boxContent.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Failed to save customer signature to contract body. Signature data was not properly added to the signature field.");
+                }
+            }
         }
-        else
+        catch (InvalidOperationException)
         {
-            // Apply the extracted signature to the original body JSON
-            contractDraft.BodyJson = AddCustomerSignatureToContract(contractDraft.OriginalBodyJson, signatureData);
+            throw; // Re-throw validation exceptions
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to save customer signature to bodyJson: {ex.Message}", ex);
         }
 
+        // Update contract draft with the signature
+        contractDraft.BodyJson = updatedBodyJson;
+        
         // Update status to Active
         contractDraft.Status = "Active";
         contractDraft.UpdatedAt = DateTime.UtcNow;
 
-        var updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        ContractDrafts? updatedContractDraft;
+        try
+        {
+            updatedContractDraft = await _contractDraftsRepository.UpdateAsync(contractDraft);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to update contract status to Active after saving customer signature: {ex.Message}", ex);
+        }
         rental.Status = "PendingDeposit";
         await _rentalRepository.UpdateAsync(rental);
         var paymentResult = await _paymentService.CreateDepositPaymentAsync(rental.Id);
