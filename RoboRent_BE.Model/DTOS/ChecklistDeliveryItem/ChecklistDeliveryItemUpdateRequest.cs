@@ -1,3 +1,5 @@
+using RoboRent_BE.Model.Entities;
+
 namespace RoboRent_BE.Model.DTOs.ChecklistDeliveryItem;
 
 public class ChecklistDeliveryItemUpdateRequest
@@ -14,6 +16,8 @@ public class ChecklistDeliveryItemUpdateRequest
     public string? ValueJson { get; set; }
     
     public string? Note { get; set; }
+    
+    public ChecklistItemResult Result { get; set; } = ChecklistItemResult.Unknown;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

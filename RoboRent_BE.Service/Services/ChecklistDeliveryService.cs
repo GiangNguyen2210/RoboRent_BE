@@ -12,16 +12,25 @@ public class ChecklistDeliveryService :  IChecklistDeliveryService
     private readonly IActualDeliveryRepository _actualDeliveryRepository;
     private readonly IChecklistDeliveryItemRepository _checklistDeliveryItemRepository;
     private readonly IMapper _mapper;
+    private readonly IAccountRepository _accountRepository;
+    private readonly IRentalRepository _rentalRepository;
+    private readonly IGroupScheduleRepository _groupScheduleRepository;
     
     public ChecklistDeliveryService(IChecklistDeliveryRepository repository,
         IActualDeliveryRepository actualDeliveryRepository,
         IMapper mapper,
-        IChecklistDeliveryItemRepository checklistDeliveryItemRepository)
+        IChecklistDeliveryItemRepository checklistDeliveryItemRepository,
+        IAccountRepository accountRepository,
+        IRentalRepository rentalRepository,
+        IGroupScheduleRepository groupScheduleRepository)
     {
         _repository = repository;
         _actualDeliveryRepository = actualDeliveryRepository;
         _mapper = mapper;
         _checklistDeliveryItemRepository = checklistDeliveryItemRepository;
+        _accountRepository = accountRepository;
+        _rentalRepository = rentalRepository;
+        _groupScheduleRepository = groupScheduleRepository;
     }
     
     public async Task<ChecklistDeliveryResponse?> CreateChecklistDeliveryAsync(ChecklistDeliveryRequest request)
@@ -85,6 +94,15 @@ public class ChecklistDeliveryService :  IChecklistDeliveryService
     existing.PassItems  = existing.Items.Count(i => i.Result == ChecklistItemResult.Pass);
     existing.FailItems  = existing.Items.Count(i => i.Result == ChecklistItemResult.Fail);
 
+    if (request.OverallResult == ChecklistItemResult.Pass)
+    {
+        existing.Status = ChecklistDeliveryStatus.Approved;
+    }
+    else
+    {
+        existing.Status = ChecklistDeliveryStatus.Draft ;
+    }
+
     // 6) Save checklist header
     await _repository.UpdateAsync(existing);
 
@@ -97,4 +115,46 @@ public class ChecklistDeliveryService :  IChecklistDeliveryService
     return _mapper.Map<ChecklistDeliveryResponse>(updated);
 }
 
+    public async Task<ChecklistDeliveryResponse?> GetChecklistDeliveryByActAsync(int actId)
+    {
+        var actualDelivery = await _actualDeliveryRepository.GetAsync(ad => ad.Id == actId);
+        
+        if (actualDelivery == null) return null;
+        
+        var res = await _repository.GetAsync(r => r.ActualDeliveryId == actualDelivery.Id);
+        
+        return _mapper.Map<ChecklistDeliveryResponse>(res);
+    }
+
+    public async Task<ChecklistDeliveryResponse?> CustomerConfirmChecklistDelivery(int checklistDeliveryId, CustomerConfirmRequest customerConfirmRequest)
+    {
+        var checklistDelivery = await _repository.GetAsync(ad => ad.Id == checklistDeliveryId);
+
+        var customer = await _accountRepository.GetAsync(a => a.Id == customerConfirmRequest.CustomerAcceptedById);
+
+        if (checklistDelivery == null || customer == null) return null;
+        
+        _mapper.Map(customerConfirmRequest, checklistDelivery);
+        
+        await _repository.UpdateAsync(checklistDelivery);
+        
+        return _mapper.Map<ChecklistDeliveryResponse>(checklistDelivery);
+    }
+
+    public async Task<int?> CustomerGetChecklistDeliveryByRentalIdAsync(int rentalId)
+    {
+        var rental = await _rentalRepository.GetAsync(r => r.Id == rentalId);
+        
+        if (rental == null) return null;
+
+        var groupSchdule = await _groupScheduleRepository.GetAsync(gs => gs.RentalId == rental.Id);
+        
+        if (groupSchdule == null) return null;
+
+        var actualDelivery = await _actualDeliveryRepository.GetAsync(ad => ad.GroupScheduleId == groupSchdule.Id);
+        
+        if (actualDelivery == null) return null;
+        
+        return actualDelivery.Id;
+    }
 }

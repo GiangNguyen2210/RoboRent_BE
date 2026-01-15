@@ -20,7 +20,7 @@ public class ChecklistDelivery
     public string? ChecklistNo { get; set; } = string.Empty; // CLD-YYYYMMDD-XXXX
 
     public ChecklistDeliveryType? Type { get; set; } = ChecklistDeliveryType.PreDispatch;
-    public ChecklistDeliveryStatus? Status { get; set; } = ChecklistDeliveryStatus.Draft;
+    public ChecklistDeliveryStatus Status { get; set; } = ChecklistDeliveryStatus.Draft;
 
     // Người kiểm
     public int? CheckedByStaffId { get; set; }
