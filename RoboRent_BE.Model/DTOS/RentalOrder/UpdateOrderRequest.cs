@@ -51,8 +51,5 @@ public class UpdateOrderRequest
     public int? AccountId { get; set; }
     
     [Required]
-    public int? EventActivityId { get; set; }
-    
-    [Required]
     public int? ActivityTypeId  { get; set; }
 }

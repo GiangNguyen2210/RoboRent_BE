@@ -1,4 +1,6 @@
-﻿namespace RoboRent_BE.Model.DTOs.ActualDelivery;
+﻿using RoboRent_BE.Model.Enums;
+
+namespace RoboRent_BE.Model.DTOs.ActualDelivery;
 
 /// <summary>
 /// Tạo ActualDelivery từ GroupSchedule (trigger khi customer accept contract)
@@ -6,6 +8,7 @@
 public class CreateActualDeliveryRequest
 {
     public int GroupScheduleId { get; set; }
+    public DeliveryType Type { get; set; } = DeliveryType.MidDay;
 }
 
 /// <summary>

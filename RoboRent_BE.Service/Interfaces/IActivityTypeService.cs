@@ -4,5 +4,5 @@ namespace RoboRent_BE.Service.Interfaces;
 
 public interface IActivityTypeService
 {
-    public Task<List<ActivityTypeResponse>> GetAllActivitiesByEAId(int eventActivityId);
+    public Task<List<ActivityTypeResponse>> GetAllActivities();
 }

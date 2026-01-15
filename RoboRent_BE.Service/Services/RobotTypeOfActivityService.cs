@@ -23,7 +23,7 @@ public class RobotTypeOfActivityService: IRobotTypeOfActivityService
         Expression<Func<RobotTypeOfActivity, bool>> filter = r =>
             r.ActivityTypeId == activityTypeId;
             
-        var result = await _repository.GetAllAsync(filter,"RoboType");
+        var result = await _repository.GetAllAsync(filter,"RoboType,RoboType.RobotAbilities");
         
         var response = result.ToList().Select(r => _mapper.Map<RobotTypeOfActivityResponse>(r)).ToList();
         

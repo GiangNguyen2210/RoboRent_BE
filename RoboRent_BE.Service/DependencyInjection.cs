@@ -41,6 +41,13 @@ public static class DependencyInjection
         services.AddHostedService<PaymentRecordsExpirationService>();
         services.AddTransient<IFaceProfilesService, FaceProfilesService>();
         services.AddTransient<IFaceVerificationService, FaceVerificationService>();
+        services.AddHostedService<RentalExpirationService>();
+        services.AddTransient<IRobotAbilityService, RobotAbilityService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddTransient<IManagerDashboardService, ManagerDashboardService>();
+        services.AddTransient<IChecklistDeliveryEvidenceService, ChecklistDeliveryEvidenceService>();
+        services.AddTransient<IChecklistDeliveryService, ChecklistDeliveryService>();
+        services.AddTransient<IChecklistDeliveryItemService, ChecklistDeliveryItemService>();
         return services;
     }
 }

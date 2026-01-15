@@ -35,7 +35,9 @@ public partial class Rental
     
     public DateTime? EventDate { get; set; } =  DateTime.UtcNow;
     
-    public bool? IsDeleted { get; set; } =  false;
+    public bool? IsDeleted { get; set; } = false;
+    
+    public bool? IsUpdated { get; set; } = false;
     
     public string? Status { get; set; } = string.Empty;
     

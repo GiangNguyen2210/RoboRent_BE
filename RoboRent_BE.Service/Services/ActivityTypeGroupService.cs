@@ -13,12 +13,14 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
 {
     private readonly IActivityTypeGroupRepository _repository;
     private readonly IRentalRepository _rentalRepository;
+    private readonly IActivityTypeRepository _activityTypeRepository;
     private readonly IMapper _mapper;
     
-    public ActivityTypeGroupService(IActivityTypeGroupRepository repository, IMapper mapper,  IRentalRepository rentalRepository)
+    public ActivityTypeGroupService(IActivityTypeGroupRepository repository, IMapper mapper,  IRentalRepository rentalRepository,  IActivityTypeRepository activityTypeRepository)
     {
         _repository = repository;
         _mapper = mapper;
+        _activityTypeRepository = activityTypeRepository;
         _rentalRepository = rentalRepository;
     }
 
@@ -26,7 +28,7 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
     {
         var result = await _repository.GetDbContext().ActivityTypeGroups
             .Include(a => a.ActivityType)
-            .ThenInclude(a => a.EventActivity)
+            // .ThenInclude(a => a.EventActivity)
             .ToListAsync();
 
         return result.Select(atg => _mapper.Map<ActivityTypeGroupResponse>(atg)).ToList();
@@ -53,10 +55,10 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
         {
             bool matched = group.GroupSchedules.Any(schedule =>
                 schedule.EventDate == rental.EventDate &&
-                schedule.EventCity == rental.City &&
-                (
-                    (rental.EndTime <= schedule.DeliveryTime) || (rental.StartTime >= schedule.FinishTime)
-                )
+                schedule.EventCity == rental.City //&&
+                // (
+                //     (rental.EndTime <= schedule.DeliveryTime) || (rental.StartTime >= schedule.FinishTime)
+                // )
             );
 
             if (matched)
@@ -77,5 +79,15 @@ public class ActivityTypeGroupService : IActivityTypeGroupService
         var result = await _repository.GetAsync(a => a.Id == activityTypeGroupId);
         return _mapper.Map<ActivityTypeGroupResponse>(result);
     }
-    
+
+    public async Task<List<ActivityTypeGroupResponse>?> GetGroupByActivityTypeId(int activityTypeId)
+    {
+        var activityType = await _activityTypeRepository.GetAsync(at => at.Id == activityTypeId);
+        if (activityType == null)
+            return null;
+
+        var res = await _repository.GetAllAsync(atg => atg.ActivityTypeId == activityType.Id);
+
+        return res.ToList().Select(atg => _mapper.Map<ActivityTypeGroupResponse>(atg)).ToList();
+    }
 }

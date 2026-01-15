@@ -1,6 +1,7 @@
 ﻿using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
 using RoboRent_BE.Model.Entities;
+using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interfaces;
 
@@ -53,6 +54,7 @@ public class ActualDeliveryService : IActualDeliveryService
         {
             GroupScheduleId = request.GroupScheduleId,
             StaffId = null,
+            Type = request.Type,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow
         };
@@ -83,11 +85,30 @@ public class ActualDeliveryService : IActualDeliveryService
             var conflictMessages = conflictCheck.Conflicts
                 .Select(c => $"- {c.EventName} ({c.ScheduledStart:g} - {c.ScheduledEnd:g})")
                 .ToList();
-            
+
             throw new Exception(
-                $"Staff {request.StaffId} has schedule conflict:\n" + 
+                $"Staff {request.StaffId} has schedule conflict:\n" +
                 string.Join("\n", conflictMessages)
             );
+        }
+
+        // 🆕 Auto-classify DeliveryType based on staff's deliveries on same day
+        var eventDate = delivery.GroupSchedule.EventDate?.Date ?? DateTime.UtcNow.Date;
+        var staffDeliveriesOnSameDay = await _deliveryRepo.GetByStaffAndDateRangeAsync(
+            request.StaffId,
+            eventDate,
+            eventDate
+        );
+
+        // FirstOfDay if this is the first delivery, otherwise MidDay
+        // LastOfDay will be handled separately (when manager marks it or auto-detect at end of day)
+        if (staffDeliveriesOnSameDay.Count == 0)
+        {
+            delivery.Type = DeliveryType.FirstOfDay;
+        }
+        else
+        {
+            delivery.Type = DeliveryType.MidDay;
         }
 
         // Assign staff
@@ -102,8 +123,8 @@ public class ActualDeliveryService : IActualDeliveryService
     }
 
     public async Task<ActualDeliveryResponse> UpdateStatusAsync(
-        int deliveryId, 
-        UpdateDeliveryStatusRequest request, 
+        int deliveryId,
+        UpdateDeliveryStatusRequest request,
         int staffId)
     {
         var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
@@ -125,7 +146,7 @@ public class ActualDeliveryService : IActualDeliveryService
             { "Pending", new[] { "Assigned" } },
             { "Assigned", new[] { "Delivering" } },
             { "Delivering", new[] { "Delivered" } },
-            { "Delivered", new string[] { } } 
+            { "Delivered", new string[] { } }
         };
 
         if (!validTransitions.ContainsKey(delivery.Status))
@@ -166,8 +187,8 @@ public class ActualDeliveryService : IActualDeliveryService
     }
 
     public async Task<ActualDeliveryResponse> UpdateNotesAsync(
-        int deliveryId, 
-        UpdateDeliveryNotesRequest request, 
+        int deliveryId,
+        UpdateDeliveryNotesRequest request,
         int staffId)
     {
         var delivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
@@ -217,8 +238,8 @@ public class ActualDeliveryService : IActualDeliveryService
     }
 
     public async Task<List<DeliveryCalendarResponse>> GetCalendarAsync(
-        DateTime from, 
-        DateTime to, 
+        DateTime from,
+        DateTime to,
         int? staffId = null)
     {
         var deliveries = await _deliveryRepo.GetByDateRangeAsync(from, to);
@@ -251,15 +272,15 @@ public class ActualDeliveryService : IActualDeliveryService
             throw new Exception($"GroupSchedule {groupScheduleId} not found");
         }
 
-        if (!targetSchedule.EventDate.HasValue || 
-            !targetSchedule.DeliveryTime.HasValue || 
+        if (!targetSchedule.EventDate.HasValue ||
+            // !targetSchedule.DeliveryTime.HasValue || 
             !targetSchedule.FinishTime.HasValue)
         {
             throw new Exception("GroupSchedule must have EventDate, DeliveryTime, and FinishTime");
         }
 
         // Calculate target time range
-        var targetStart = targetSchedule.EventDate.Value.Date + targetSchedule.DeliveryTime.Value.ToTimeSpan();
+        var targetStart = targetSchedule.EventDate.Value.Date;// + targetSchedule.DeliveryTime.Value.ToTimeSpan();
         var targetEnd = targetSchedule.EventDate.Value.Date + targetSchedule.FinishTime.Value.ToTimeSpan();
 
         // Get all deliveries of this staff around same date
@@ -275,14 +296,14 @@ public class ActualDeliveryService : IActualDeliveryService
         {
             var schedule = delivery.GroupSchedule;
 
-            if (!schedule.EventDate.HasValue || 
-                !schedule.DeliveryTime.HasValue || 
+            if (!schedule.EventDate.HasValue ||
+                // !schedule.DeliveryTime.HasValue || 
                 !schedule.FinishTime.HasValue)
             {
                 continue;
             }
 
-            var existStart = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
+            var existStart = schedule.EventDate.Value.Date;// + schedule.DeliveryTime.Value.ToTimeSpan();
             var existEnd = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
 
             // Check overlap
@@ -304,11 +325,11 @@ public class ActualDeliveryService : IActualDeliveryService
             Conflicts = conflicts
         };
     }
-    
+
     public async Task<PageListResponse<ActualDeliveryResponse>> GetPendingDeliveriesAsync(
-        int page, 
-        int pageSize, 
-        string? searchTerm = null, 
+        int page,
+        int pageSize,
+        string? searchTerm = null,
         string? sortBy = "date")
     {
         // Validate parameters
@@ -317,9 +338,9 @@ public class ActualDeliveryService : IActualDeliveryService
 
         // Get from repository
         var (items, totalCount) = await _deliveryRepo.GetPendingDeliveriesAsync(
-            page, 
-            pageSize, 
-            searchTerm, 
+            page,
+            pageSize,
+            searchTerm,
             sortBy
         );
 
@@ -354,10 +375,10 @@ public class ActualDeliveryService : IActualDeliveryService
 
         if (schedule?.EventDate.HasValue == true)
         {
-            if (schedule.DeliveryTime.HasValue)
-            {
-                scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
-            }
+            // if (schedule.DeliveryTime.HasValue)
+            // {
+            //     scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
+            // }
             if (schedule.FinishTime.HasValue)
             {
                 scheduledPickupTime = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
@@ -370,30 +391,31 @@ public class ActualDeliveryService : IActualDeliveryService
             GroupScheduleId = delivery.GroupScheduleId,
             StaffId = delivery.StaffId,
             StaffName = delivery.Staff?.FullName,
-            
+            Type = delivery.Type,
+
             ScheduledDeliveryTime = scheduledDeliveryTime,
             ScheduledPickupTime = scheduledPickupTime,
-            
+
             ActualDeliveryTime = delivery.ActualDeliveryTime,
             ActualPickupTime = delivery.ActualPickupTime,
-            
+
             Status = delivery.Status,
             Notes = delivery.Notes,
-            
+
             CreatedAt = delivery.CreatedAt,
             UpdatedAt = delivery.UpdatedAt,
-            
+
             ScheduleInfo = schedule == null ? null : new GroupScheduleInfo
             {
                 EventDate = schedule.EventDate,
                 EventLocation = schedule.EventLocation,
                 EventCity = schedule.EventCity,
-                DeliveryTime = schedule.DeliveryTime,
+                // DeliveryTime = schedule.DeliveryTime,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
                 FinishTime = schedule.FinishTime
             },
-            
+
             RentalInfo = rental == null ? null : new RentalInfo
             {
                 RentalId = rental.Id,
@@ -428,6 +450,6 @@ public class ActualDeliveryService : IActualDeliveryService
 
         return null;
     }
-    
-    
+
+
 }

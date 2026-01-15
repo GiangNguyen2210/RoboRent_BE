@@ -23,5 +23,7 @@ public interface IRentalService
     public Task<OrderResponse?> CustomerDeleteRentalAsync(int rentalId);
     public Task<OrderResponse?> StaffRequestRentalUpdateAsync(int rentalId);
     Task<RentalCompletionResponse?> CompleteRentalAsync(int rentalId);
+    public Task<UpdatedStatusResponse?> GetUpdatedStatusAsync(int rentalId);
 
+    Task ExpireRentalContractAsync();
 }

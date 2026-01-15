@@ -1,4 +1,6 @@
-﻿namespace RoboRent_BE.Model.DTOs.ActualDelivery;
+﻿using RoboRent_BE.Model.Enums;
+
+namespace RoboRent_BE.Model.DTOs.ActualDelivery;
 
 public class ActualDeliveryResponse
 {
@@ -6,24 +8,25 @@ public class ActualDeliveryResponse
     public int GroupScheduleId { get; set; }
     public int? StaffId { get; set; }
     public string? StaffName { get; set; }
-    
+    public DeliveryType Type { get; set; }
+
     // Scheduled times (từ GroupSchedule)
     public DateTime? ScheduledDeliveryTime { get; set; }
     public DateTime? ScheduledPickupTime { get; set; }
-    
+
     // Actual times (staff ghi thực tế)
     public DateTime? ActualDeliveryTime { get; set; }
     public DateTime? ActualPickupTime { get; set; }
-    
+
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
-    
+
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    
+
     // Info từ GroupSchedule
     public GroupScheduleInfo? ScheduleInfo { get; set; }
-    
+
     // Info từ Rental
     public RentalInfo? RentalInfo { get; set; }
 }
