@@ -4,6 +4,7 @@ using RoboRent_BE.Model.DTOs.ActivityType;
 using RoboRent_BE.Model.DTOs.ActivityTypeGroup;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.DTOs.ChecklistDelivery;
+using RoboRent_BE.Model.DTOs.ChecklistDeliveryEvidence;
 using RoboRent_BE.Model.DTOs.ChecklistDeliveryItem;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
 using RoboRent_BE.Model.DTOS.ContractTemplates;
@@ -33,6 +34,12 @@ public class MappingProfile : Profile
 
     public MappingProfile()
     {
+        CreateMap<CustomerConfirmRequest, ChecklistDelivery>();
+        
+        CreateMap<ChecklistDeliveryEvidence, ChecklistDeliveryEvidenceResponse>();
+
+        CreateMap<ChecklistDeliveryEvidenceCreateRequest, ChecklistDeliveryEvidence>();
+        
         CreateMap<ChecklistUpdateDeliveryRequest, ChecklistDelivery>();
 
         CreateMap<ChecklistDeliveryItemUpdateRequest, ChecklistDeliveryItem>();
