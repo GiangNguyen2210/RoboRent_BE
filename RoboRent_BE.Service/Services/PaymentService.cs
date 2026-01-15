@@ -2,9 +2,11 @@
 using RoboRent_BE.Model.DTOS;
 using RoboRent_BE.Model.DTOS.RentalOrder;
 using RoboRent_BE.Model.DTOS.ContractDrafts;
+using RoboRent_BE.Model.DTOs.ChecklistDelivery;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interface;
+using RoboRent_BE.Service.Interfaces;
 using Net.payOS.Types;
 using Net.payOS;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +21,8 @@ public class PaymentService : IPaymentService
     private readonly IAccountRepository _accountRepo;
     private readonly IGroupScheduleRepository _groupScheduleRepo;
     private readonly IActualDeliveryRepository _actualDeliveryRepo;
+    private readonly IChecklistDeliveryService _checklistDeliveryService;
+    private readonly IChecklistDeliveryItemService _checklistDeliveryItemService;
     private readonly PayOS _payOS;
     private readonly string _returnUrl;
     private readonly string _cancelUrl;
@@ -31,6 +35,8 @@ public class PaymentService : IPaymentService
         IAccountRepository accountRepo,
         IGroupScheduleRepository groupScheduleRepo,
         IActualDeliveryRepository actualDeliveryRepo,
+        IChecklistDeliveryService checklistDeliveryService,
+        IChecklistDeliveryItemService checklistDeliveryItemService,
         IConfiguration config,
         ILogger<PaymentService> logger)
     {
@@ -40,6 +46,8 @@ public class PaymentService : IPaymentService
         _accountRepo = accountRepo;
         _groupScheduleRepo = groupScheduleRepo;
         _actualDeliveryRepo = actualDeliveryRepo;
+        _checklistDeliveryService = checklistDeliveryService;
+        _checklistDeliveryItemService = checklistDeliveryItemService;
         _logger = logger;
 
         // ✅ Inject PayOS trực tiếp
@@ -496,6 +504,30 @@ public class PaymentService : IPaymentService
         await _groupScheduleRepo.UpdateAsync(groupSchedule);
 
         _logger.LogInformation($"✅ ActualDelivery created for GroupSchedule {groupSchedule.Id} after deposit payment");
+
+        // 🆕 Auto-create checklist (hidden, will be shown when status = Assigned)
+        try
+        {
+            var checklistResponse = await _checklistDeliveryService.CreateChecklistDeliveryAsync(new ChecklistDeliveryRequest
+            {
+                ActualDeliveryId = actualDelivery.Id,
+                Type = ChecklistDeliveryType.PreDispatch,
+                Status = ChecklistDeliveryStatus.Draft,
+                OverallResult = ChecklistItemResult.Unknown
+            });
+
+            if (checklistResponse != null)
+            {
+                // Auto-create checklist items from templates
+                await _checklistDeliveryItemService.CreateItemAsync(checklistResponse.Id);
+                _logger.LogInformation($"✅ Checklist auto-created for ActualDelivery {actualDelivery.Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning($"⚠️ Failed to auto-create checklist for ActualDelivery {actualDelivery.Id}: {ex.Message}");
+            // Don't throw - checklist creation failure shouldn't block delivery creation
+        }
     }
 
     #endregion
