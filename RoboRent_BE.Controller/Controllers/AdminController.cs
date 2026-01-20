@@ -192,4 +192,18 @@ public class AdminController : ControllerBase
         var result = await _modifyIdentityUserService.GetManagerListAsync(page, pageSize, status, searchTerm);
         return Ok(result);
     }
+
+    [HttpGet("accounts")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAccounts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? searchTerm = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        var result = await _modifyIdentityUserService.GetAllAccountsAsync(page, pageSize, status, searchTerm);
+        return Ok(result);
+    }
 }
