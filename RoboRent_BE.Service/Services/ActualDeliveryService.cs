@@ -1,9 +1,10 @@
-﻿using RoboRent_BE.Model.DTOs;
+using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interfaces;
+using RoboRent_BE.Service.Configuration;
 
 namespace RoboRent_BE.Service.Services;
 
@@ -375,10 +376,17 @@ public class ActualDeliveryService : IActualDeliveryService
 
         if (schedule?.EventDate.HasValue == true)
         {
-            // if (schedule.DeliveryTime.HasValue)
-            // {
-            //     scheduledDeliveryTime = schedule.EventDate.Value.Date + schedule.DeliveryTime.Value.ToTimeSpan();
-            // }
+            // Calculate delivery time: SetupTime - TravelTime
+            if (schedule.SetupTime.HasValue && !string.IsNullOrWhiteSpace(schedule.EventCity))
+            {
+                var (_, distance) = DeliveryFeeConfig.CalculateFee(schedule.EventCity);
+                var travelTimeHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
+                
+                scheduledDeliveryTime = schedule.EventDate.Value.Date 
+                    + schedule.SetupTime.Value.ToTimeSpan() 
+                    - TimeSpan.FromHours(travelTimeHours);
+            }
+            
             if (schedule.FinishTime.HasValue)
             {
                 scheduledPickupTime = schedule.EventDate.Value.Date + schedule.FinishTime.Value.ToTimeSpan();
@@ -410,7 +418,7 @@ public class ActualDeliveryService : IActualDeliveryService
                 EventDate = schedule.EventDate,
                 EventLocation = schedule.EventLocation,
                 EventCity = schedule.EventCity,
-                // DeliveryTime = schedule.DeliveryTime,
+                DeliveryTime = CalculateDeliveryTime(schedule),
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
                 FinishTime = schedule.FinishTime
@@ -424,6 +432,20 @@ public class ActualDeliveryService : IActualDeliveryService
                 PhoneNumber = rental.PhoneNumber
             }
         };
+    }
+
+    private TimeOnly? CalculateDeliveryTime(GroupSchedule schedule)
+    {
+        if (!schedule.SetupTime.HasValue || string.IsNullOrWhiteSpace(schedule.EventCity))
+            return null;
+
+        var (_, distance) = DeliveryFeeConfig.CalculateFee(schedule.EventCity);
+        var travelTimeHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
+        
+        var setupDateTime = DateTime.Today + schedule.SetupTime.Value.ToTimeSpan();
+        var deliveryDateTime = setupDateTime - TimeSpan.FromHours(travelTimeHours);
+        
+        return TimeOnly.FromDateTime(deliveryDateTime);
     }
     public async Task<ActualDeliveryResponse?> GetByRentalIdAsync(int rentalId)
     {
