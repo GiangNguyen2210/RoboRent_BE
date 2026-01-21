@@ -206,4 +206,29 @@ public class AdminController : ControllerBase
         var result = await _modifyIdentityUserService.GetAllAccountsAsync(page, pageSize, status, searchTerm);
         return Ok(result);
     }
+
+    [HttpPut("accounts/{accountId}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUserStatus(int accountId, [FromBody] UpdateStatusRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        var result = await _modifyIdentityUserService.UpdateUserStatusAsync(accountId, request.Status);
+        if (result)
+        {
+            return Ok(new { message = "User status updated successfully" });
+        }
+
+        return NotFound(new { message = "Account not found" });
+    }
 }

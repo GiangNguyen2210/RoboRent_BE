@@ -289,4 +289,17 @@ public class ModifyIdentityUserService : IModifyIdentityUserService
             HasPreviousPage = page > 1
         };
     }
+
+    public async Task<bool> UpdateUserStatusAsync(int accountId, string status)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId);
+        if (account == null)
+        {
+            return false;
+        }
+
+        account.Status = status;
+        await _accountRepository.UpdateAsync(account);
+        return true;
+    }
 }

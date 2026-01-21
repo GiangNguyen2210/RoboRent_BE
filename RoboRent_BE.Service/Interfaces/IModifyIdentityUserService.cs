@@ -31,4 +31,6 @@ public interface IModifyIdentityUserService
         int pageSize,
         string? status = null,
         string? searchTerm = null);
+
+    Task<bool> UpdateUserStatusAsync(int accountId, string status);
 }
