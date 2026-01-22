@@ -1,4 +1,4 @@
-﻿namespace RoboRent_BE.Service.Configuration;
+namespace RoboRent_BE.Service.Configuration;
 
 public static class DeliveryFeeConfig
 {
@@ -66,5 +66,25 @@ public static class DeliveryFeeConfig
         // Tỉnh khác: distance × 30,000
         decimal fee = distance * RATE_PER_KM_ROUND_TRIP;
         return (fee, distance);
+    }
+
+    /// <summary>
+    /// Tính thời gian vận chuyển (giờ) dựa trên khoảng cách
+    /// Logic: Staff phải đi trước setup time để kịp đến
+    /// </summary>
+    public static int GetTravelTimeHours(int? distanceKm)
+    {
+        if (distanceKm == null) return 2; // Default fallback
+        
+        return distanceKm switch
+        {
+            0 => 2,              // HCM: 2h (chuẩn bị + di chuyển nội thành)
+            <= 100 => 3,         // Lân cận: 3h
+            <= 200 => 4,         // ĐBSCL gần: 4h
+            <= 400 => 6,         // ĐBSCL xa + Tây Nguyên gần: 6h
+            <= 700 => 10,        // Tây Nguyên xa + Miền Trung gần: 10h
+            <= 1200 => 16,       // Miền Trung: 16h (qua đêm)
+            _ => 24              // Miền Bắc: 24h (1 ngày)
+        };
     }
 }

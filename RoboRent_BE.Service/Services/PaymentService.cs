@@ -23,6 +23,7 @@ public class PaymentService : IPaymentService
     private readonly IActualDeliveryRepository _actualDeliveryRepo;
     private readonly IChecklistDeliveryService _checklistDeliveryService;
     private readonly IChecklistDeliveryItemService _checklistDeliveryItemService;
+    private readonly IContractReportsRepository _contractReportsRepo;
     private readonly PayOS _payOS;
     private readonly string _returnUrl;
     private readonly string _cancelUrl;
@@ -37,6 +38,7 @@ public class PaymentService : IPaymentService
         IActualDeliveryRepository actualDeliveryRepo,
         IChecklistDeliveryService checklistDeliveryService,
         IChecklistDeliveryItemService checklistDeliveryItemService,
+        IContractReportsRepository contractReportsRepo,
         IConfiguration config,
         ILogger<PaymentService> logger)
     {
@@ -48,6 +50,7 @@ public class PaymentService : IPaymentService
         _actualDeliveryRepo = actualDeliveryRepo;
         _checklistDeliveryService = checklistDeliveryService;
         _checklistDeliveryItemService = checklistDeliveryItemService;
+        _contractReportsRepo = contractReportsRepo;
         _logger = logger;
 
         // ✅ Inject PayOS trực tiếp
@@ -216,14 +219,37 @@ public class PaymentService : IPaymentService
 
     public async Task<List<PaymentRecordResponse>> GetCustomerTransactionsAsync(int customerId)
     {
-        var allPayments = await _paymentRecordRepo.GetAllAsync(
+        //  Payments from Rentals (Deposit / Full)
+        var rentalPayments = await _paymentRecordRepo.GetAllAsync(
             filter: p => p.Rental != null && p.Rental.AccountId == customerId,
             includeProperties: "Rental"
         );
 
-        return allPayments
-            .OrderByDescending(p => p.CreatedAt)
+        var rentalPaymentDtos = rentalPayments
             .Select(p => MapToResponse(p, p.Rental?.EventName))
+            .ToList();
+
+        //  Payments from Contract Reports (ContractReportResolution)
+        var contractReports = await _contractReportsRepo.GetAllAsync(
+            filter: cr =>
+                cr.PaymentId != null &&
+                (cr.ReporterId == customerId || cr.AccusedId == customerId),
+            includeProperties: "PaymentRecord"
+        );
+
+        var contractReportPaymentDtos = contractReports
+            .Where(cr => cr.PaymentRecord != null)
+            .Select(cr =>
+            {
+                // Reuse RentalName field to show context in UI
+                var contextName = $"Contract Report #{cr.Id}";
+                return MapToResponse(cr.PaymentRecord, contextName);
+            })
+            .ToList();
+
+        return rentalPaymentDtos
+            .Concat(contractReportPaymentDtos)
+            .OrderByDescending(p => p.CreatedAt)
             .ToList();
     }
 

@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOS.Admin;
 using RoboRent_BE.Model.Entities;
@@ -279,6 +280,84 @@ public class ModifyIdentityUserService : IModifyIdentityUserService
             HasPreviousPage = page > 1
         };
     }
-    
-    
+
+    public async Task<PageListResponse<AccountListResponse>> GetAllAccountsAsync(
+        int page,
+        int pageSize,
+        string? status = null,
+        string? searchTerm = null)
+    {
+        var allUsers = await _userManager.Users.ToListAsync();
+        var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+        var adminUserIds = adminUsers.Select(u => u.Id).ToList();
+        var nonAdminUserIds = allUsers.Where(u => !adminUserIds.Contains(u.Id)).Select(u => u.Id).ToList();
+
+        var query = await _accountRepository.GetAllAsync(
+            a => nonAdminUserIds.Contains(a.UserId) && a.isDeleted == false
+        );
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(a => a.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearch = searchTerm.ToLower();
+            query = query.Where(a =>
+                (a.FullName != null && a.FullName.ToLower().Contains(lowerSearch)) ||
+                (a.ModifyIdentityUser.Email != null && a.ModifyIdentityUser.Email.ToLower().Contains(lowerSearch))
+            );
+        }
+
+        var totalCount = query.Count();
+
+        var items = query
+            .OrderBy(a => a.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AccountListResponse
+            {
+                AccountId = a.Id,
+                UserId = a.UserId ?? string.Empty,
+                Email = a.ModifyIdentityUser.Email ?? string.Empty,
+                FullName = a.FullName,
+                PhoneNumber = string.Empty,
+                Status = a.Status,
+                EmailConfirmed = a.ModifyIdentityUser.EmailConfirmed,
+            })
+            .ToList();
+
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrEmpty(item.UserId))
+            {
+                var user = await _userManager.FindByIdAsync(item.UserId);
+                item.Role = (await _userManager.GetRolesAsync(user!)).FirstOrDefault() ?? "Customer";
+            }
+        }
+
+        return new PageListResponse<AccountListResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            HasNextPage = page * pageSize < totalCount,
+            HasPreviousPage = page > 1
+        };
+    }
+
+    public async Task<bool> UpdateUserStatusAsync(int accountId, string status)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId);
+        if (account == null)
+        {
+            return false;
+        }
+
+        account.Status = status;
+        await _accountRepository.UpdateAsync(account);
+        return true;
+    }
 }
