@@ -25,4 +25,10 @@ public interface IModifyIdentityUserService
         int pageSize, 
         string? status = null, 
         string? searchTerm = null);
+
+    public Task<PageListResponse<StaffListItemResponse>> GetTechnicalStaffListAsync(
+        int page,
+        int pageSize,
+        string? status = null,
+        string? searchTerm = null);
 }
