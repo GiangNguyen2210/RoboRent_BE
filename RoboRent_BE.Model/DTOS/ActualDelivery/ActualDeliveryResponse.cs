@@ -48,6 +48,7 @@ public class RentalInfo
     public string? EventName { get; set; }
     public string? CustomerName { get; set; }
     public string? PhoneNumber { get; set; }
+    public string? PackageName { get; set; } // New field
 }
 
 /// <summary>

@@ -26,7 +26,7 @@ public class ActualDeliveryService : IActualDeliveryService
         // Validate GroupSchedule exists
         var groupSchedule = await _groupScheduleRepo.GetAsync(
             gs => gs.Id == request.GroupScheduleId,
-            includeProperties: "Rental,Rental.Account"
+            includeProperties: "Rental,Rental.Account,Rental.ActivityType"
         );
 
         if (groupSchedule == null)
@@ -120,7 +120,72 @@ public class ActualDeliveryService : IActualDeliveryService
 
         await _deliveryRepo.UpdateAsync(delivery);
 
-        return await MapToResponseAsync(delivery.Id);
+        // 🆕 Re-classify all deliveries for this staff on this day
+        await ReclassifyDeliveriesOfDayAsync(request.StaffId, eventDate);
+
+        // Fetch updated delivery to return correct Type
+        var updatedDelivery = await _deliveryRepo.GetWithDetailsAsync(deliveryId);
+        return MapToResponse(updatedDelivery!);
+    }
+
+    private async Task ReclassifyDeliveriesOfDayAsync(int staffId, DateTime date)
+    {
+        // 1. Get all deliveries for staff on that day
+        var deliveries = await _deliveryRepo.GetByStaffAndDateRangeAsync(staffId, date, date);
+
+        if (!deliveries.Any()) return;
+
+        // 2. Sort by ScheduledDeliveryTime (Calculate manually since it's not stored in DB)
+        // We need to calculate ScheduledDeliveryTime for sorting
+        var sortedDeliveries = deliveries.Select(d => 
+        {
+            DateTime sortTime = DateTime.MaxValue;
+            if (d.GroupSchedule?.EventDate != null && d.GroupSchedule?.SetupTime != null && !string.IsNullOrEmpty(d.GroupSchedule?.EventCity))
+            {
+                 // Re-use calculation logic roughly for sorting
+                 var (_, distance) = DeliveryFeeConfig.CalculateFee(d.GroupSchedule.EventCity);
+                 var travelTimeHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
+                 sortTime = d.GroupSchedule.EventDate.Value.Date 
+                            + d.GroupSchedule.SetupTime.Value.ToTimeSpan() 
+                            - TimeSpan.FromHours(travelTimeHours);
+            }
+            else if (d.GroupSchedule?.EventDate != null)
+            {
+                // Fallback to EventDate if calculation fails
+                 sortTime = d.GroupSchedule.EventDate.Value.Date;
+            }
+
+            return new { Delivery = d, SortTime = sortTime };
+        })
+        .OrderBy(x => x.SortTime)
+        .ToList();
+
+        // 3. Apply logic
+        var count = sortedDeliveries.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            var item = sortedDeliveries[i].Delivery;
+            DeliveryType newType;
+
+            if (count == 1)
+            {
+                newType = DeliveryType.SoleDelivery;
+            }
+            else
+            {
+                if (i == 0) newType = DeliveryType.FirstOfDay;
+                else if (i == count - 1) newType = DeliveryType.LastOfDay;
+                else newType = DeliveryType.MidDay;
+            }
+
+            // Update if changed
+            if (item.Type != newType)
+            {
+                item.Type = newType;
+                await _deliveryRepo.UpdateAsync(item);
+            }
+        }
     }
 
     public async Task<ActualDeliveryResponse> UpdateStatusAsync(
@@ -145,9 +210,15 @@ public class ActualDeliveryService : IActualDeliveryService
         var validTransitions = new Dictionary<string, string[]>
         {
             { "Pending", new[] { "Assigned" } },
-            { "Assigned", new[] { "Delivering" } },
+            // Assigned có thể đi Dispatched (Rời kho) hoặc Delivering (Đi tiếp)
+            { "Assigned", new[] { "Dispatched", "Delivering" } },
+            // Dispatched (Rời kho) -> Delivering (Đang đi)
+            { "Dispatched", new[] { "Delivering" } },
             { "Delivering", new[] { "Delivered" } },
-            { "Delivered", new string[] { } }
+            // Delivered -> Returning (Về kho) hoặc kết thúc
+            { "Delivered", new[] { "Returning" } }, 
+            { "Returning", new[] { "Returned" } },
+            { "Returned", new string[] { } }
         };
 
         if (!validTransitions.ContainsKey(delivery.Status))
@@ -163,6 +234,25 @@ public class ActualDeliveryService : IActualDeliveryService
             );
         }
 
+        // Validate Logic based on DeliveryType
+        if (request.Status == "Dispatched")
+        {
+            // Only FirstOfDay or SoleDelivery can dispatch from warehouse
+            if (delivery.Type != DeliveryType.FirstOfDay && delivery.Type != DeliveryType.SoleDelivery)
+            {
+                throw new Exception($"Delivery Type '{delivery.Type}' cannot start from warehouse (Dispatched). Only FirstOfDay or SoleDelivery allowed.");
+            }
+        }
+
+        if (request.Status == "Returning" || request.Status == "Returned")
+        {
+             // Only LastOfDay or SoleDelivery can return to warehouse
+             if (delivery.Type != DeliveryType.LastOfDay && delivery.Type != DeliveryType.SoleDelivery)
+             {
+                 throw new Exception($"Delivery Type '{delivery.Type}' cannot return to warehouse. Only LastOfDay or SoleDelivery allowed.");
+             }
+        }
+
         // Update status
         delivery.Status = request.Status;
         if (!string.IsNullOrEmpty(request.Notes))
@@ -171,15 +261,29 @@ public class ActualDeliveryService : IActualDeliveryService
         }
 
         // Set actual times
-        if (request.Status == "Delivered")
+        if (request.Status == "Dispatched" || request.Status == "Delivering")
         {
-            delivery.ActualDeliveryTime = DateTime.UtcNow;
+            // Ghi nhận Giờ Xuất Phát (Departure Time)
+            // Chỉ ghi nhận lần đầu tiên (nếu chưa có)
+            if (!delivery.ActualDeliveryTime.HasValue)
+            {
+                delivery.ActualDeliveryTime = DateTime.UtcNow;
+            }
         }
-        else if (request.Status == "Collected")
+        else if (request.Status == "Delivered")
         {
+            // KHÔNG ghi đè ActualDeliveryTime nữa.
+            // ActualDeliveryTime sẽ giữ giá trị là "Giờ Xuất Phát".
+            // "Giờ Đến" (Arrival) hiện tại sẽ không được lưu (theo yêu cầu).
+        }
+        else if (request.Status == "Returning")
+        {
+            // Returning = Bắt đầu về (Giờ thu hồi xong)
             delivery.ActualPickupTime = DateTime.UtcNow;
         }
-
+        
+        // Returned = Về đến kho -> Chỉ update UpdatedAt
+        
         delivery.UpdatedAt = DateTime.UtcNow;
 
         await _deliveryRepo.UpdateAsync(delivery);
@@ -429,7 +533,8 @@ public class ActualDeliveryService : IActualDeliveryService
                 RentalId = rental.Id,
                 EventName = rental.EventName,
                 CustomerName = rental.Account?.FullName,
-                PhoneNumber = rental.PhoneNumber
+                PhoneNumber = rental.PhoneNumber,
+                PackageName = rental.ActivityType?.Name // Map Package Name
             }
         };
     }
@@ -452,7 +557,7 @@ public class ActualDeliveryService : IActualDeliveryService
         // Query: Rental → GroupSchedules → ActualDelivery (first one)
         var groupSchedules = await _groupScheduleRepo.GetAllAsync(
             gs => gs.RentalId == rentalId,
-            includeProperties: "Rental,Rental.Account"
+            includeProperties: "Rental,Rental.Account,Rental.ActivityType"
         );
 
         if (!groupSchedules.Any())
