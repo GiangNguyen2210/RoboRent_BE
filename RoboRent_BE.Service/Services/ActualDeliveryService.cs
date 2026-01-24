@@ -26,7 +26,7 @@ public class ActualDeliveryService : IActualDeliveryService
         // Validate GroupSchedule exists
         var groupSchedule = await _groupScheduleRepo.GetAsync(
             gs => gs.Id == request.GroupScheduleId,
-            includeProperties: "Rental,Rental.Account"
+            includeProperties: "Rental,Rental.Account,Rental.ActivityType"
         );
 
         if (groupSchedule == null)
@@ -429,7 +429,8 @@ public class ActualDeliveryService : IActualDeliveryService
                 RentalId = rental.Id,
                 EventName = rental.EventName,
                 CustomerName = rental.Account?.FullName,
-                PhoneNumber = rental.PhoneNumber
+                PhoneNumber = rental.PhoneNumber,
+                PackageName = rental.ActivityType?.Name // Map Package Name
             }
         };
     }
@@ -452,7 +453,7 @@ public class ActualDeliveryService : IActualDeliveryService
         // Query: Rental → GroupSchedules → ActualDelivery (first one)
         var groupSchedules = await _groupScheduleRepo.GetAllAsync(
             gs => gs.RentalId == rentalId,
-            includeProperties: "Rental,Rental.Account"
+            includeProperties: "Rental,Rental.Account,Rental.ActivityType"
         );
 
         if (!groupSchedules.Any())

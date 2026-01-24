@@ -16,6 +16,9 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.GroupSchedule)
                 .ThenInclude(gs => gs.Rental)
                 .ThenInclude(r => r.Account)
+            .Include(d => d.GroupSchedule) // Chain another Include for ActivityType
+                .ThenInclude(gs => gs.Rental)
+                .ThenInclude(r => r.ActivityType)
             .Include(d => d.Staff)
             .FirstOrDefaultAsync(d => d.GroupScheduleId == groupScheduleId);
     }
@@ -26,6 +29,9 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.GroupSchedule)
                 .ThenInclude(gs => gs.Rental)
                 .ThenInclude(r => r.Account)
+            .Include(d => d.GroupSchedule) // Chain another Include for ActivityType
+                .ThenInclude(gs => gs.Rental)
+                .ThenInclude(r => r.ActivityType)
             .Include(d => d.Staff)
             .Where(d => d.StaffId == staffId)
             .OrderBy(d => d.GroupSchedule.EventDate)
@@ -62,6 +68,9 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.GroupSchedule)
                 .ThenInclude(gs => gs.Rental)
                 .ThenInclude(r => r.Account)
+            .Include(d => d.GroupSchedule) // Chain another Include for ActivityType
+                .ThenInclude(gs => gs.Rental)
+                .ThenInclude(r => r.ActivityType)
             .Include(d => d.GroupSchedule.ActivityTypeGroup)
             .Include(d => d.Staff)
             .FirstOrDefaultAsync(d => d.Id == id);
