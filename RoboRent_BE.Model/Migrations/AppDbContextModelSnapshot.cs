@@ -942,7 +942,7 @@ namespace RoboRent_BE.Model.Migrations
                         {
                             Id = 1,
                             Code = "DOCS_RENTAL_BRIEF",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra có đầy đủ thông tin người phụ trách kỹ thuật, hotline, và hướng dẫn sử dụng nhanh (nếu có).",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -953,13 +953,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 10,
                             Title = "Tài liệu & thông tin bàn giao",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 2,
                             Code = "SAFETY_SERIAL_QR_MATCH",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Quét QR/đối chiếu serial trên robot với mã trong hệ thống trước khi giao.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -971,13 +971,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = true,
                             SortOrder = 10,
                             Title = "Serial/QR đúng với hệ thống",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 3,
                             Code = "APPEARANCE_OVERALL_PHOTO",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Chụp ảnh toàn thân robot (ít nhất 2 góc) để làm bằng chứng tình trạng ban đầu.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -988,13 +988,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 10,
                             Title = "Ảnh tổng quan robot trước bàn giao",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 4,
                             Code = "APPEARANCE_SCRATCH_DENT",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Quan sát thân vỏ, khớp nối, mặt trước/sau; ghi nhận trầy xước hoặc móp/nứt nếu có.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1005,13 +1005,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 20,
                             Title = "Trầy xước/móp/nứt vỏ",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 5,
                             Code = "POWER_BATTERY_LEVEL",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Bật robot và kiểm tra % pin (khuyến nghị ≥ 70% trước khi vận chuyển/giao).",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1023,13 +1023,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = true,
                             SortOrder = 10,
                             Title = "Mức pin trước khi giao",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 6,
                             Code = "POWER_CHARGER_CABLES",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Đảm bảo có đủ sạc/adapter và dây nguồn đúng chuẩn, không đứt gãy.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1040,13 +1040,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 20,
                             Title = "Sạc/adapter/dây nguồn đầy đủ",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 7,
                             Code = "MOBILITY_BASIC_TEST",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra robot có thể đứng vững/di chuyển cơ bản theo khả năng (không cần chạy show).",
                             EvidenceRequirement = 2,
                             FailRequiresEvidence = true,
@@ -1057,13 +1057,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 10,
                             Title = "Test di chuyển cơ bản",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 8,
                             Code = "AUDIO_SPEAKER_TEST",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Phát đoạn âm thanh mẫu; kiểm tra rè, nhỏ bất thường hoặc mất kênh.",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1074,13 +1074,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 10,
                             Title = "Test loa (âm thanh)",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 9,
                             Code = "DISPLAY_SCREEN_OK",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra không sọc, không loang màu, cảm ứng/điều khiển hiển thị hoạt động.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1091,13 +1091,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 10,
                             Title = "Màn hình hiển thị bình thường",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 10,
                             Code = "ACCESSORIES_REMOTE_CONTROLLER",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra có đủ remote/controller và pin remote (nếu dùng).",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1108,13 +1108,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 30,
                             Title = "Remote/thiết bị điều khiển (nếu có)",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 11,
                             Code = "SAFETY_CASE_PACKING",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Robot được cố định an toàn trong case/thùng; có chèn chống sốc.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1125,13 +1125,13 @@ namespace RoboRent_BE.Model.Migrations
                             RequiresMeasuredValue = false,
                             SortOrder = 20,
                             Title = "Đóng gói/thùng/case vận chuyển đúng chuẩn",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 101,
                             Code = "RECEPTION_BRANDING_ASSETS_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra đã có logo/banner/hình nền và giao diện màu sắc đúng theo yêu cầu khách.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1143,13 +1143,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 1,
                             SortOrder = 10,
                             Title = "Branding assets đã nạp sẵn",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 102,
                             Code = "RECEPTION_QR_CTA_WORKING",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Mở màn hình QR/CTA; thử quét QR bằng điện thoại để đảm bảo điều hướng đúng link.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1161,13 +1161,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 1,
                             SortOrder = 20,
                             Title = "QR/CTA hiển thị đúng & quét được",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 103,
                             Code = "RECEPTION_FAQ_SCRIPT_LOADED",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra danh sách câu chào và FAQ theo yêu cầu sự kiện (ngôn ngữ, giọng đọc).",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1179,13 +1179,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 1,
                             SortOrder = 10,
                             Title = "Kịch bản chào hỏi/FAQ đã cấu hình",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 201,
                             Code = "PERFORMANCE_SHOWSET_LOADED",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra danh sách tiết mục (nhạc, thời lượng, thứ tự) đã tải đúng phiên bản.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1197,13 +1197,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 2,
                             SortOrder = 10,
                             Title = "Show set/playlist biểu diễn đã nạp",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 202,
                             Code = "PERFORMANCE_TRIGGER_METHOD_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Xác nhận phương thức kích hoạt (manual/remote/schedule) hoạt động đúng.",
                             EvidenceRequirement = 2,
                             FailRequiresEvidence = true,
@@ -1215,13 +1215,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 2,
                             SortOrder = 20,
                             Title = "Cơ chế kích hoạt biểu diễn sẵn sàng",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 203,
                             Code = "PERFORMANCE_SAFETY_LIMITS_SET",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Xác nhận đã set vùng an toàn/khoảng cách/giới hạn tốc độ phù hợp kịch bản.",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1233,13 +1233,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 2,
                             SortOrder = 10,
                             Title = "Thiết lập giới hạn an toàn sân khấu",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 301,
                             Code = "HOST_SCRIPT_BLOCKS_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra các khối nội dung lời dẫn theo timeline; đúng ngôn ngữ và thời lượng ước tính.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1251,13 +1251,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 3,
                             SortOrder = 10,
                             Title = "Kịch bản MC (blocks) đã nạp",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 302,
                             Code = "HOST_VOICE_SETTINGS_OK",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra tốc độ/cao độ/âm lượng; đảm bảo nghe rõ và không gây chói.",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1269,13 +1269,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 3,
                             SortOrder = 20,
                             Title = "Thiết lập giọng nói phù hợp không gian",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 303,
                             Code = "HOST_MIC_TEST_IF_ANY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra mic thu âm/khử ồn theo cấu hình; ghi nhận nếu micro yếu hoặc nhiễu.",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1287,13 +1287,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 3,
                             SortOrder = 10,
                             Title = "Test micro (nếu robot dùng mic)",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 304,
                             Code = "HOST_COUNTDOWN_OR_SLIDE_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra nội dung countdown/slide/QR hiển thị đúng theo mốc chương trình.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1305,13 +1305,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 3,
                             SortOrder = 30,
                             Title = "Countdown/slide hỗ trợ hiển thị sẵn sàng",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 401,
                             Code = "PROMO_MEDIA_PLAYLIST_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra thứ tự, thời lượng và khả năng play mượt của playlist nội dung booth.",
                             EvidenceRequirement = 2,
                             FailRequiresEvidence = true,
@@ -1323,13 +1323,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 4,
                             SortOrder = 10,
                             Title = "Playlist quảng cáo (image/video) đã nạp",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 402,
                             Code = "PROMO_CTA_QR_COUPON_READY",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Kiểm tra QR/CTA/voucher đúng nội dung ưu đãi và quét ra đúng link/landing page.",
                             EvidenceRequirement = 1,
                             FailRequiresEvidence = true,
@@ -1341,13 +1341,13 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 4,
                             SortOrder = 20,
                             Title = "QR/CTA/voucher hiển thị đúng",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         },
                         new
                         {
                             Id = 403,
                             Code = "PROMO_PATROL_ROUTE_CONFIG",
-                            CreatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959),
+                            CreatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807),
                             Description = "Xác nhận lộ trình, điểm dừng, khu vực tránh và tốc độ tối đa phù hợp booth.",
                             EvidenceRequirement = 0,
                             FailRequiresEvidence = false,
@@ -1359,7 +1359,7 @@ namespace RoboRent_BE.Model.Migrations
                             RoboTypeId = 4,
                             SortOrder = 20,
                             Title = "Lộ trình tuần tra/điểm dừng (nếu di chuyển)",
-                            UpdatedAt = new DateTime(2026, 1, 22, 15, 33, 17, 584, DateTimeKind.Utc).AddTicks(7959)
+                            UpdatedAt = new DateTime(2026, 1, 23, 13, 41, 4, 730, DateTimeKind.Utc).AddTicks(4807)
                         });
                 });
 
