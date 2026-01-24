@@ -1,4 +1,4 @@
-﻿using RoboRent_BE.Service.Interface;
+using RoboRent_BE.Service.Interface;
 using Net.payOS.Types;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -255,6 +255,42 @@ public class PaymentController : ControllerBase
             { 
                 success = false, 
                 message = "Failed to get customer transactions",
+                error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [DEV/TESTING] Manually simulate webhook payment completion for localhost testing
+    /// Mimics exactly what ProcessWebhookAsync does:
+    /// 1. Updates PaymentRecord (Status, PaidAt)
+    /// 2. If Deposit + Paid → Creates ActualDelivery + Checklist
+    /// </summary>
+    [HttpPost("dev-complete-payment/{orderCode}")]
+    public async Task<IActionResult> DevCompletePayment(long orderCode)
+    {
+        try
+        {
+            _logger.LogInformation($"🛠️ [DEV] Manual payment completion triggered for OrderCode: {orderCode}");
+
+            // Reuse the exact same logic as webhook
+            await _paymentService.ProcessWebhookAsync(orderCode, "Paid");
+
+            return Ok(new
+            {
+                success = true,
+                message = "Payment manually marked as Paid (dev mode)",
+                orderCode = orderCode,
+                note = "ActualDelivery and Checklist created if this was a Deposit payment"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ [DEV] Error processing manual payment for OrderCode {orderCode}: {ex.Message}");
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Manual payment processing failed",
                 error = ex.Message
             });
         }
