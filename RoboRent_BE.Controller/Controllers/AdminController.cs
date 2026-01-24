@@ -175,6 +175,20 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
     
+    [HttpGet("technical-staff")]
+    public async Task<IActionResult> GetTechnicalStaffList(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
+        [FromQuery] string? searchTerm = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        
+        var result = await _modifyIdentityUserService.GetTechnicalStaffListAsync(page, pageSize, status, searchTerm);
+        return Ok(result);
+    }
+    
     /// <summary>
     /// [STAFF] Get list of managers
     /// </summary>
@@ -191,5 +205,44 @@ public class AdminController : ControllerBase
 
         var result = await _modifyIdentityUserService.GetManagerListAsync(page, pageSize, status, searchTerm);
         return Ok(result);
+    }
+
+    [HttpGet("accounts")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAccounts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? searchTerm = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        var result = await _modifyIdentityUserService.GetAllAccountsAsync(page, pageSize, status, searchTerm);
+        return Ok(result);
+    }
+
+    [HttpPut("accounts/{accountId}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUserStatus(int accountId, [FromBody] UpdateStatusRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        var result = await _modifyIdentityUserService.UpdateUserStatusAsync(accountId, request.Status);
+        if (result)
+        {
+            return Ok(new { message = "User status updated successfully" });
+        }
+
+        return NotFound(new { message = "Account not found" });
     }
 }

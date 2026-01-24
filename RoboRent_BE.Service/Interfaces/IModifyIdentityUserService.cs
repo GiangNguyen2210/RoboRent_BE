@@ -25,4 +25,18 @@ public interface IModifyIdentityUserService
         int pageSize, 
         string? status = null, 
         string? searchTerm = null);
+
+    Task<PageListResponse<AccountListResponse>> GetAllAccountsAsync(
+        int page,
+        int pageSize,
+        string? status = null,
+        string? searchTerm = null);
+
+    Task<bool> UpdateUserStatusAsync(int accountId, string status);
+
+    public Task<PageListResponse<StaffListItemResponse>> GetTechnicalStaffListAsync(
+        int page,
+        int pageSize,
+        string? status = null,
+        string? searchTerm = null);
 }
