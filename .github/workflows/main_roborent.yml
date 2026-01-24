@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - RoborentBE
+name: Build and deploy ASP.Net Core app to Azure Web App - Roborent
 
 on:
   push:
@@ -51,15 +51,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8241CEAF46E74A15948B38F6CA8BE6F8 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_84839AE0B6154B2C9045331109B97522 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_47778ED2A77640C9BDE422467BCC5105 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AC2C00399544450E80E1E6EB1077F7F1 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_EC159A74CF004F748CA963E6FFBADCBA }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_9B05C516C9144BEB9422E02FA54FDA5C }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'RoborentBE'
+          app-name: 'Roborent'
           slot-name: 'Production'
           package: .
           
