@@ -295,4 +295,29 @@ public class PaymentController : ControllerBase
             });
         }
     }
+
+    [HttpPut("mark-as-paid/{orderCode}")]
+    public async Task<IActionResult> MarkPaymentAsPaid(long orderCode)
+    {
+        try
+        {
+            await _paymentService.ProcessWebhookAsync(orderCode, "Paid");
+            return Ok(new
+            {
+                success = true,
+                message = "Payment marked as Paid",
+                orderCode = orderCode
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error marking payment as Paid for OrderCode {orderCode}: {ex.Message}");
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Failed to mark as Paid",
+                error = ex.Message
+            });
+        }
+    }
 }
