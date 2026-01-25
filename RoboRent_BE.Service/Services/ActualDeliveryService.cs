@@ -212,8 +212,8 @@ public class ActualDeliveryService : IActualDeliveryService
             { "Pending", new[] { "Assigned" } },
             // Assigned có thể đi Dispatched (Rời kho) hoặc Delivering (Đi tiếp)
             { "Assigned", new[] { "Dispatched", "Delivering" } },
-            // Dispatched (Rời kho) -> Delivering (Đang đi)
-            { "Dispatched", new[] { "Delivering" } },
+            // Dispatched (Rời kho) -> Giao xong luôn
+            { "Dispatched", new[] { "Delivered" } },
             { "Delivering", new[] { "Delivered" } },
             // Delivered -> Returning (Về kho) hoặc kết thúc
             { "Delivered", new[] { "Returning" } }, 
