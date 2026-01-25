@@ -1,4 +1,4 @@
-﻿using RoboRent_BE.Model.DTOs;
+using RoboRent_BE.Model.DTOs;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
 
 namespace RoboRent_BE.Service.Interfaces;
@@ -54,11 +54,23 @@ public interface IActualDeliveryService
     /// Get pending deliveries for manager assignment
     /// </summary>
     Task<PageListResponse<ActualDeliveryResponse>> GetPendingDeliveriesAsync(
-        int page, 
-        int pageSize, 
-        string? searchTerm = null, 
+        int page,
+        int pageSize,
+        string? searchTerm = null,
         string? sortBy = "date");
-    
+
+    /// <summary>
+    /// [MANAGER] Assign staff for ALL pending deliveries in (EventDate + ActivityTypeGroup)
+    /// </summary>
+    Task<AssignStaffBatchResponse> AssignStaffBatchAsync(AssignStaffBatchRequest request);
+
+    /// <summary>
+    /// [MANAGER] Get pending deliveries grouped by (EventDate + ActivityTypeGroup)
+    /// </summary>
+    Task<PendingDeliveriesGroupedResponse> GetPendingDeliveriesGroupedAsync(
+        DateTime? from = null,
+        DateTime? to = null);
+
     Task<ActualDeliveryResponse?> GetByRentalIdAsync(int rentalId);
 
 }

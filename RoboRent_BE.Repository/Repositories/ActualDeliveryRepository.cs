@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.Entities;
 using RoboRent_BE.Repository.Interfaces;
 
@@ -45,6 +45,9 @@ public class ActualDeliveryRepository : GenericRepository<ActualDelivery>, IActu
             .Include(d => d.GroupSchedule)
                 .ThenInclude(gs => gs.Rental)
                 .ThenInclude(r => r.Account)
+            .Include(d => d.GroupSchedule)
+                .ThenInclude(gs => gs.ActivityTypeGroup)
+                .ThenInclude(atg => atg.ActivityType)
             .Include(d => d.Staff)
             .Where(d => d.GroupSchedule.EventDate >= from.Date && d.GroupSchedule.EventDate <= to.Date)
             .OrderBy(d => d.GroupSchedule.EventDate)

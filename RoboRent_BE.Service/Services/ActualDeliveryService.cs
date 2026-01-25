@@ -5,6 +5,7 @@ using RoboRent_BE.Model.Enums;
 using RoboRent_BE.Repository.Interfaces;
 using RoboRent_BE.Service.Interfaces;
 using RoboRent_BE.Service.Configuration;
+using RoboRent_BE.Service.Interfaces;
 
 namespace RoboRent_BE.Service.Services;
 
@@ -130,42 +131,20 @@ public class ActualDeliveryService : IActualDeliveryService
 
     private async Task ReclassifyDeliveriesOfDayAsync(int staffId, DateTime date)
     {
-        // 1. Get all deliveries for staff on that day
         var deliveries = await _deliveryRepo.GetByStaffAndDateRangeAsync(staffId, date, date);
 
         if (!deliveries.Any()) return;
 
-        // 2. Sort by ScheduledDeliveryTime (Calculate manually since it's not stored in DB)
-        // We need to calculate ScheduledDeliveryTime for sorting
-        var sortedDeliveries = deliveries.Select(d => 
-        {
-            DateTime sortTime = DateTime.MaxValue;
-            if (d.GroupSchedule?.EventDate != null && d.GroupSchedule?.SetupTime != null && !string.IsNullOrEmpty(d.GroupSchedule?.EventCity))
-            {
-                 // Re-use calculation logic roughly for sorting
-                 var (_, distance) = DeliveryFeeConfig.CalculateFee(d.GroupSchedule.EventCity);
-                 var travelTimeHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
-                 sortTime = d.GroupSchedule.EventDate.Value.Date 
-                            + d.GroupSchedule.SetupTime.Value.ToTimeSpan() 
-                            - TimeSpan.FromHours(travelTimeHours);
-            }
-            else if (d.GroupSchedule?.EventDate != null)
-            {
-                // Fallback to EventDate if calculation fails
-                 sortTime = d.GroupSchedule.EventDate.Value.Date;
-            }
+        var sortedDeliveries = deliveries
+            .Where(d => d.GroupSchedule?.SetupTime != null)
+            .OrderBy(d => d.GroupSchedule!.SetupTime)
+            .ToList();
 
-            return new { Delivery = d, SortTime = sortTime };
-        })
-        .OrderBy(x => x.SortTime)
-        .ToList();
-
-        // 3. Apply logic
         var count = sortedDeliveries.Count;
 
         for (int i = 0; i < count; i++)
         {
-            var item = sortedDeliveries[i].Delivery;
+            var item = sortedDeliveries[i];
             DeliveryType newType;
 
             if (count == 1)
@@ -179,7 +158,6 @@ public class ActualDeliveryService : IActualDeliveryService
                 else newType = DeliveryType.MidDay;
             }
 
-            // Update if changed
             if (item.Type != newType)
             {
                 item.Type = newType;
@@ -577,6 +555,242 @@ public class ActualDeliveryService : IActualDeliveryService
 
         return null;
     }
+
+    public async Task<AssignStaffBatchResponse> AssignStaffBatchAsync(AssignStaffBatchRequest request)
+    {
+        var existingAssignments = await _deliveryRepo.GetByStaffAndDateRangeAsync(
+            request.StaffId,
+            request.EventDate,
+            request.EventDate
+        );
+
+        if (existingAssignments.Any())
+        {
+            var assignedGroupIds = existingAssignments
+                .Select(d => d.GroupSchedule.ActivityTypeGroupId)
+                .Distinct()
+                .ToList();
+
+            if (!assignedGroupIds.Contains(request.ActivityTypeGroupId) || assignedGroupIds.Count > 1)
+            {
+                throw new Exception(
+                    $"Staff đã được assign cho ActivityTypeGroup khác trong ngày {request.EventDate:yyyy-MM-dd}. " +
+                    $"Không thể assign cho nhiều nhóm robot trong cùng một ngày.");
+            }
+        }
+
+        var groupSchedules = await _groupScheduleRepo.GetByEventDateAndActivityTypeGroupAsync(
+            request.EventDate,
+            request.ActivityTypeGroupId
+        );
+
+        if (!groupSchedules.Any())
+        {
+            throw new Exception(
+                $"Không tìm thấy GroupSchedule nào cho (Date: {request.EventDate:yyyy-MM-dd}, ActivityTypeGroup: {request.ActivityTypeGroupId})");
+        }
+
+        var sortedSchedules = groupSchedules.OrderBy(gs => gs.SetupTime).ToList();
+        var conflictingScheduleIds = new List<int>();
+        var assignableScheduleIds = new List<int>();
+
+        // Check travel time conflicts
+        for (int i = 0; i < sortedSchedules.Count; i++)
+        {
+            var current = sortedSchedules[i];
+            
+            // First schedule is always assignable
+            if (i == 0)
+            {
+                assignableScheduleIds.Add(current.Id);
+                continue;
+            }
+
+            var previous = sortedSchedules[i - 1];
+
+            if (current.SetupTime == null || current.FinishTime == null ||
+                previous.SetupTime == null || previous.FinishTime == null)
+            {
+                throw new Exception($"Schedule {current.Id} hoặc {previous.Id} thiếu thời gian.");
+            }
+
+            var finishDateTime = previous.EventDate!.Value.Date + previous.FinishTime.Value.ToTimeSpan();
+            var nextSetupDateTime = current.EventDate!.Value.Date + current.SetupTime.Value.ToTimeSpan();
+
+            var (_, distance) = DeliveryFeeConfig.CalculateFee(current.EventCity);
+            var travelHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
+
+            var requiredArrival = finishDateTime.AddHours(travelHours);
+
+            if (requiredArrival > nextSetupDateTime)
+            {
+                // Conflict detected - all remaining schedules are conflicting
+                for (int j = i; j < sortedSchedules.Count; j++)
+                {
+                    conflictingScheduleIds.Add(sortedSchedules[j].Id);
+                }
+                break;
+            }
+            else
+            {
+                assignableScheduleIds.Add(current.Id);
+            }
+        }
+
+        // If conflict detected and not forcing partial assign, return conflict info
+        if (conflictingScheduleIds.Any() && !request.ForcePartialAssign)
+        {
+            var conflictMessages = new List<string>();
+            for (int i = 0; i < sortedSchedules.Count - 1; i++)
+            {
+                var current = sortedSchedules[i];
+                var next = sortedSchedules[i + 1];
+                
+                if (conflictingScheduleIds.Contains(next.Id))
+                {
+                    var finishDateTime = current.EventDate!.Value.Date + current.FinishTime!.Value.ToTimeSpan();
+                    var nextSetupDateTime = next.EventDate!.Value.Date + next.SetupTime!.Value.ToTimeSpan();
+                    var gap = (nextSetupDateTime - finishDateTime).TotalHours;
+                    var (_, distance) = DeliveryFeeConfig.CalculateFee(next.EventCity);
+                    var travelHours = DeliveryFeeConfig.GetTravelTimeHours(distance);
+                    
+                    conflictMessages.Add(
+                        $"{current.Rental?.EventName ?? current.RentalId.ToString()} kết thúc lúc {current.FinishTime}, " +
+                        $"{next.Rental?.EventName ?? next.RentalId.ToString()} bắt đầu lúc {next.SetupTime}. " +
+                        $"Cần {travelHours}h di chuyển đến {next.EventCity} nhưng chỉ còn {gap:F1}h."
+                    );
+                    break; // Only show first conflict
+                }
+            }
+
+            return new AssignStaffBatchResponse
+            {
+                Success = false,
+                HasConflict = true,
+                ConflictingScheduleIds = conflictingScheduleIds,
+                AssignedScheduleIds = new List<int>(),
+                AssignedCount = 0,
+                ConflictMessage = $"Staff không thể hoàn thành tất cả {sortedSchedules.Count} lịch trình. " +
+                                 $"Chỉ có thể assign {assignableScheduleIds.Count} lịch trình đầu tiên. " +
+                                 string.Join(" ", conflictMessages)
+            };
+        }
+
+        // Get schedules to assign (only assignable ones if there's conflict)
+        var schedulesToAssign = conflictingScheduleIds.Any() 
+            ? sortedSchedules.Where(gs => assignableScheduleIds.Contains(gs.Id)).ToList()
+            : sortedSchedules;
+
+        var pendingDeliveries = new List<ActualDelivery>();
+        foreach (var gs in schedulesToAssign)
+        {
+            var delivery = await _deliveryRepo.GetByGroupScheduleIdAsync(gs.Id);
+            if (delivery != null && delivery.Status == "Pending")
+            {
+                pendingDeliveries.Add(delivery);
+            }
+        }
+
+        if (!pendingDeliveries.Any())
+        {
+            throw new Exception($"Không có pending delivery nào để assign.");
+        }
+
+        var assignedIds = new List<int>();
+        foreach (var delivery in pendingDeliveries)
+        {
+            delivery.StaffId = request.StaffId;
+            delivery.Status = "Assigned";
+            delivery.Notes = request.Notes;
+            delivery.UpdatedAt = DateTime.UtcNow;
+
+            await _deliveryRepo.UpdateAsync(delivery);
+            assignedIds.Add(delivery.GroupScheduleId);
+        }
+
+        await ReclassifyDeliveriesOfDayAsync(request.StaffId, request.EventDate);
+
+        return new AssignStaffBatchResponse
+        {
+            Success = true,
+            AssignedCount = pendingDeliveries.Count,
+            HasConflict = conflictingScheduleIds.Any(),
+            ConflictingScheduleIds = conflictingScheduleIds,
+            AssignedScheduleIds = assignedIds,
+            ConflictMessage = conflictingScheduleIds.Any() 
+                ? $"Đã assign {pendingDeliveries.Count}/{sortedSchedules.Count} lịch trình do conflict."
+                : null
+        };
+    }
+
+    public async Task<PendingDeliveriesGroupedResponse> GetPendingDeliveriesGroupedAsync(
+        DateTime? from = null,
+        DateTime? to = null)
+    {
+        var defaultFrom = DateTime.UtcNow.Date;
+        var defaultTo = DateTime.UtcNow.Date.AddDays(60);
+
+        from = from ?? defaultFrom;
+        to = to ?? defaultTo;
+
+        // CHỈ lấy deliveries có status = Pending
+        var allDeliveries = await _deliveryRepo.GetByDateRangeAsync(from.Value, to.Value);
+        var pendingDeliveries = allDeliveries
+            .Where(d => d.Status == "Pending")
+            .Where(d => d.GroupSchedule?.EventDate.HasValue == true && d.GroupSchedule.ActivityTypeGroupId.HasValue)
+            .ToList();
+
+        // Group by EventDate + ActivityTypeGroupId
+        var grouped = pendingDeliveries
+            .GroupBy(d => new
+            {
+                Date = d.GroupSchedule!.EventDate!.Value.Date,
+                GroupId = d.GroupSchedule.ActivityTypeGroupId!.Value
+            })
+            .Select(g =>
+            {
+                var schedules = g.Select(d => d.GroupSchedule!).Distinct().OrderBy(gs => gs.SetupTime).ToList();
+                var firstSchedule = schedules.First();
+                var activityTypeGroup = firstSchedule.ActivityTypeGroup;
+                var activityType = activityTypeGroup?.ActivityType;
+                
+                // Tên group = ActivityType Name (ví dụ: "Wedding Robots", "Corporate Event Robots")
+                var groupName = $"{activityType?.Name ?? "Unknown"} ATG {g.Key.GroupId}";
+
+                return new GroupedDeliveryInfo
+                {
+                    ActivityTypeGroupId = g.Key.GroupId,
+                    ActivityTypeGroupName = groupName,
+                    EventDate = g.Key.Date.ToString("yyyy-MM-dd"),
+                    DeliveryIds = g.Select(d => d.Id).ToList(),
+                    GroupScheduleIds = schedules.Select(gs => gs.Id).ToList(),
+                    ScheduleCount = schedules.Count,
+                    ScheduleInfo = new ScheduleInfoSummary
+                    {
+                        EventLocations = schedules.Select(gs => gs.EventLocation ?? "").Distinct().Where(s => !string.IsNullOrEmpty(s)).ToList(),
+                        EventCities = schedules.Select(gs => gs.EventCity ?? "").Distinct().Where(s => !string.IsNullOrEmpty(s)).ToList(),
+                        EarliestSetupTime = schedules.First().SetupTime?.ToString() ?? "",
+                        LatestFinishTime = schedules.Last().FinishTime?.ToString() ?? ""
+                    },
+                    RentalInfo = new RentalInfoSummary
+                    {
+                        EventNames = schedules.Select(gs => gs.Rental?.EventName ?? "").Distinct().Where(s => !string.IsNullOrEmpty(s)).ToList(),
+                        CustomerNames = schedules.Select(gs => gs.Rental?.Account?.FullName ?? "").Distinct().Where(s => !string.IsNullOrEmpty(s)).ToList()
+                    }
+                };
+            })
+            .OrderBy(g => g.EventDate)
+            .ThenBy(g => g.ActivityTypeGroupName)
+            .ToList();
+
+        return new PendingDeliveriesGroupedResponse
+        {
+            Groups = grouped,
+            From = from.Value.ToString("yyyy-MM-dd"),
+            To = to.Value.ToString("yyyy-MM-dd")
+        };
+    }
+
 
 
 }
