@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoboRent_BE.Controller.Helpers;
 using RoboRent_BE.Model.DTOs.ActualDelivery;
@@ -228,19 +228,106 @@ public class ActualDeliveryController : ControllerBase
         try
         {
             var result = await _deliveryService.GetPendingDeliveriesAsync(
-                page, 
-                pageSize, 
-                searchTerm, 
+                page,
+                pageSize,
+                searchTerm,
                 sortBy
             );
-        
+
             return Ok(result);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { 
-                Message = "Failed to get pending deliveries", 
-                Error = ex.Message 
+            return BadRequest(new {
+                Message = "Failed to get pending deliveries",
+                Error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [MANAGER] Assign staff for ALL pending deliveries in (EventDate + ActivityTypeGroup)
+    /// </summary>
+    [HttpPut("assign-staff-batch")]
+    public async Task<IActionResult> AssignStaffBatch([FromBody] AssignStaffBatchRequest request)
+    {
+        try
+        {
+            // Convert EventDate to UTC for PostgreSQL compatibility
+            var requestWithUtc = new AssignStaffBatchRequest
+            {
+                ActivityTypeGroupId = request.ActivityTypeGroupId,
+                EventDate = DateTime.SpecifyKind(request.EventDate, DateTimeKind.Utc),
+                StaffId = request.StaffId,
+                Notes = request.Notes,
+                ForcePartialAssign = request.ForcePartialAssign
+            };
+            
+            var response = await _deliveryService.AssignStaffBatchAsync(requestWithUtc);
+
+            // If conflict detected and not forced, return conflict info for confirmation
+            if (response.HasConflict && !response.Success)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    hasConflict = true,
+                    conflictMessage = response.ConflictMessage,
+                    conflictingScheduleIds = response.ConflictingScheduleIds,
+                    assignedCount = 0
+                });
+            }
+
+            // Success (notification removed - not critical for batch assignment)
+            
+            return Ok(new
+            {
+                success = true,
+                assignedCount = response.AssignedCount,
+                hasConflict = response.HasConflict,
+                message = response.ConflictMessage ?? $"Đã assign staff cho {response.AssignedCount} deliveries"
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to assign staff",
+                error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// [MANAGER] Get pending deliveries grouped by (EventDate + ActivityTypeGroup)
+    /// Query params: from, to (optional)
+    /// </summary>
+    [HttpGet("pending-grouped")]
+    public async Task<IActionResult> GetPendingDeliveriesGrouped(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
+    {
+        try
+        {
+            // Convert to UTC for PostgreSQL compatibility
+            DateTime? fromUtc = from.HasValue ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : null;
+            DateTime? toUtc = to.HasValue ? DateTime.SpecifyKind(to.Value, DateTimeKind.Utc) : null;
+            
+            var result = await _deliveryService.GetPendingDeliveriesGroupedAsync(fromUtc, toUtc);
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Failed to get pending deliveries grouped",
+                error = ex.Message
             });
         }
     }
