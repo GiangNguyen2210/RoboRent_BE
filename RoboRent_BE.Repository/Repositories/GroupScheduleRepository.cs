@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RoboRent_BE.Model.Entities;
-using RoboRent_BE.Repository.Interfaces;
+using RoboRent_BE.Repository.Interfaces; 
 
 namespace RoboRent_BE.Repository.Repositories;
 
@@ -32,6 +32,20 @@ public class GroupScheduleRepository : GenericRepository<GroupSchedule>, IGroupS
             .Where(g => g.ActivityTypeGroupId == groupId &&
                         g.EventDate == date &&
                         !g.IsDeleted)
+            .ToListAsync();
+    }
+
+    public async Task<List<GroupSchedule>> GetByEventDateAndActivityTypeGroupAsync(DateTime eventDate, int activityTypeGroupId)
+    {
+        return await _dbContext.GroupSchedules
+            .Include(gs => gs.Rental)
+            .Include(gs => gs.ActivityTypeGroup)
+            .ThenInclude(atg => atg.ActivityType)
+            .Where(gs =>
+                gs.EventDate.HasValue &&
+                gs.EventDate.Value.Date == eventDate.Date &&
+                gs.ActivityTypeGroupId == activityTypeGroupId &&
+                !gs.IsDeleted)
             .ToListAsync();
     }
 

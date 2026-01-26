@@ -41,13 +41,13 @@ public class PriceQuoteService : IPriceQuoteService
             throw new Exception($"Không thể tạo quote. Rental status hiện tại: {rental.Status}. Cần status: Received hoặc PendingPriceQuote");
         }
 
-        // Business Rule: Max 3 quotes per rental
+        // Business Rule: Max 3 quotes per rental -> REMOVED
         var existingQuotes = await _priceQuoteRepo.GetByRentalIdAsync(request.RentalId);
 
-        if (existingQuotes.Count >= 3)
-        {
-            throw new Exception($"Maximum 3 quotes reached for rental {request.RentalId}. Cannot create more.");
-        }
+        // if (existingQuotes.Count >= 3)
+        // {
+        //     throw new Exception($"Maximum 3 quotes reached for rental {request.RentalId}. Cannot create more.");
+        // }
 
         // Check không có quote nào đang active
         var activeQuote = existingQuotes.FirstOrDefault(q =>
@@ -119,7 +119,7 @@ public class PriceQuoteService : IPriceQuoteService
             .Select((q, index) => MapToPriceQuoteResponse(q, index + 1))
             .ToList();
 
-        // ✅ CanCreateMore: count < 3 VÀ không có quote active
+        // ✅ CanCreateMore: count < 3 VÀ không có quote active -> REMOVED LIMIT
         var hasActiveQuote = quotes.Any(q =>
             q.Status == "PendingManager" ||
             q.Status == "PendingCustomer" ||
@@ -130,7 +130,7 @@ public class PriceQuoteService : IPriceQuoteService
             RentalId = rentalId,
             Quotes = quoteResponses,
             TotalQuotes = quotes.Count,
-            CanCreateMore = quotes.Count < 3 && !hasActiveQuote
+            CanCreateMore = !hasActiveQuote
         };
     }
 
@@ -213,26 +213,13 @@ public class PriceQuoteService : IPriceQuoteService
             rental2.Status = "RejectedPriceQuote";
             await _rentalRepo.UpdateAsync(rental2);
 
-            if (allQuotes.Count >= 3)
-            {
-                // Đã 3 quotes rồi → Expired
-                quote.Status = "Expired";
-
-                var rental = await _rentalRepo.GetAsync(r => r.Id == quote.RentalId);
-                rental.Status = "Canceled";
-                await _rentalRepo.UpdateAsync(rental);
-
-                var schedule = await _groupScheduleRepo.GetAsync(gs => gs.RentalId == rental.Id);
-                schedule.IsDeleted = true;
-                await _groupScheduleRepo.UpdateAsync(schedule);
-            }
-            else
-            {
-                // Chưa đủ 3 → RejectedCustomer (staff sẽ tạo quote mới)
-                quote.Status = "RejectedCustomer";
-            }
-
+            // REMOVED LIMIT CHECK (Previously >= 3 check)
+            // Always allow creating new quote (RejectedCustomer status)
+            
+            quote.Status = "RejectedCustomer";
             await _priceQuoteRepo.UpdateAsync(quote);
+            
+            // The expired logic is removed as per new business rule (unlimited quotes)
         }
         else
         {
