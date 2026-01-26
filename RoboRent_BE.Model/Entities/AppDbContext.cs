@@ -135,6 +135,38 @@ public partial class AppDbContext : IdentityDbContext<
                 TwoFactorEnabled = false,
                 LockoutEnabled = true,
                 AccessFailedCount = 0
+            },
+            new ModifyIdentityUser
+            {
+                Id = "8b6b1d73-9f76-4c3a-8a62-1a4a6f1f2c90", // GUID mới
+                Status = "Active",
+                UserName = "khoanddse183725@fpt.edu.vn",
+                NormalizedUserName = "KHOANDDSE183725@FPT.EDU.VN",
+                Email = "khoanddse183725@fpt.edu.vn",
+                NormalizedEmail = "KHOANDDSE183725@FPT.EDU.VN",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                ConcurrencyStamp = Guid.NewGuid().ToString(),
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
+            },
+            new ModifyIdentityUser
+            {
+                Id = "9c1b4f5a-8c1e-4d5b-9e9a-3b7f4c2e8a91", // GUID MỚI
+                Status = "Active",
+                UserName = "qwe104531@gmail.com",
+                NormalizedUserName = "QWE104531@GMAIL.COM",
+                Email = "qwe104531@gmail.com",
+                NormalizedEmail = "QWE104531@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                ConcurrencyStamp = Guid.NewGuid().ToString(),
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
             }
             );
 
@@ -174,6 +206,30 @@ public partial class AppDbContext : IdentityDbContext<
                 isDeleted = false,
                 Status = "Active",
                 UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b"
+            },
+            new Account
+            {
+                Id = 4,
+                FullName = "Nguyen Dinh Dang Khoa",
+                PhoneNumber = string.Empty,
+                DateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                gender = string.Empty,
+                IdentificationIsValidated = false,
+                isDeleted = false,
+                Status = "Active",
+                UserId = "8b6b1d73-9f76-4c3a-8a62-1a4a6f1f2c90"
+            },
+            new Account
+            {
+                Id = 5,
+                FullName = "QWE",
+                PhoneNumber = string.Empty,
+                DateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                gender = string.Empty,
+                IdentificationIsValidated = false,
+                isDeleted = false,
+                Status = "Active",
+                UserId = "9c1b4f5a-8c1e-4d5b-9e9a-3b7f4c2e8a91"
             }
             );
 
@@ -192,6 +248,16 @@ public partial class AppDbContext : IdentityDbContext<
             {
                 UserId = "47ebcce9-fd0c-4173-91f4-a25385622d21",
                 RoleId = "2"
+            },
+            new IdentityUserRole<string>
+            {
+                UserId = "8b6b1d73-9f76-4c3a-8a62-1a4a6f1f2c90",
+                RoleId = "1"
+            },
+            new IdentityUserRole<string>
+            {
+                UserId = "9c1b4f5a-8c1e-4d5b-9e9a-3b7f4c2e8a91",
+                RoleId = "5"
             }
             );
 
@@ -215,6 +281,20 @@ public partial class AppDbContext : IdentityDbContext<
                 UserId = "fa56f53b-f406-42c4-afdc-f12a1a210b4b",
                 LoginProvider = "Google",
                 ProviderKey = "116621369845429820359",
+                ProviderDisplayName = "Google"
+            },
+            new IdentityUserLogin<string>
+            {
+                UserId = "8b6b1d73-9f76-4c3a-8a62-1a4a6f1f2c90",
+                LoginProvider = "Google",
+                ProviderKey = "105441188175765323725",
+                ProviderDisplayName = "Google"
+            },
+            new IdentityUserLogin<string>
+            {
+                UserId = "9c1b4f5a-8c1e-4d5b-9e9a-3b7f4c2e8a91",
+                LoginProvider = "Google",
+                ProviderKey = "105932045306748541536",
                 ProviderDisplayName = "Google"
             }
             );

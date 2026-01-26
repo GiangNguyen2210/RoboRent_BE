@@ -157,4 +157,25 @@ public class ChecklistDeliveryService :  IChecklistDeliveryService
         
         return actualDelivery.Id;
     }
+
+    public async Task<dynamic> StaffConfirmPickupRobotAsync(int checklistDeliveryId)
+    {
+        var checklistDelivery = await _repository.GetAsync(cd => cd.Id == checklistDeliveryId);
+        
+        if (checklistDelivery == null) return null;
+
+        var ac = await _actualDeliveryRepository.GetAsync(a => a.Id == checklistDelivery.ActualDeliveryId);
+        
+        if (ac == null) return null;
+        
+        ac.ActualPickupTime = DateTime.UtcNow;
+
+        await _actualDeliveryRepository.UpdateAsync(ac);
+        
+        checklistDelivery.Status = ChecklistDeliveryStatus.Completed;
+        
+        await _repository.UpdateAsync(checklistDelivery);
+        
+        return _mapper.Map<ChecklistDeliveryResponse>(checklistDelivery);
+    }
 }

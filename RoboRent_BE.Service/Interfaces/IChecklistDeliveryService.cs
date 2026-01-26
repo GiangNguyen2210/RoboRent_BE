@@ -13,4 +13,6 @@ public interface IChecklistDeliveryService
     public Task<ChecklistDeliveryResponse?> CustomerConfirmChecklistDelivery(int checklistDeliveryId, CustomerConfirmRequest customerConfirmRequest);
     
     public Task<int?> CustomerGetChecklistDeliveryByRentalIdAsync(int rentalId);
+
+    public Task<dynamic> StaffConfirmPickupRobotAsync(int checklistDeliveryId);
 }
