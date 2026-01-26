@@ -511,11 +511,11 @@ public partial class AppDbContext : IdentityDbContext<
         Name = "Standard Event Package",
         ShortDescription = "Gói tiêu chuẩn cho sự kiện vừa, tăng cường trình diễn và quảng bá",
         Description = "Gói STANDARD cho sự kiện vừa. Khách chọn giờ linh hoạt, hệ thống tính tiền theo đơn giá/giờ. "
-                    + "Thời lượng tối thiểu 2 tiếng, làm tròn theo bước 30 phút. Bao gồm 2 kỹ thuật viên hỗ trợ.",
+                    + "Thời lượng tối thiểu 2 tiếng, làm tròn theo bước 30 phút. Bao gồm 1 kỹ thuật viên hỗ trợ.",
         Currency = "VND",
 
         IncludesOperator = true,
-        OperatorCount = 2,
+        OperatorCount = 1,
 
         MinimumMinutes = 120,
         BillingIncrementMinutes = 30,
@@ -537,11 +537,11 @@ public partial class AppDbContext : IdentityDbContext<
         Name = "Premium Event Package",
         ShortDescription = "Gói cao cấp cho sự kiện lớn, trải nghiệm robot toàn diện",
         Description = "Gói PREMIUM cho sự kiện lớn. Khách chọn giờ linh hoạt, hệ thống tính tiền theo đơn giá/giờ. "
-                    + "Thời lượng tối thiểu 2 tiếng, làm tròn theo bước 30 phút. Bao gồm 3 kỹ thuật viên cao cấp.",
+                    + "Thời lượng tối thiểu 2 tiếng, làm tròn theo bước 30 phút. Bao gồm 1 kỹ thuật viên cao cấp.",
         Currency = "VND",
 
         IncludesOperator = true,
-        OperatorCount = 3,
+        OperatorCount = 1,
 
         MinimumMinutes = 120,
         BillingIncrementMinutes = 30,
