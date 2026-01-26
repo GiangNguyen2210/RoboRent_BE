@@ -190,11 +190,15 @@ public class ContractReportsService : IContractReportsService
         // Calculate ExpiredAt from the expiredAt timestamp in paymentData
         var expiredAt = DateTimeOffset.FromUnixTimeSeconds((long)paymentData.expiredAt).UtcDateTime;
 
+       
+        // If customer reported → "Refund", else → "Fine"
+        var paymentType = report.ReportRole == "Customer" ? "Refund" : "Fine";
+
         // Save PaymentRecord
         var paymentRecord = new PaymentRecord
         {
             RentalId =  null, // Contract reports don't have rental
-            PaymentType = "ContractReportResolution",
+            PaymentType = paymentType,
             Amount = paymentAmount,
             OrderCode = newOrderCode,
             PaymentLinkId = createPaymentResult.paymentLinkId,
