@@ -166,4 +166,36 @@ public class ChecklistDeliveryController : ControllerBase
             });
         }
     }
+
+    [HttpPut("staff/pickup/robot/{checklistDeliveryId}")]
+    public async Task<IActionResult> StaffConfirmPickupRobotAsync(int checklistDeliveryId)
+    {
+        try
+        {
+            var res = await _checklistDeliveryService.StaffConfirmPickupRobotAsync(checklistDeliveryId);
+
+            if (res == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Not found"
+                });
+            }
+            
+            return Ok(new
+            {
+                success = true,
+                data = res
+            });
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = e.Message
+            });
+        }
+    }
 }
