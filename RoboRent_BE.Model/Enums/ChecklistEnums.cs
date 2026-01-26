@@ -10,7 +10,8 @@ public enum ChecklistDeliveryType
 public enum ChecklistDeliveryStatus
 {
     Draft = 1,
-    Approved = 3
+    Approved = 3,
+    Completed = 2,
 }
 
 public enum ChecklistItemResult

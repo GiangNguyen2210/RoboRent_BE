@@ -175,6 +175,20 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
     
+    [HttpGet("technical-staff")]
+    public async Task<IActionResult> GetTechnicalStaffList(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
+        [FromQuery] string? searchTerm = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        
+        var result = await _modifyIdentityUserService.GetTechnicalStaffListAsync(page, pageSize, status, searchTerm);
+        return Ok(result);
+    }
+    
     /// <summary>
     /// [STAFF] Get list of managers
     /// </summary>
