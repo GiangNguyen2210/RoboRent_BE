@@ -50,5 +50,7 @@ public class ActivityTypeResponse
 
     public bool IsDeleted { get; set; } = false;
     
+    public int TotalRobotAmount { get; set; }
+
     public List<RoboTypeResponse>  RoboTypes { get; set; } = new List<RoboTypeResponse>();
 }
