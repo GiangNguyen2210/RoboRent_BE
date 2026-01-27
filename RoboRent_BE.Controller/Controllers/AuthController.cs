@@ -45,8 +45,16 @@ namespace RoboRent_BE.Controller.Controllers
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             
+            var appUrl = _configuration["AppUrl"];
             var scheme = Request.Scheme; // "https"
             var host = Request.Host.Value;
+
+            if (!string.IsNullOrEmpty(appUrl) && Uri.TryCreate(appUrl, UriKind.Absolute, out var uri))
+            {
+                scheme = uri.Scheme;
+                host = uri.Authority;
+            }
+
             var redirectUrl = $"{scheme}://{host}/api/Auth/google-callback";
             if (!string.IsNullOrEmpty(returnUrl))
             {
@@ -70,8 +78,18 @@ namespace RoboRent_BE.Controller.Controllers
                     return BadRequest(new { error = Request.Query["error"].ToString(), message = "Authentication failed. Please try logging in again." });
                 }
 
+                var appUrl = _configuration["AppUrl"];
+                var scheme = Request.Scheme;
+                var host = Request.Host.Value;
+
+                if (!string.IsNullOrEmpty(appUrl) && Uri.TryCreate(appUrl, UriKind.Absolute, out var uri))
+                {
+                    scheme = uri.Scheme;
+                    host = uri.Authority;
+                }
+
                 var result = await _authService.HandleGoogleCallbackAsync(returnUrl, (userId, token) =>
-                    Url.ActionLink("Verify", "Auth", new { userId, token }));
+                    Url.ActionLink("Verify", "Auth", new { userId, token }, protocol: scheme, host: host));
 
                 if (!string.IsNullOrEmpty(result.Error))
                 {

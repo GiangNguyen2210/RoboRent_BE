@@ -8,15 +8,20 @@ public enum DeliveryType
     /// <summary>
     /// Đơn đầu ngày - Rời kho, có status "LeftWarehouse"
     /// </summary>
-    FirstOfDay = 1,
+    FirstOfDay = 0,
 
     /// <summary>
     /// Đơn giữa ngày - Không rời/về kho
     /// </summary>
-    MidDay = 2,
+    MidDay = 1,
 
     /// <summary>
     /// Đơn cuối ngày - Về kho, có status "ReturnedWarehouse"
     /// </summary>
-    LastOfDay = 3
+    LastOfDay = 2,
+
+    /// <summary>
+    /// Đơn độc lập - Không liên quan đến ngày
+    /// </summary>
+    SoleDelivery = 3
 }

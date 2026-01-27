@@ -7,6 +7,7 @@ public interface IGroupScheduleRepository : IGenericRepository<GroupSchedule>
     Task<GroupSchedule?> GetByRentalAsync(int rentalId);
     Task<GroupSchedule?> GetByIdAsync(int id);
     Task<IEnumerable<GroupSchedule>> GetSameDaySchedulesAsync(int groupId, DateTime date);
+    Task<List<GroupSchedule>> GetByEventDateAndActivityTypeGroupAsync(DateTime eventDate, int activityTypeGroupId);
 
     // CRUD
     Task AddAsync(GroupSchedule entity);
