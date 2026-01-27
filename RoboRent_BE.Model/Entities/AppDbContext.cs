@@ -501,7 +501,8 @@ public partial class AppDbContext : IdentityDbContext<
 
         IsActive = true,
         IsDeleted = false,
-        DamageDeposit = 5000000m
+        DamageDeposit = 5000000m,
+        TotalRobotAmount = 4
     },
 
     new ActivityType
@@ -527,7 +528,8 @@ public partial class AppDbContext : IdentityDbContext<
 
         IsActive = true,
         IsDeleted = false,
-        DamageDeposit = 10000000m
+        DamageDeposit = 10000000m,
+        TotalRobotAmount = 6
     },
 
     new ActivityType
@@ -553,7 +555,8 @@ public partial class AppDbContext : IdentityDbContext<
 
         IsActive = true,
         IsDeleted = false,
-        DamageDeposit = 20000000m
+        DamageDeposit = 20000000m,
+        TotalRobotAmount = 10
     }
 );
 
