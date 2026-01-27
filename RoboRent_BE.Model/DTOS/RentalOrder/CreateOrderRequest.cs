@@ -36,7 +36,8 @@ public partial class CreateOrderRequest
     
     public DateTime? RequestedDate { get; set; } =  DateTime.UtcNow;
     [Required]
-    public DateTime? EventDate { get; set; } =  DateTime.UtcNow;
+    [NotBeforeUtcNow(ErrorMessage = "Event date cannot be earlier than current UTC time.")]
+    public DateTime? EventDate { get; set; } = DateTime.UtcNow;
     
     [DefaultValue(false)]
     public bool? IsDeleted { get; set; } =  false;
@@ -49,4 +50,25 @@ public partial class CreateOrderRequest
     
     [Required]
     public int? ActivityTypeId  { get; set; }
+}
+
+public class NotBeforeUtcNowAttribute : ValidationAttribute
+{
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        if (value == null)
+            return ValidationResult.Success;
+
+        if (value is DateTime dateTime)
+        {
+            if (dateTime < DateTime.UtcNow)
+            {
+                return new ValidationResult(
+                    ErrorMessage ?? "Event date must not be earlier than the current UTC time."
+                );
+            }
+        }
+
+        return ValidationResult.Success;
+    }
 }
